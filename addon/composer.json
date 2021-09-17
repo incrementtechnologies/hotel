@@ -19,7 +19,7 @@
     "extra": {
         "laravel": {
             "providers": [
-                "Increment\\Hotel\\AddOn\\AddOnProvider"
+                "Increment\\Hotel\\AddOn\\AddOnServiceProvider"
             ]
         }
     }
