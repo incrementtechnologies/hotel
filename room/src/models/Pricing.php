@@ -1,7 +1,7 @@
 <?php
 
 
-namespace Increment\Imarket\Product\Models;
+namespace Increment\Hotel\Room\Models;
 use Illuminate\Database\Eloquent\Model;
 use App\APIModel;
 class Pricing extends APIModel

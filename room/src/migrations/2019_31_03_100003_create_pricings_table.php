@@ -16,11 +16,11 @@ class CreatePricingsTable extends Migration
         Schema::create('pricings', function (Blueprint $table) {
             $table->bigIncrements('id');
             $table->bigInteger('account_id');
-            $table->bigInteger('product_id');
-            $table->string('type');
-            $table->integer('minimum')->nullable();
-            $table->integer('maximum')->nullable();
-            $table->double('price');
+            $table->bigInteger('room_id');
+            $table->double('regular');
+            $table->double('refundable')->nullable();
+            $table->string('currency');
+            $table->string('label');
             $table->timestamps();
             $table->softDeletes();
         });

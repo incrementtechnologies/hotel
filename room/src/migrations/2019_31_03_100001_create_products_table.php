@@ -13,14 +13,14 @@ class CreateProductsTable extends Migration
      */
     public function up()
     {
-        Schema::create('products', function (Blueprint $table) {
+        Schema::create('rooms', function (Blueprint $table) {
             $table->increments('id');
             $table->string('code');
             $table->bigInteger('account_id');
             $table->longText('title');
+            $table->bigInteger('category');
             $table->longText('description')->nullable();
-            $table->longText('tags')->nullable();
-            $table->string('status')->default('pending');
+            $table->string('status');
             $table->timestamps();
             $table->softDeletes();
         });

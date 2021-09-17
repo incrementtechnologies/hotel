@@ -6,13 +6,13 @@ namespace Increment\Hotel\Room\Http;
 use Illuminate\Http\Request;
 use App\Http\Controllers\APIController;
 use Increment\Hotel\Room\Models\Pricing;
-use Increment\Hotel\Room\Models\Product;
+use Increment\Hotel\Room\Models\Room;
 class PricingController extends APIController
 {
     function __construct(){
     	$this->model = new Pricing();
         $this->notRequired = array(
-            'minimum', 'maximum', 'label'
+           'label'
         );
     }
 
@@ -31,7 +31,7 @@ class PricingController extends APIController
     }
 
     public function getProduct($productId){
-    	$result = Product::where('id', '=', $productId)->first();
+    	$result = Room::where('id', '=', $productId)->first();
     	return ($result) ? $result : null;
     }
 
