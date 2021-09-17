@@ -1,6 +1,6 @@
 <?php
 
-namespace Increment\Hotel\Http\Controllers;
+namespace Increment\Hotel\AddOn\Http;
 
 use Illuminate\Http\Request;
 use App\Http\Controllers\APIController;
