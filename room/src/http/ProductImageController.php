@@ -29,4 +29,20 @@ class ProductImageController extends APIController
     $image = ProductImage::where('room_id', '=', $roomId)->where('deleted_at', '=', null)->first();
     return $image != null ? $image['url'] : null;
   }
+
+  public function getImages($roomId){
+    $image = ProductImage::where('room_id', '=', $roomId)->where('deleted_at', '=', null)->get();
+    $res = array();
+    if(sizeof($image) > 0){
+      for ($i=0; $i <= sizeof($image)-1; $i++) { 
+        $item = $image[$i];
+        $data = array(
+          'url' => $item['url'],
+          'id' => $item['id'] 
+        );
+        array_push($res, $data);
+      }
+    }
+    return $res;
+  }
 }
