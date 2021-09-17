@@ -1,0 +1,26 @@
+{
+    "name": "increment/reservation",
+    "description": "reservations in increment",
+    "type": "library",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "kennCK",
+            "email": "kennettecanales@gmail.com"
+        }
+    ],
+    "minimum-stability": "dev",
+    "require": {},
+    "autoload": {
+        "psr-4": {
+            "Increment\\Hotel\\Reservation": "src/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Increment\\Hotel\\Reservation\\ReservationServiceProvider"
+            ]
+        }
+    }
+}

@@ -1,0 +1,26 @@
+{
+    "name": "increment/coupon",
+    "description": "Increment Core Marketplace Backend",
+    "type": "library",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "kennCK",
+            "email": "kennettecanales@gmail.com"
+        }
+    ],
+    "minimum-stability": "dev",
+    "require": {},
+    "autoload": {
+        "psr-4": {
+            "Increment\\Imarket\\Coupon": "src/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Increment\\Imarket\\Coupon\\CouponServiceProvider"
+            ]
+        }
+    }
+}
