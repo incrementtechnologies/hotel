@@ -1,0 +1,26 @@
+{
+    "name": "increment/product",
+    "description": "Increment Core Marketplace Backend",
+    "type": "library",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "kennCK",
+            "email": "kennettecanales@gmail.com"
+        }
+    ],
+    "minimum-stability": "dev",
+    "require": {},
+    "autoload": {
+        "psr-4": {
+            "Increment\\Hotel\\Room": "src/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Increment\\Hotel\\Room\\RoomServiceProvider"
+            ]
+        }
+    }
+}
