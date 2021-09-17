@@ -15,7 +15,7 @@ class UpdateProductImagesTableChange extends Migration
     {
         Schema::table('product_images', function (Blueprint $table) {
             $table->dropColumn(['account_id']);
-            $table->bigInteger('product_id')->after('id');
+            $table->bigInteger('room_id')->after('id');
         });
     }
 

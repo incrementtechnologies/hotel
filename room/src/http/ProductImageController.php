@@ -18,7 +18,15 @@ class ProductImageController extends APIController
   	}else{
   		$result = ProductImage::where('product_id', $productId)->where('status', '=', $status)->orderBy('created_at', 'desc')->get();
   	}
-    
     return (sizeof($result) > 0) ? $result : null;
+  }
+
+  public function addImage($data){
+    return ProductImage::create($data);
+  }
+
+  public function getImage($roomId){
+    $image = ProductImage::where('room_id', '=', $roomId)->where('deleted_at', '=', null)->first();
+    return $image != null ? $image['url'] : null;
   }
 }
