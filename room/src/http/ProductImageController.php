@@ -5,6 +5,7 @@ namespace Increment\Hotel\Room\Http;
 use Illuminate\Http\Request;
 use App\Http\Controllers\APIController;
 use Increment\Hotel\Room\Models\ProductImage;
+use Carbon\Carbon;
 class ProductImageController extends APIController
 {
   function __construct(){
@@ -44,5 +45,11 @@ class ProductImageController extends APIController
       }
     }
     return $res;
+  }
+
+  public function removeImages($roomId){
+    return ProductImage::where('room_id', '=', $roomId)->update(array(
+      'deleted_at' => Carbon::now()
+    ));
   }
 }
