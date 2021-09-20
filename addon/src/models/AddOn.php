@@ -3,9 +3,11 @@
 namespace Increment\Hotel\AddOn\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use App\APIModel;
 
-class AddOn extends Model
+class AddOn extends APIModel
 {
-    protected $table = 'add-ons';
-    protected $fillable = ['merchant_id', 'account_id', 'title',  'currency', 'price', 'url'];
+    protected $table = 'add_ons';
+    protected $fillable = ['account_id', 'title', 'price'];
+    // protected $fillable = ['merchant_id', 'account_id', 'title',  'currency', 'price', 'url'];
 }
