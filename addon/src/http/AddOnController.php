@@ -27,6 +27,16 @@ class AddOnController extends APIController
 		return $this->response();
 	}
 
+    public function retrieveAll(Request $request) {
+		$data = $request->all();
+		$results = DB::table('add_ons')
+			->where('deleted_at', '=', null)
+			->get();
+		$this->response['data'] = $results;
+		$this->response['size'] = AddOn::where('deleted_at', '=', null)->count();
+		return $this->response();
+	}
+
     public function create(Request $request){
 		if($this->checkAuthenticatedUser() == false){
 		  return $this->response();
