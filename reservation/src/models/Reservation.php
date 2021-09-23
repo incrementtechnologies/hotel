@@ -1,6 +1,6 @@
 <?php
 
-namespace Increment\Imarket\Reservation\Models;
+namespace Increment\Hotel\Reservation\Models;
 use Illuminate\Database\Eloquent\Model;
 use App\APIModel;
 use Carbon\Carbon;

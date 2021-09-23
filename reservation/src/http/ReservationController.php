@@ -200,19 +200,26 @@ class ReservationController extends APIController
 			$condition = array(
 				array('T3.title', $con[0]['clause'], $con[0]['value'])
 			);
+		}else if ($con[0]['column'] == 'price') {
+			$sortBy = 'T5.'.array_keys($data['sort'])[0];
+			$condition = array(
+				array('T5.regular', $con[0]['clause'], $con[0]['value'])
+			);
 		}
 		$res = Reservation::leftJoin('accounts as T2', 'T2.id', '=', 'reservations.account_id')
 			->leftJoin('rooms as T3', 'T3.id', 'reservations.payload_value')
 			->leftJoin('account_informations as T4', 'T4.account_id', '=', 'T2.id')
+			->leftJoin('pricings as T5', 'T5.room_id', '=', 'T3.id')
 			->where($condition)
 			->orderBy($sortBy, array_values($data['sort'])[0])
 			->limit($data['limit'])
 			->offset($data['offset'])
-			->get(['reservations.*', 'T2.email', 'T3.title', 'T3.price']);
+			->get(['reservations.*', 'T2.email', 'T3.title', 'T5.regular']);
 
 		$size = Reservation::leftJoin('accounts as T2', 'T2.id', '=', 'reservations.account_id')
 			->leftJoin('rooms as T3', 'T3.id', 'reservations.payload_value')
 			->leftJoin('account_informations as T4', 'T4.account_id', '=', 'T2.id')
+			->leftJoin('pricings as T5', 'T5.room_id', '=', 'T3.id')
 			->where($condition)
 			->orderBy($sortBy, array_values($data['sort'])[0])
 			->get();
@@ -259,5 +266,14 @@ class ReservationController extends APIController
 			}
 		}
 		return $total;
+	}
+
+	public function getTotalBookings($date){
+		$bookings = Reservation::where('check_in', '<=', $date)->where('deleted_at', '=', null)->count();
+		$reservations = Reservation::where('check_in', '>', $date)->where('deleted_at', '=', null)->count();
+		return array(
+			'previous' => $bookings,
+			'upcommings' => $reservations
+		);
 	}
 }
