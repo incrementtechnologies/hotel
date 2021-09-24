@@ -20,7 +20,7 @@ class CouponController extends APIController
 
 	public function getCouponOnCode($code){
 		$results = Coupon::where('code', '=', $code)->get();
-		return (sizeof($result) > 0) ? $result[0] : null;
+		return (sizeof($results) > 0) ? $results[0] : null;
 	}
 	
 	public function create(Request $request){
