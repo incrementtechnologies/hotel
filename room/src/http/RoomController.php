@@ -16,16 +16,16 @@ class RoomController extends APIController
     $data = $request->all();
     $con = $data['condition'];
     $result = Room::leftJoin('pricings as T1', 'T1.room_id', '=', 'rooms.id')
-      ->where($con[0]['column'], $con[0]['clause'], $con[0]['value'])
-      ->where('deleted_at', '=', null)
+      ->where($con[0]['column'] === 'created_at' ? 'rooms.'.$con[0]['column'] : $con[0]['column'], $con[0]['clause'], $con[0]['value'])
+      ->where('rooms.deleted_at', '=', null)
       ->limit($data['limit'])
       ->offset($data['offset'])
-      ->orderBy(array_keys($data['sort'])[0], array_values($data['sort'])[0])
-      ->get();
+      ->orderBy($con[0]['column'] === 'created_at' ? 'rooms.'.array_keys($data['sort'])[0] : array_keys($data['sort'])[0], array_values($data['sort'])[0])
+      ->get(['rooms.*', 'T1.regular', 'T1.refundable', 'T1.currency', 'T1.label']);
     $size = Room::leftJoin('pricings as T1', 'T1.room_id', '=', 'rooms.id')
-      ->where($con[0]['column'], $con[0]['clause'], $con[0]['value'])
-      ->where('deleted_at', '=', null)
-      ->orderBy(array_keys($data['sort'])[0], array_values($data['sort'])[0])
+      ->where($con[0]['column'] === 'created_at' ? 'rooms.'.$con[0]['column'] : $con[0]['column'], $con[0]['clause'], $con[0]['value'])
+      ->where('rooms.deleted_at', '=', null)
+      ->orderBy($con[0]['column'] === 'created_at' ? 'rooms.'.array_keys($data['sort'])[0] : array_keys($data['sort'])[0], array_values($data['sort'])[0])
       ->get();
 
     for ($i=0; $i <= sizeof($result)-1 ; $i++) { 
