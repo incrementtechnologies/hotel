@@ -15,13 +15,15 @@ class RoomController extends APIController
   public function retrieve(Request $request){
     $data = $request->all();
     $con = $data['condition'];
-    $result = Room::where($con[0]['column'], $con[0]['clause'], $con[0]['value'])
+    $result = Room::leftJoin('pricings as T1', 'T1.room_id', '=', 'rooms.id')
+      ->where($con[0]['column'], $con[0]['clause'], $con[0]['value'])
       ->where('deleted_at', '=', null)
       ->limit($data['limit'])
       ->offset($data['offset'])
       ->orderBy(array_keys($data['sort'])[0], array_values($data['sort'])[0])
       ->get();
-    $size = Room::where($con[0]['column'], $con[0]['clause'], $con[0]['value'])
+    $size = Room::leftJoin('pricings as T1', 'T1.room_id', '=', 'rooms.id')
+      ->where($con[0]['column'], $con[0]['clause'], $con[0]['value'])
       ->where('deleted_at', '=', null)
       ->orderBy(array_keys($data['sort'])[0], array_values($data['sort'])[0])
       ->get();
@@ -30,6 +32,7 @@ class RoomController extends APIController
       $item = $result[$i];
       $result[$i]['category'] = app('Increment\Common\Payload\Http\PayloadController')->retrieveByParams($item['category']);
       $result[$i]['additional_info'] = json_decode($item['additional_info']);
+      $result[$i]['images'] = app('Increment\Hotel\Room\Http\ProductImageController')->getImages($item['room_id']);
     }
     $this->response['data'] = $result;
     $this->response['size'] = sizeof($size);
