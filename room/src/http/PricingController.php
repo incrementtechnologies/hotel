@@ -23,7 +23,7 @@ class PricingController extends APIController
     	if(sizeof($result) > 0){
     		$i = 0;
     		foreach ($result as $key) {
-    			$this->response['data'][$i]['product'] = $this->getProduct($result[$i]['product_id']);
+    			$this->response['data'][$i]['room'] = $this->getProduct($result[$i]['room_id']);
     			$i++;
     		}
     	}
