@@ -32,7 +32,31 @@ class RoomController extends APIController
       $item = $result[$i];
       $result[$i]['category'] = app('Increment\Common\Payload\Http\PayloadController')->retrieveByParams($item['category']);
       $result[$i]['additional_info'] = json_decode($item['additional_info']);
-      $result[$i]['images'] = app('Increment\Hotel\Room\Http\ProductImageController')->getImages($item['room_id']);
+      $result[$i]['images'] = app('Increment\Hotel\Room\Http\ProductImageController')->getImages($item['id']);
+    }
+    $this->response['data'] = $result;
+    $this->response['size'] = sizeof($size);
+
+    return $this->response();
+  }
+
+  public function retrieveById(Request $request){
+    $data = $request->all();
+    $result = Room::leftJoin('pricings as T1', 'T1.room_id', '=', 'rooms.id')
+      ->where('rooms.id', '=', $data['room_id'])
+      ->where('rooms.deleted_at', '=', null)
+      ->get(['rooms.*', 'T1.regular', 'T1.refundable', 'T1.currency', 'T1.label']);
+      
+      $size = Room::leftJoin('pricings as T1', 'T1.room_id', '=', 'rooms.id')
+      ->where('rooms.id', '=', $data['room_id'])
+      ->where('rooms.deleted_at', '=', null)
+      ->get();
+
+    for ($i=0; $i <= sizeof($result)-1 ; $i++) {
+      $item = $result[$i];
+      $result[$i]['category'] = app('Increment\Common\Payload\Http\PayloadController')->retrieveByParams($item['category']);
+      $result[$i]['additional_info'] = json_decode($item['additional_info']);
+      $result[$i]['images'] = app('Increment\Hotel\Room\Http\ProductImageController')->getImages($item['id']);
     }
     $this->response['data'] = $result;
     $this->response['size'] = sizeof($size);

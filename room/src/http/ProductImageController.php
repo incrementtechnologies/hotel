@@ -12,6 +12,28 @@ class ProductImageController extends APIController
     $this->model = new ProductImage();
   }
 
+  public function createWithImages(Request $request){
+    $data = $request->all();
+    if(isset($data['url'])){
+      if(sizeof($data['url']) > 0){
+        for ($i=0; $i <= sizeof($data['url'])-1 ; $i++) { 
+          $item = $data['url'][$i];
+          $params = array(
+            'url' => $item['url'],
+            'room_id' => $data['room_id'],
+            'status' => 'product'
+          );
+          $this->addImage($params);
+        }
+      }
+      $this->response['data'] = $data['room_id'];
+      return $this->response();
+    }else{
+      $this->response['error'] = 'Error';
+      return $this->response();
+    }
+  }
+  
   public function getProductImage($productId, $status){
   	$result = null;
   	if($status == null){
