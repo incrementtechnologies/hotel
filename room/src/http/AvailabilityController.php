@@ -9,6 +9,11 @@ use Carbon\Carbon;
 
 class AvailabilityController extends APIController
 {
+    function __construct(){
+        $this->notRequired = array(
+           'limit'
+        );
+    }
     public function create(Request $request){
 		if($this->checkAuthenticatedUser() == false){
 		  return $this->response();
@@ -18,6 +23,7 @@ class AvailabilityController extends APIController
         $this->insertDB($data);
 		return $this->response();
 	}
+
 
     public function retrieve(Request $request){
         $data = $request->all();
