@@ -8,5 +8,5 @@ use App\APIModel;
 class Availability extends APIModel
 {
     protected $table = 'availabilities';
-    protected $fillable = ['payload', 'payload_value', 'start_date', 'end_date', 'limit', 'status'];
+    protected $fillable = ['payload', 'payload_value', 'start_date', 'end_date', 'status'];
 }
