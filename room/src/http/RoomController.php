@@ -63,4 +63,34 @@ class RoomController extends APIController
 
     return $this->response();
   }
+
+  public function updateWithImages(Request $request){
+    $data = $request->all();
+    $room = array(
+      'code' => $data['code'],
+      'account_id' => $data['account_id'],
+      'title' => $data['title'],
+      'category' => $data['category'],
+      'description' => $data['description'],
+      'additional_info' => $data['additional_info'],
+      'status' => $data['status']
+    );
+    $room['updated_at'] = Carbon::now();
+    $res = Room::where('id', '=', $data['id'])->update($room);
+    if(isset($data['images'])){
+      if(sizeof($data['images']) > 0){
+        for ($i=0; $i <= sizeof($data['images'])-1 ; $i++) { 
+          $item = $data['images'][$i];
+          $params = array(
+            'room_id' => $data['id'],
+            'url' => $item['url'],
+            'status' => 'room_images'
+          );
+          app('Increment\Hotel\Room\Http\ProductImageController')->addImage($params);
+        }
+      }
+    }
+    $this->response['data'] = $res;
+    return $this->response();
+  }
 }
