@@ -11,7 +11,7 @@ class AvailabilityController extends APIController
 {
     function __construct(){
         $this->notRequired = array(
-           'limit'
+           'description'
         );
     }
     public function create(Request $request){
