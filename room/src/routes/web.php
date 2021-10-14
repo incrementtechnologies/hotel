@@ -23,7 +23,7 @@ Route::get($route.'test', $controller."test");
 
 
 // Product Images
-$route = env('PACKAGE_ROUTE', '').'/product_images/';
+$route = env('PACKAGE_ROUTE', '').'/room_images/';
 $controller = 'Increment\Hotel\Room\Http\ProductImageController@';
 Route::post($route.'create', $controller."create");
 Route::post($route.'create_with_image', $controller."createWithImages");
