@@ -79,7 +79,7 @@ class RoomController extends APIController
     $res = Room::where('id', '=', $data['id'])->update($room);
     if(isset($data['images'])){
       if(sizeof($data['images']) > 0){
-        for ($i=0; $i <= sizeof($data['images'])-1 ; $i++) { 
+        for ($i=0; $i <= sizeof($data['images'])-1 ; $i++) {
           $item = $data['images'][$i];
           $params = array(
             'room_id' => $data['id'],
