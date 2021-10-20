@@ -26,7 +26,7 @@ class ReservationController extends APIController
 	{
 		$this->model = new Reservation();
 		$this->notRequired = array(
-			'code'
+			'code', 'coupon_id'
 		);
 	}
 
@@ -130,13 +130,53 @@ class ReservationController extends APIController
 	{
 		$data = $request->all();
 		$this->model = new Reservation();
+		// $this->insertDB($data);
+		$cart = json_decode($data['payload_value']);
+		for ($i=0; $i <= sizeof($cart)-1 ; $i++) { 
+			$item = $cart[$i];
+			$condition = array(
+				array('account_id', '=', $data['account_id']),
+				array('category_id', '=', $item->category),
+				array('deleted_at', '=', null),
+				array('status', '=', 'pending')
+			);
+			$updates = array(
+				'status' => 'in_progress',
+				'updated_at' => Carbon::now()
+			);
+			app('Increment\Hotel\Room\Http\CartController')->updateByParams($condition, $updates);
+		}
 		$this->insertDB($data);
-		// if ($this->response['data'] !== null) {
-		// 	TopChoice::where('synqt_id', '=', $data['payload_value'])->update(array(
-		// 		'deleted_at' => Carbon::now()
-		// 	));
-		// }
+		return $this->response();
+	}
 
+	public function update(Request $request){
+		$data = $request->all();
+		$this->model = new Reservation();
+		// $this->insertDB($data);
+		$cart = json_decode($data['payload_value']);
+		for ($i=0; $i <= sizeof($cart)-1 ; $i++) { 
+			$item = $cart[$i];
+			$condition = array(
+				array('account_id', '=', $data['account_id']),
+				array('category_id', '=', $item->category),
+				array('deleted_at', '=', null),
+				array('status', '=', 'pending')
+			);
+			$updates = array(
+				'status' => 'in_progress',
+				'qty' => $item->checkoutQty,
+				'updated_at' => Carbon::now()
+			);
+			app('Increment\Hotel\Room\Http\CartController')->updateByParams($condition, $updates);
+		}
+		$update = Reservation::where('id', '=', $data['id'])->update(array(
+			'payload_value' => $data['payload_value'],
+			'details' => $data['details'],
+			'check_in' => $data['check_in'],
+			'check_out' => $data['check_out'],
+		));
+		$this->response['data'] = $update;
 		return $this->response();
 	}
 
@@ -155,31 +195,6 @@ class ReservationController extends APIController
 		} else {
 			return $code;
 		}
-	}
-
-	public function update(Request $request)
-	{
-		$data = $request->all();
-		$emailData = array();
-		$reservation = Reservation::where('id', '=', $data['id'])->get();
-		$noOfGuests = app($this->messengerGroupClass)->getMembersByParams('payload', $reservation[0]['payload_value'], ['id', 'title']);
-		$emailData = array(
-			'reservee' => $this->retrieveNameOnly($reservation[0]['account_id']),
-			'date' =>  Carbon::createFromFormat('Y-m-d H:i:s', $reservation[0]['datetime'])->copy()->tz($this->response['timezone'])->format('F j, Y H:i A'),
-			'number_of_guests' => $noOfGuests !== null ? sizeof($noOfGuests) : 0,
-			'merchant' => app($this->merchantClass)->getByParams('id', $reservation[0]['merchant_id']),
-			'code' => $this->generateCode(),
-			'status' => ucfirst($data['status'])
-		);
-		// $email = app($this->emailClass)->receipSynqt($emailData, $reservation[0]['account_id']);
-		// if ($email !== null) {
-		$result = Reservation::where('id', '=', $data['id'])->update(array(
-			'status' => $data['status'],
-			'code' => $this->generateCode(),
-		));
-		$this->response['data'] = $result;
-		// }
-		return $this->response();
 	}
 
 	public function retrieveBookings(Request $request)
@@ -276,4 +291,27 @@ class ReservationController extends APIController
 			'upcommings' => $reservations
 		);
 	}
+
+	public function retrieveDetails(Request $request){
+		$data = $request->all();
+		$result = Reservation::where('account_id', '=', $data['account_id'])->where('status', '=', 'in_progress')->get();
+		// $rooms = [];
+		if(sizeof($result) > 0){
+			for ($i=0; $i <= sizeof($result) -1; $i++) { 
+				$item = $result[$i];
+				// $cart = json_decode($item['payload_value']);
+				// for ($a=0; $a <= sizeof($cart) -1; $a++) { 
+				// 	$items = $cart[$a];
+				// 	$temp = app('Increment\Hotel\Room\Http\RoomController')->getWithQty($items->price_id, $items->category);
+				// 	array_push($rooms, $temp[0]);
+				// }
+				// $result[$i]['rooms'] = $rooms;
+				$result[$i]['details'] = json_decode($item['details']);
+				$result[$i]['payload_value'] =  json_decode($item['payload_value']);;
+			}
+		}
+		$this->response['data'] = $result;
+		return $this->response();
+	}
+
 }
