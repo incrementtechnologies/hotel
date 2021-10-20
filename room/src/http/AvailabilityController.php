@@ -24,7 +24,6 @@ class AvailabilityController extends APIController
 		return $this->response();
 	}
 
-
     public function retrieve(Request $request){
         $data = $request->all();
         $con = $data['condition'];
@@ -41,5 +40,9 @@ class AvailabilityController extends APIController
         }
         $this->response['data'] = $res;
         return $this->response();
+    }
+
+    public function retrieveStatus($roomId){
+        return Availability::where('payload_value', '=', $roomId)->first();
     }
 }
