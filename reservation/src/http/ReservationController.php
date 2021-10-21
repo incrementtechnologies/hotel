@@ -26,7 +26,7 @@ class ReservationController extends APIController
 	{
 		$this->model = new Reservation();
 		$this->notRequired = array(
-			'code', 'coupon_id'
+			'code', 'coupon_id', 'payload', 'payload_value'
 		);
 	}
 
@@ -66,63 +66,19 @@ class ReservationController extends APIController
 		return $this->response();
 	}
 
-	public function retrieve(Request $request)
-	{
+	public function retrieveAllDetails(Request $request){
 		$data = $request->all();
-		$con = $data['condition'];
-		if (isset($data['filter'])) {
-			$result = Reservation::where($con[0]['column'], $con[0]['clause'], $con[0]['value'])
-				->where($con[1]['column'], $con[1]['clause'], $con[1]['value'])
-				->where($con[2]['column'], $con[2]['clause'], $con[2]['value'])
-				->offset($data['offset'])->limit($data['limit'])->orderBy(array_keys($data['sort'])[0], array_values($data['sort'])[0])->get();
-		} else {
-			$result = DB::table('messenger_members as T1')
-				->leftJoin('messenger_groups as T2', 'T1.messenger_group_id', '=', 'T2.id')
-				->where('T1.' . $con[0]['column'], $con[0]['clause'], $con[0]['value'])
-				->offset($data['offset'])->limit($data['limit'])
-				->orderBy('T1.' . array_keys($data['sort'])[0], $data['sort'][array_keys($data['sort'])[0]])
-				->get();
-
-			$result = json_decode($result, true);
-			$result = array_unique($result, SORT_REGULAR);
-			// $result = Reservation::where($con[0]['column'], $con[0]['clause'], $con[0]['value'])
-			// 	->where($con[1]['column'], $con[1]['clause'], $con[1]['value'])
-			// 	->where($con[2]['column'], $con[2]['clause'], $con[2]['value'])
-			// 	->offset($data['offset'])->limit($data['limit'])
-			// 	->orderBy(array_keys($data['sort'])[0], $data['sort'][array_keys($data['sort'])[0]])
-			// 	->get();
-		}
-		$res = null;
-		if (sizeof($result) > 0) {
-			$j = 0;
-			foreach ($result as $value) {
-				$tempReserv = Reservation::where('payload_value', '=', $value['payload'])
-					->where($con[1]['column'], $con[1]['clause'], $con[1]['value'])
-					->where($con[2]['column'], $con[2]['clause'], $con[2]['value'])
-					->select('id', 'account_id', 'payload_value', 'merchant_id', 'datetime', 'status')
-					->get();
-				if (sizeof($tempReserv) > 0) {
-					array_push($this->temp, $tempReserv[0]);
-				}
-				$j++;
-			}
-			$res = $this->temp;
-			if (sizeof($res) > 0) {
-				$i = 0;
-				foreach ($res as $key) {
-					$res[$i]['reservee'] = $this->retrieveNameOnly($res[$i]['account_id']);
-					$res[$i]['synqt'] = app($this->synqtClass)->retrieveSynqtByParams('id', $res[$i]['payload_value']);
-					$res[$i]['merchant'] = app($this->merchantClass)->getMerchantByParams('id', $res[$i]['merchant_id']);
-					$res[$i]['distance'] = app($this->locationClass)->getLocationDistanceByMerchant($res[$i]['synqt'][0]['location_id'], json_decode($res[$i]['merchant']['address']));
-					$res[$i]['total_super_likes'] = app($this->topChoiceClass)->countByParams($res[$i]['payload_value'], $res[$i]['merchant_id']);
-					$res[$i]['rating'] = app($this->ratingClass)->getRatingByPayload('merchant_id', $res[$i]['merchant_id']);
-					$res[$i]['date_time_at_human'] = Carbon::createFromFormat('Y-m-d H:i:s', $res[$i]['datetime'])->copy()->tz($this->response['timezone'])->format('F j, Y H:i A');
-					$res[$i]['members'] = app($this->messengerGroupClass)->getMembersByParams('payload', $res[$i]['payload_value'], ['id', 'title']);
-					$i++;
-				}
-				$this->response['data'] = $res;
-			}
-		}
+		$reserve = Reservation::where('code', '=', $data['id'])->first();
+		$cart = app('Increment\Hotel\Room\Http\CartController')->retrieveCartWithRooms($reserve['id']);
+		$reserve['details'] = json_decode($reserve['details'], true);
+		$reserve['check_in'] = Carbon::createFromFormat('Y-m-d H:i:s', $reserve['check_in'])->copy()->tz($this->response['timezone'])->format('F j, Y');
+		$reserve['check_out'] = Carbon::createFromFormat('Y-m-d H:i:s', $reserve['check_out'])->copy()->tz($this->response['timezone'])->format('F j, Y');
+		$reserve['coupon'] = $reserve['coupon_id'] !== null ? app('App\Http\CouponController')->retrieveById($reserve['coupon_id']) : null;
+		$array = array(
+			'reservation' => $reserve,
+			'cart' => $cart
+		);
+		$this->response['data'] = $array;
 		return $this->response();
 	}
 
@@ -130,23 +86,23 @@ class ReservationController extends APIController
 	{
 		$data = $request->all();
 		$this->model = new Reservation();
-		// $this->insertDB($data);
-		$cart = json_decode($data['payload_value']);
-		for ($i=0; $i <= sizeof($cart)-1 ; $i++) { 
-			$item = $cart[$i];
+		$temp = Reservation::where('account_id', '=', $data['account_id'])->count();
+		$data['code'] = $this->generateCode($temp);
+		$this->insertDB($data);
+		if($this->response['data']){
 			$condition = array(
 				array('account_id', '=', $data['account_id']),
-				array('category_id', '=', $item->category),
+				array('reservation_id', '=', null),
 				array('deleted_at', '=', null),
 				array('status', '=', 'pending')
 			);
 			$updates = array(
 				'status' => 'in_progress',
+				'reservation_id' => $this->response['data'],
 				'updated_at' => Carbon::now()
 			);
 			app('Increment\Hotel\Room\Http\CartController')->updateByParams($condition, $updates);
 		}
-		$this->insertDB($data);
 		return $this->response();
 	}
 
@@ -154,14 +110,15 @@ class ReservationController extends APIController
 		$data = $request->all();
 		$this->model = new Reservation();
 		// $this->insertDB($data);
-		$cart = json_decode($data['payload_value']);
+		$cart = json_decode($data['carts']);
 		for ($i=0; $i <= sizeof($cart)-1 ; $i++) { 
 			$item = $cart[$i];
 			$condition = array(
 				array('account_id', '=', $data['account_id']),
 				array('category_id', '=', $item->category),
+				array('reservation_id', '=', $item->reservation_id),
 				array('deleted_at', '=', null),
-				array('status', '=', 'pending')
+				array('status', '=', 'in_progress')
 			);
 			$updates = array(
 				'status' => 'in_progress',
@@ -171,12 +128,43 @@ class ReservationController extends APIController
 			app('Increment\Hotel\Room\Http\CartController')->updateByParams($condition, $updates);
 		}
 		$update = Reservation::where('id', '=', $data['id'])->update(array(
-			'payload_value' => $data['payload_value'],
 			'details' => $data['details'],
 			'check_in' => $data['check_in'],
 			'check_out' => $data['check_out'],
 		));
 		$this->response['data'] = $update;
+		return $this->response();
+	}
+
+	public function updateCoupon(Request $request){
+		$data = $request->all();
+		$reserve = Reservation::where('account_id', '=', $data['account_id'])->where('status', '=', 'in_progress')->first();
+		if($reserve !== null){
+			$details = json_decode($reserve['details']);
+			$cart = json_decode($reserve['payload_value']);
+			$details->payment_method = $data['payment_method'];
+			$res = Reservation::where('account_id', '=', $data['account_id'])->where('status', '=', 'in_progress')->update(array(
+				'coupon_id' => $data['coupon'],
+				'details' => 	json_encode($details),	
+				'status' => 'completed'
+			));
+			for ($i=0; $i <= sizeof($cart)-1; $i++) {
+				$item = $cart[$i];
+				$condition = array(
+					array('price_id', '=', $item->price_id),
+					array('category_id', '=', $item->category),
+					array('account_id', '=', $data['account_id'])
+				);
+				$updates = array(
+					'status' => 'completed',
+					'updated_at' => Carbon::now()
+				);
+				app('Increment\Hotel\Room\Http\CartController')->updateByParams($condition, $updates);
+			}
+			if($res !== null){
+				$this->response['data'] = $reserve;
+			}
+		}
 		return $this->response();
 	}
 
@@ -186,15 +174,11 @@ class ReservationController extends APIController
 		return sizeof($result) > 0 ? $result[0] : null;
 	}
 
-	public function generateCode()
+	public function generateCode($counter)
 	{
-		$code = 'res_' . substr(str_shuffle($this->codeSource), 0, 60);
-		$codeExist = Reservation::where('code', '=', $code)->get();
-		if (sizeof($codeExist) > 0) {
-			$this->generateCode();
-		} else {
-			return $code;
-		}
+		$length = strlen((string)$counter);
+    $code = '00000000';
+    return 'MEZZO_'.substr_replace($code, $counter, intval(7 - $length));
 	}
 
 	public function retrieveBookings(Request $request)
