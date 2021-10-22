@@ -138,29 +138,23 @@ class ReservationController extends APIController
 
 	public function updateCoupon(Request $request){
 		$data = $request->all();
-		$reserve = Reservation::where('account_id', '=', $data['account_id'])->where('status', '=', 'in_progress')->first();
+		$reserve = Reservation::where('account_id', '=', $data['account_id'])->where('id', '=', $data['id'])->first();
 		if($reserve !== null){
 			$details = json_decode($reserve['details']);
-			$cart = json_decode($reserve['payload_value']);
 			$details->payment_method = $data['payment_method'];
-			$res = Reservation::where('account_id', '=', $data['account_id'])->where('status', '=', 'in_progress')->update(array(
-				'coupon_id' => $data['coupon'],
+			$res = Reservation::where('account_id', '=', $data['account_id'])->where('id', '=', $data['id'])->update(array(
 				'details' => 	json_encode($details),	
 				'status' => 'completed'
 			));
-			for ($i=0; $i <= sizeof($cart)-1; $i++) {
-				$item = $cart[$i];
-				$condition = array(
-					array('price_id', '=', $item->price_id),
-					array('category_id', '=', $item->category),
-					array('account_id', '=', $data['account_id'])
-				);
-				$updates = array(
-					'status' => 'completed',
-					'updated_at' => Carbon::now()
-				);
-				app('Increment\Hotel\Room\Http\CartController')->updateByParams($condition, $updates);
-			}
+			$condition = array(
+				array('reservation_id', '=', $data['id']),
+				array('account_id', '=', $data['account_id'])
+			);
+			$updates = array(
+				'status' => 'completed',
+				'updated_at' => Carbon::now()
+			);
+			app('Increment\Hotel\Room\Http\CartController')->updateByParams($condition, $updates);
 			if($res !== null){
 				$this->response['data'] = $reserve;
 			}
@@ -296,6 +290,36 @@ class ReservationController extends APIController
 		}
 		$this->response['data'] = $result;
 		return $this->response();
+	}
+
+	public function countByIds($accountId, $couponId){
+		if($accountId === null && $couponId !== null){
+			return Reservation::where('coupon_id', '=', $couponId)->count();
+		}else if($accountId !== null && $couponId === null){
+			return Reservation::where('account_id', '=', $accountId)->count();
+		}else if($accountId !== null && $couponId !== null){
+			return Reservation::where('account_id', '=', $accountId)->where('coupon_id', '=', $couponId)->count();
+		}
+	}
+
+	public function updateByCouponCode($couponId, $id){
+		return Reservation::where('id', '=', $id)->update(array(
+			'coupon_id' => $id
+		));
+	}
+
+	public function updatedCoupon(Request $request){
+		$data = $request->all();
+		$res = Reservation::where('id', '=', $data['id'])->update(array(
+			'coupon_id' => null,
+			'updated_at' => Carbon::now()
+		));
+		$this->response['data'] = $res;
+		return $this->response();
+	}
+
+	public function getByIds($accountId, $status){
+		return Reservation::where('account_id', '=', $accountId)->where('status', '=', $status)->first();
 	}
 
 }
