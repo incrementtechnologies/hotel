@@ -69,6 +69,9 @@ class RoomController extends APIController
     
       for ($i=0; $i <= sizeof($result)-1 ; $i++) { 
         $item = $result[$i];
+        $addedToCart  = app('Increment\Hotel\Room\Http\CartController')->countByCategory($item['category']);
+        $roomsQty = Room::where('category', $item['category'])->count();
+        $result[$i]['fullyBooked'] =  (int)($roomsQty - $addedToCart) > 0 ? false : true;
         $result[$i]['additional_info'] = json_decode($item['additional_info']);
         $result[$i]['images'] = app('Increment\Hotel\Room\Http\ProductImageController')->getImages($item['id']);
       }
@@ -163,6 +166,15 @@ class RoomController extends APIController
       ->where('rooms.category', '=', $categoryId)
       ->groupBy('T1.regular')
       ->get(['rooms.*', 'T1.regular', 'T1.refundable', 'T1.currency', 'T1.label', DB::raw('COUNT("T1.regular") as room_qty'), 'T1.id as price_id', 'T2.payload_value']);
+    
+    if(sizeof($result) > 0){
+      for ($i=0; $i <= sizeof($result)-1 ; $i++) { 
+        $item = $result[$i];
+        $result[$i]['images'] = app('Increment\Hotel\Room\Http\ProductImageController')->getImages($item['id']);
+        $result[$i]['additional_info'] = json_decode($item['additional_info']);
+      }
+    }
+
     return $result;
   }
 }
