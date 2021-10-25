@@ -339,4 +339,35 @@ class ReservationController extends APIController
 		return Booking::where($column, $value)->get();
 	}
 
+	public function retrieveSaleByCoupon($column, $value){
+		if($column !== null && $value !== null){
+			$result = Reservation::where($column, '=', $value)->select(DB::raw('COUNT(coupon_id) as total_booking'), DB::raw('SUM(total) as total'))->get();
+		}else if($column === null && $value === null){
+			$result = Reservation::select(DB::raw('COUNT(coupon_id) as total_booking'), DB::raw('SUM(total) as total'))->get();
+		}
+		return $result;
+	}
+
+	public function retrieveMyBookings(Request $request){
+		$data = $request->all();
+		$con = $data['condition'];
+		$result = Reservation::leftJoin('carts as T1', 'T1.reservation_id', '=', 'reservations.id')
+			->leftJoin('pricings as T2', 'T2.id', '=', 'T1.price_id')
+			->where($data['condition'])
+			->where('account_id', '=', $data['account_id'])
+			->limit($data['limit'])
+			->offset($data['offset'])->get(['reservations.*', 'T2.regular', 'T2.refundable', 'T2.currency', 'T2.label']);
+		if(sizeof($result) > 0){
+			for ($i=0; $i <= sizeof($result)-1 ; $i++) { 
+				$item = $result[$i];
+				$result[$i]['details'] = json_decode($item['details']);
+				$result[$i]['check_in'] = Carbon::createFromFormat('Y-m-d H:i:s', $item['check_in'])->copy()->tz($this->response['timezone'])->format('F d, Y');
+        $result[$i]['check_out'] = Carbon::createFromFormat('Y-m-d H:i:s', $item['check_out'])->copy()->tz($this->response['timezone'])->format('F d, Y');
+				$result[$i]['rooms'] = app('Increment\Hotel\Room\Http\CartController')->retrieveCartWithRooms($item['id']);
+			}
+		}
+		$this->response['data'] = $result;
+		$this->response();
+	}
+
 }
