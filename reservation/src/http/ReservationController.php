@@ -351,9 +351,15 @@ class ReservationController extends APIController
 	public function retrieveMyBookings(Request $request){
 		$data = $request->all();
 		$con = $data['condition'];
+		$whereArray = array(
+			array('reservations.'.$con[0]['column'], $con[0]['clause'], $con[0]['value']),
+			array('reservations.'.$con[1]['column'], $con[1]['clause'], $con[1]['value']),
+			array('reservations.'.$con[2]['column'], $con[2]['clause'], $con[2]['value']),
+			array('reservations.'.$con[3]['column'], $con[3]['clause'], $con[3]['value'])
+		);
 		$result = Reservation::leftJoin('carts as T1', 'T1.reservation_id', '=', 'reservations.id')
 			->leftJoin('pricings as T2', 'T2.id', '=', 'T1.price_id')
-			->where($data['condition'])
+			->where($whereArray)
 			->where('account_id', '=', $data['account_id'])
 			->limit($data['limit'])
 			->offset($data['offset'])->get(['reservations.*', 'T2.regular', 'T2.refundable', 'T2.currency', 'T2.label']);
