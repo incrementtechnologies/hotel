@@ -61,7 +61,39 @@ class CartController extends APIController
             ->groupBy('carts.price_id')
             ->get(['qty', 'price_id', 'category_id', DB::raw('Sum(qty) as checkoutQty')]);
         if(sizeof($result) > 0 ){
-            for ($i=0; $i <= sizeof($result) -1; $i++) { 
+            for ($i=0; $i <= sizeof($result) -1; $i++) {
+                $temp = [];
+                $item = $result[$i];
+                $result[$i]['rooms'] = app('Increment\Hotel\Room\Http\RoomController')->getWithQty($item['category_id'], $item['price_id']);
+                $result[$i]['specificRooms'] = app('Increment\Hotel\Room\Http\RoomController')->retrieveByCategory($item['category_id']);
+                $booking = app('Increment\Hotel\Reservation\Http\ReservationController')->retrieveBookingsByParams('room_id',  $result[$i]['rooms'][0]['id']);
+                if(sizeof($booking) > 0){
+                    for ($a=0; $a <= sizeof($booking)-1; $a++) { 
+                        $each = $booking[$a];
+                        array_push($temp, array(
+                            'room_id' => $each['room_id'],
+                            'category' => $each['room_type_id']
+                        ));
+                    }
+                }else{
+                    for ($a=0; $a <= $item['qty']-1 ; $a++) {
+                        array_push($temp, array(
+                            'category' => null
+                        ));
+                    }
+                }
+                $result[$i]['inputs'] = $temp;
+            }
+        }
+        return $result;
+    }
+
+    public function retrieveCartWithRoomDetails($reservation_id){
+        $result = Cart::where('reservation_id', '=', $reservation_id)
+            ->groupBy('carts.price_id')
+            ->get(['qty', 'price_id', 'category_id', DB::raw('Sum(qty) as checkoutQty')]);
+        if(sizeof($result) > 0 ){
+            for ($i=0; $i <= sizeof($result) -1; $i++) {
                 $item = $result[$i];
                 $result[$i]['rooms'] = app('Increment\Hotel\Room\Http\RoomController')->getWithQty($item['category_id'], $item['price_id']);
             }
