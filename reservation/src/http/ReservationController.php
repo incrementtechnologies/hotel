@@ -335,4 +335,8 @@ class ReservationController extends APIController
 		return $this->response();
 	}
 
+	public function retrieveBookingsByParams($column, $value){
+		return Booking::where($column, $value)->get();
+	}
+
 }
