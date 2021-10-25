@@ -174,7 +174,15 @@ class RoomController extends APIController
         $result[$i]['additional_info'] = json_decode($item['additional_info']);
       }
     }
-
     return $result;
+  }
+  public function retrieveByParams(Request $request){
+    $data = $request->all();
+    $result = Room::where('category', '=', $data['category_id'])->where('status', '=', 'publish')->get();
+    $this->response['data'] = $result;
+    return $this->response();
+  }
+  public function retrieveByCategory($categoryId){
+    return Room::where('category', '=', $categoryId)->get();
   }
 }

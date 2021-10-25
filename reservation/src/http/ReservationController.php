@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Http\Controllers\APIController;
 use App\TopChoice;
 use Increment\Hotel\Reservation\Models\Reservation;
+use Increment\Hotel\Reservation\Models\Booking;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
@@ -73,10 +74,11 @@ class ReservationController extends APIController
 		$reserve['details'] = json_decode($reserve['details'], true);
 		$reserve['check_in'] = Carbon::createFromFormat('Y-m-d H:i:s', $reserve['check_in'])->copy()->tz($this->response['timezone'])->format('F j, Y');
 		$reserve['check_out'] = Carbon::createFromFormat('Y-m-d H:i:s', $reserve['check_out'])->copy()->tz($this->response['timezone'])->format('F j, Y');
-		$reserve['coupon'] = $reserve['coupon_id'] !== null ? app('App\Http\CouponController')->retrieveById($reserve['coupon_id']) : null;
+		$reserve['coupon'] = $reserve['coupon_id'] !== null ? app('App\Http\Controllers\CouponController')->retrieveById($reserve['coupon_id']) : null;
 		$array = array(
 			'reservation' => $reserve,
-			'cart' => $cart
+			'cart' => $cart,
+			'customer' => $this->retrieveAccountDetails($reserve['account_id']),
 		);
 		$this->response['data'] = $array;
 		return $this->response();
@@ -277,13 +279,6 @@ class ReservationController extends APIController
 		if(sizeof($result) > 0){
 			for ($i=0; $i <= sizeof($result) -1; $i++) { 
 				$item = $result[$i];
-				// $cart = json_decode($item['payload_value']);
-				// for ($a=0; $a <= sizeof($cart) -1; $a++) { 
-				// 	$items = $cart[$a];
-				// 	$temp = app('Increment\Hotel\Room\Http\RoomController')->getWithQty($items->price_id, $items->category);
-				// 	array_push($rooms, $temp[0]);
-				// }
-				// $result[$i]['rooms'] = $rooms;
 				$result[$i]['details'] = json_decode($item['details']);
 				$result[$i]['payload_value'] =  json_decode($item['payload_value']);;
 			}
@@ -320,6 +315,24 @@ class ReservationController extends APIController
 
 	public function getByIds($accountId, $status){
 		return Reservation::where('account_id', '=', $accountId)->where('status', '=', $status)->first();
+	}
+
+	public function updateReservations(Request $request){
+		$data = $request->all();
+		$res = Reservation::where('code', '=', $data['roomCode'])->update(array(
+			'status' => $data['status']
+		));
+		for ($i=0; $i <= sizeof($data['booking'])-1; $i++) { 
+			$item = $data['booking'][$i];
+			$params = array(
+				'reservation_id' =>  $data['reservation_id'],
+				'room_id' => $item['room_id'], 
+				'room_type_id' => $item['category']
+			);
+			Booking::create($params);
+		}
+		$this->response['data'] = $res;
+		return $this->response();
 	}
 
 }

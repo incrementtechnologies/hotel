@@ -9,6 +9,7 @@ Route::post($route.'retrieve_by_type', $controller."retrieveByType");
 Route::post($route.'retrieve_by_id', $controller."retrieveById");
 Route::post($route.'retrieve_unique', $controller."retrieveUnique");
 Route::post($route.'retrieve_basic', $controller."retrieveBasic");
+Route::post($route.'retrieve_by_params', $controller."retrieveByParams");
 Route::post($route.'update_with_images', $controller."updateWithImages");
 Route::post($route.'update', $controller."update");
 Route::post($route.'delete', $controller."delete");
