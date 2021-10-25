@@ -66,10 +66,21 @@ class CartController extends APIController
                 $item = $result[$i];
                 $result[$i]['rooms'] = app('Increment\Hotel\Room\Http\RoomController')->getWithQty($item['category_id'], $item['price_id']);
                 $result[$i]['specificRooms'] = app('Increment\Hotel\Room\Http\RoomController')->retrieveByCategory($item['category_id']);
-                for ($a=0; $a <= $item['qty']-1 ; $a++) {
-                    array_push($temp, array(
-                        'category' => null
-                    ));
+                $booking = app('Increment\Hotel\Reservation\Http\ReservationController')->retrieveBookingsByParams('room_id',  $result[$i]['rooms'][0]['id']);
+                if(sizeof($booking) > 0){
+                    for ($a=0; $a <= sizeof($booking)-1; $a++) { 
+                        $each = $booking[$a];
+                        array_push($temp, array(
+                            'room_id' => $each['room_id'],
+                            'category' => $each['room_type_id']
+                        ));
+                    }
+                }else{
+                    for ($a=0; $a <= $item['qty']-1 ; $a++) {
+                        array_push($temp, array(
+                            'category' => null
+                        ));
+                    }
                 }
                 $result[$i]['inputs'] = $temp;
             }
