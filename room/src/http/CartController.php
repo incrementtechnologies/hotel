@@ -61,9 +61,17 @@ class CartController extends APIController
             ->groupBy('carts.price_id')
             ->get(['qty', 'price_id', 'category_id', DB::raw('Sum(qty) as checkoutQty')]);
         if(sizeof($result) > 0 ){
-            for ($i=0; $i <= sizeof($result) -1; $i++) { 
+            for ($i=0; $i <= sizeof($result) -1; $i++) {
+                $temp = [];
                 $item = $result[$i];
                 $result[$i]['rooms'] = app('Increment\Hotel\Room\Http\RoomController')->getWithQty($item['category_id'], $item['price_id']);
+                $result[$i]['specificRooms'] = app('Increment\Hotel\Room\Http\RoomController')->retrieveByCategory($item['category_id']);
+                for ($a=0; $a <= $item['qty']-1 ; $a++) {
+                    array_push($temp, array(
+                        'category' => null
+                    ));
+                }
+                $result[$i]['inputs'] = $temp;
             }
         }
         return $result;
