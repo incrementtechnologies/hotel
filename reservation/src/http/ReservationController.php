@@ -266,7 +266,8 @@ class ReservationController extends APIController
 
 	public function retrieveDetails(Request $request){
 		$data = $request->all();
-		$result = Reservation::where('account_id', '=', $data['account_id'])->where('status', '=', 'in_progress')->get();
+		$con = $data['condition'];
+		$result = Reservation::where($con[0]['column'], $con[0]['clause'], $con[0]['value'])->where('status', '=', 'in_progress')->get();
 		// $rooms = [];
 		if(sizeof($result) > 0){
 			for ($i=0; $i <= sizeof($result) -1; $i++) { 
