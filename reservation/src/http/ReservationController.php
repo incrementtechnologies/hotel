@@ -251,16 +251,8 @@ class ReservationController extends APIController
 	}
 
 	public function retrieveTotalSpentByAcccount($accountId){
-		$res = Reservation::where('account_id', '=', $accountId)->get(['payload_value']);
-		$total = 0;
-		for ($i=0; $i <= sizeof($res)-1; $i++) { 
-			$item = $res[$i];
-			$rooms = app($this->roomController)->retrieveTotalPriceById($accountId, 'id', $item['payload_value'], ['price']);
-			if(sizeof($rooms) > 0){
-				$total += $rooms[0]['price'];
-			}
-		}
-		return $total;
+		$res = Reservation::where('account_id', '=', $accountId)->sum('total');
+		return $res;
 	}
 
 	public function getTotalBookings($date){
@@ -274,7 +266,8 @@ class ReservationController extends APIController
 
 	public function retrieveDetails(Request $request){
 		$data = $request->all();
-		$result = Reservation::where('account_id', '=', $data['account_id'])->where('status', '=', 'in_progress')->get();
+		$con = $data['condition'];
+		$result = Reservation::where($con[0]['column'], $con[0]['clause'], $con[0]['value'])->where('status', '=', 'in_progress')->get();
 		// $rooms = [];
 		if(sizeof($result) > 0){
 			for ($i=0; $i <= sizeof($result) -1; $i++) { 
