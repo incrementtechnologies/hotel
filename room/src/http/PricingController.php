@@ -30,6 +30,13 @@ class PricingController extends APIController
     	return $this->response();
     }
 
+		public function retrievePricings(Request $request){
+			$data = $request->all();
+			$con = $data['condition'];
+			$result = Pricing::where($con[0]['column'], $con[0]['clause'], $con[0]['value'])->groupBy('label')->get();
+			$this->response['data'] = $result;
+			return $this->response();
+		}
     public function getProduct($productId){
     	$result = Room::where('id', '=', $productId)->first();
     	return ($result) ? $result : null;
