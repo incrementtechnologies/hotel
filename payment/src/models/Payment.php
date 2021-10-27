@@ -1,12 +1,12 @@
 <?php
 
-namespace Increment\Imarket\Payment\Models;
+namespace Increment\Hotel\Payment\Models;
 use Illuminate\Database\Eloquent\Model;
 use App\APIModel;
 use Carbon\Carbon;
 class Payment extends APIModel
 {
-    protected $table = 'coupons';
+    protected $table = 'payments';
     protected $fillable = ['account_id', 'code', 'method', 'details', 'status'];
 
 }
