@@ -27,7 +27,7 @@ class ReservationController extends APIController
 	{
 		$this->model = new Reservation();
 		$this->notRequired = array(
-			'code', 'coupon_id', 'payload', 'payload_value'
+			'code', 'coupon_id', 'payload', 'payload_value', 'total'
 		);
 	}
 
@@ -329,7 +329,16 @@ class ReservationController extends APIController
 	}
 
 	public function retrieveBookingsByParams($column, $value){
-		return Booking::where($column, $value)->get();
+		return Booking::where($column, '=', $value)->get();
+	}
+
+	public function retrieveReservationByParams($column, $value, $return){
+		return Reservation::where($column, '=', $value)->get($return);
+	}
+
+	public function callBackPayment(Request $request){
+		$data = $request->all();
+
 	}
 
 	public function retrieveSaleByCoupon($column, $value){
@@ -367,6 +376,32 @@ class ReservationController extends APIController
 			}
 		}
 		$this->response['data'] = $result;
+		return $this->response();
+	}
+
+	public function checkout(Request $request){
+		$data = $request->all();
+		$reservation = Reservation::where('account_id', '=', $data['account_id'])->where('code', '=', $data['reservation_code'])->first();
+		if($reservation !== null){
+			$details = json_decode($reservation['details']);
+			$params = array(
+				"account_id" => $data['account_id'],
+				"amount" => $data['amount'],
+				"name" => $details->name,
+				"email" => $details->email,
+				"referenceNumber" => $reservation['code'],
+				"contact_number" => $details->contactNumber,
+				"successUrl" => $data['success_url'],
+				"failUrl" => $data['failure_url'],
+				"cancelUrl" => $data['cancel_url']
+			);
+			$res = app('Increment\Hotel\Payment\Http\PaymentController')->checkout($params);
+			if($res['data'] !== null){
+				$this->response['data'] = $res['data'];
+			}else{
+				$this->response['data'] = $res['error'];
+			}
+		}
 		return $this->response();
 	}
 

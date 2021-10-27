@@ -1,5 +1,5 @@
 {
-    "name": "increment/coupon",
+    "name": "increment/hotel",
     "description": "Increment Core Marketplace Backend",
     "type": "library",
     "license": "MIT",
@@ -13,13 +13,13 @@
     "require": {},
     "autoload": {
         "psr-4": {
-            "Increment\\Imarket\\Payment": "src/"
+            "Increment\\Hotel\\Payment": "src/"
         }
     },
     "extra": {
         "laravel": {
             "providers": [
-                "Increment\\Imarket\\Payment\\PaymentServiceProvider"
+                "Increment\\Hotel\\Payment\\PaymentServiceProvider"
             ]
         }
     }
