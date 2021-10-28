@@ -7,6 +7,6 @@ use Carbon\Carbon;
 class Payment extends APIModel
 {
     protected $table = 'payments';
-    protected $fillable = ['account_id', 'code', 'method', 'details', 'status'];
+    protected $fillable = ['account_id', 'code', 'method', 'details', 'status', 'payload', 'payload_value'];
 
 }

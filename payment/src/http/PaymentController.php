@@ -16,15 +16,40 @@ class PaymentController extends APIController
 {
    	function __construct(){
    		$this->model = new Payment();
+			$this->setUpWebHooks();
    	}
-
-		public function checkout($data){
+		
+		public function setUpWebHooks(){
 			PayMayaSDK::getInstance()->initCheckout(
 				env('PAYMAYA_PK'),
 				env('PAYMAYA_SK'),
 				'SANDBOX'
 			);
+			$this->clearWebhooks();
+			$successWebhook = new Webhook();
+			$successWebhook->name = Webhook::CHECKOUT_SUCCESS;
+			$successWebhook->callbackUrl = url(env('APP_URL').'/payments/callback');
+			$successWebhook->register();
 
+			$failureWebhook = new Webhook();
+			$failureWebhook->name = Webhook::CHECKOUT_FAILURE;
+			$failureWebhook->callbackUrl = url('callback/error');
+			$failureWebhook->register();
+
+			$dropoutWebhook = new Webhook();
+			$dropoutWebhook->name = Webhook::CHECKOUT_DROPOUT;
+			$dropoutWebhook->callbackUrl = url('callback/dropout');
+			$dropoutWebhook->register();
+		}
+
+		public function clearWebhooks(){
+			$webhooks = Webhook::retrieve();
+			foreach ($webhooks as $webhook) {
+					$webhook->delete();
+			}
+		}
+
+		public function checkout($data){
 			$itemAmountDetails = new ItemAmountDetails();
 			$itemAmountDetails->tax = "0.00";
 			$itemAmountDetails->subtotal = number_format($data['amount'], 2, '.', '');
@@ -65,8 +90,10 @@ class PaymentController extends APIController
 				$parameter = array(
 					'code' => $this->generateCode(),
 					'account_id' => $data['account_id'],
+					'payload' => $data['payload'],
+					'payload_value' => $data['payload_value'],
 					'details' => json_encode($exec),
-					'status' => 'complete',
+					'status' => 'pending',
 				);
 				Payment::create($parameter);
 				return array(
@@ -75,6 +102,35 @@ class PaymentController extends APIController
 				);
 			};
 		}
+
+		public function callback(Request $request){
+			$data = $request->all();
+			$temp = Payment::where('payload_value', '=', $data['id'])->orderBy('created_at', '=', 'desc')->first();
+			$checkout = json_decode($temp['details']);
+			$transaction_id = $checkout->checkoutId;
+			if (! $transaction_id) {
+					return ['paymentStatus' => false, 'message' => 'Transaction Id Missing'];
+			}
+			$itemCheckout = new Checkout();
+			$itemCheckout->id = $transaction_id;
+			$checkout = $itemCheckout->retrieve();
+			//update reservation
+			$params = array(
+				'id' => $data['id'],
+				'payment_method'=> 'credit',
+				'status' => trtolower($checkout['paymentStatus']) === 'payment_success' ? 'completed' : 'failed'
+			);
+			app('Increment\Hotel\Reservation\Http\ReservationController')->updateReservationCart($params);
+			//======End=========
+	
+
+			$result = Payment::where('details', 'like', '%'.$transaction_id.'%')->update(array(
+				'status' => strtolower($checkout['paymentStatus'])
+			));
+			$this->response['data'] = $result;
+			return $this->response();
+		}
+
 		public function createByParams($data){
 			$data['code'] = $this->generateCode();
 			$this->insertDB($data);
