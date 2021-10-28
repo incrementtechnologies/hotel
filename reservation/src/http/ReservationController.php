@@ -146,14 +146,15 @@ class ReservationController extends APIController
 			$details->payment_method = $data['payment_method'];
 			$res = Reservation::where('account_id', '=', $data['account_id'])->where('id', '=', $data['id'])->update(array(
 				'details' => 	json_encode($details),	
-				'status' => 'completed'
+				'status' => $data['status'],
+				'total' => $data['amount']
 			));
 			$condition = array(
 				array('reservation_id', '=', $data['id']),
 				array('account_id', '=', $data['account_id'])
 			);
 			$updates = array(
-				'status' => 'completed',
+				'status' => $data['status'],
 				'updated_at' => Carbon::now()
 			);
 			app('Increment\Hotel\Room\Http\CartController')->updateByParams($condition, $updates);
@@ -162,6 +163,33 @@ class ReservationController extends APIController
 			}
 		}
 		return $this->response();
+	}
+
+	public function updateByParams($condition, $updates){
+		return Reservation::where($condition)->update($updates);
+	}
+
+	public function updateReservationCart($data){
+		$reserve = Reservation::where('id', '=', $data['id'])->first();
+		if($reserve !== null){
+			$details = json_decode($reserve['details']);
+			$details->payment_method = $data['payment_method'];
+			$res = Reservation::where('id', '=', $data['id'])->update(array(
+				'details' => 	json_encode($details),	
+				'status' => $data['status']
+			));
+			$condition = array(
+				array('reservation_id', '=', $data['id'])
+			);
+			$updates = array(
+				'status' => $data['status'],
+				'updated_at' => Carbon::now()
+			);
+			app('Increment\Hotel\Room\Http\CartController')->updateByParams($condition, $updates);
+			if($res !== null){
+				return $reserve;
+			}
+		}
 	}
 
 	public function retrieveByParams($whereArray, $returns)
@@ -383,6 +411,9 @@ class ReservationController extends APIController
 		$data = $request->all();
 		$reservation = Reservation::where('account_id', '=', $data['account_id'])->where('code', '=', $data['reservation_code'])->first();
 		if($reservation !== null){
+			Reservation::where('code', '=', $data['reservation_code'])->update(array(
+				'total' => $data['amount']
+			));
 			$details = json_decode($reservation['details']);
 			$params = array(
 				"account_id" => $data['account_id'],
@@ -391,6 +422,8 @@ class ReservationController extends APIController
 				"email" => $details->email,
 				"referenceNumber" => $reservation['code'],
 				"contact_number" => $details->contactNumber,
+				"payload" => "reservation",
+				"payload_value" => $reservation['id'],
 				"successUrl" => $data['success_url'],
 				"failUrl" => $data['failure_url'],
 				"cancelUrl" => $data['cancel_url']
