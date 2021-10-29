@@ -4,6 +4,7 @@
 $route = env('PACKAGE_ROUTE', '').'/reservations/';
 $controller = 'Increment\Hotel\Reservation\Http\ReservationController@';
 Route::post($route.'create', $controller."create");
+Route::post($route.'checkout', $controller."checkout");
 Route::post($route.'retrieve', $controller."retrieve");
 Route::post($route.'retrieve_web', $controller."retrieveWeb");
 Route::post($route.'retrieve_bookings', $controller."retrieveBookings");

@@ -27,7 +27,7 @@ class ReservationController extends APIController
 	{
 		$this->model = new Reservation();
 		$this->notRequired = array(
-			'code', 'coupon_id', 'payload', 'payload_value'
+			'code', 'coupon_id', 'payload', 'payload_value', 'total'
 		);
 	}
 
@@ -146,14 +146,15 @@ class ReservationController extends APIController
 			$details->payment_method = $data['payment_method'];
 			$res = Reservation::where('account_id', '=', $data['account_id'])->where('id', '=', $data['id'])->update(array(
 				'details' => 	json_encode($details),	
-				'status' => 'completed'
+				'status' => $data['status'],
+				'total' => $data['amount']
 			));
 			$condition = array(
 				array('reservation_id', '=', $data['id']),
 				array('account_id', '=', $data['account_id'])
 			);
 			$updates = array(
-				'status' => 'completed',
+				'status' => $data['status'],
 				'updated_at' => Carbon::now()
 			);
 			app('Increment\Hotel\Room\Http\CartController')->updateByParams($condition, $updates);
@@ -162,6 +163,33 @@ class ReservationController extends APIController
 			}
 		}
 		return $this->response();
+	}
+
+	public function updateByParams($condition, $updates){
+		return Reservation::where($condition)->update($updates);
+	}
+
+	public function updateReservationCart($data){
+		$reserve = Reservation::where('id', '=', $data['id'])->first();
+		if($reserve !== null){
+			$details = json_decode($reserve['details']);
+			$details->payment_method = $data['payment_method'];
+			$res = Reservation::where('id', '=', $data['id'])->update(array(
+				'details' => 	json_encode($details),	
+				'status' => $data['status']
+			));
+			$condition = array(
+				array('reservation_id', '=', $data['id'])
+			);
+			$updates = array(
+				'status' => $data['status'],
+				'updated_at' => Carbon::now()
+			);
+			app('Increment\Hotel\Room\Http\CartController')->updateByParams($condition, $updates);
+			if($res !== null){
+				return $reserve;
+			}
+		}
 	}
 
 	public function retrieveByParams($whereArray, $returns)
@@ -267,7 +295,13 @@ class ReservationController extends APIController
 	public function retrieveDetails(Request $request){
 		$data = $request->all();
 		$con = $data['condition'];
-		$result = Reservation::where($con[0]['column'], $con[0]['clause'], $con[0]['value'])->where('status', '=', 'in_progress')->get();
+		$result = Reservation::where($con[0]['column'], $con[0]['clause'], $con[0]['value'])
+			->where(function($query){
+				$query->where('status', '=', 'in_progress')
+					->orWhere('status', '=', 'failed')
+					->orWhere('status', '=', 'pending');
+			})
+			->get();
 		// $rooms = [];
 		if(sizeof($result) > 0){
 			for ($i=0; $i <= sizeof($result) -1; $i++) { 
@@ -329,7 +363,16 @@ class ReservationController extends APIController
 	}
 
 	public function retrieveBookingsByParams($column, $value){
-		return Booking::where($column, $value)->get();
+		return Booking::where($column, '=', $value)->get();
+	}
+
+	public function retrieveReservationByParams($column, $value, $return){
+		return Reservation::where($column, '=', $value)->get($return);
+	}
+
+	public function callBackPayment(Request $request){
+		$data = $request->all();
+
 	}
 
 	public function retrieveSaleByCoupon($column, $value){
@@ -367,6 +410,37 @@ class ReservationController extends APIController
 			}
 		}
 		$this->response['data'] = $result;
+		return $this->response();
+	}
+
+	public function checkout(Request $request){
+		$data = $request->all();
+		$reservation = Reservation::where('account_id', '=', $data['account_id'])->where('code', '=', $data['reservation_code'])->first();
+		if($reservation !== null){
+			Reservation::where('code', '=', $data['reservation_code'])->update(array(
+				'total' => $data['amount']
+			));
+			$details = json_decode($reservation['details']);
+			$params = array(
+				"account_id" => $data['account_id'],
+				"amount" => $data['amount'],
+				"name" => $details->name,
+				"email" => $details->email,
+				"referenceNumber" => $reservation['code'],
+				"contact_number" => $details->contactNumber,
+				"payload" => "reservation",
+				"payload_value" => $reservation['id'],
+				"successUrl" => $data['success_url'],
+				"failUrl" => $data['failure_url'],
+				"cancelUrl" => $data['cancel_url']
+			);
+			$res = app('Increment\Hotel\Payment\Http\PaymentController')->checkout($params);
+			if($res['data'] !== null){
+				$this->response['data'] = $res['data'];
+			}else{
+				$this->response['data'] = $res['error'];
+			}
+		}
 		return $this->response();
 	}
 

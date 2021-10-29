@@ -2,8 +2,9 @@
 
 // Coupons
 $route = env('PACKAGE_ROUTE', '').'/payments/';
-$controller = 'Increment\Imarket\Payment\Http\PaymentController@';
+$controller = 'Increment\Hotel\Payment\Http\PaymentController@';
 Route::post($route.'create', $controller."create");
+Route::post($route.'callback', $controller."callback");
 Route::post($route.'retrieve', $controller."retrieve");
 Route::post($route.'use', $controller."useCoupon");
 Route::post($route.'update', $controller."update");

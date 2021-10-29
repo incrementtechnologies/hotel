@@ -17,15 +17,15 @@ class CartController extends APIController
         $exist = Cart::where('account_id', '=', $data['account_id'])
             ->where('price_id', '=', $data['price_id'])
             ->where('category_id', '=', $data['category_id'])
-            ->where('status', '=', 'pending')->first();
+            ->where('status', '!=', 'completed')->first();
         if($exist !== null){
-            $res = Cart::where('account_id', '=', $data['account_id'])
-            ->where('price_id', '=', $data['price_id'])
-            ->where('category_id', '=', $data['category_id'])
-            ->where('status', '=', 'pending')->update(array(
-                'qty' => (int)$exist['qty'] + (int)$data['qty']
-            ));
-            $this->response['data'] = $res;
+            // $res = Cart::where('account_id', '=', $data['account_id'])
+            // ->where('price_id', '=', $data['price_id'])
+            // ->where('category_id', '=', $data['category_id'])
+            // ->where('status', '=', 'pending')->update(array(
+            //     'qty' => (int)$exist['qty'] + (int)$data['qty']
+            // ));
+            // $this->response['data'] = $res;
         }else{
             $res = Cart::create($data);
             $this->response['data'] = $res;
@@ -49,6 +49,8 @@ class CartController extends APIController
         if(sizeof($result) > 0 ){
             for ($i=0; $i <= sizeof($result) -1; $i++) { 
                 $item = $result[$i];
+                $reservation =app('Increment\Hotel\Reservation\Http\ReservationController')->retrieveReservationByParams('id', $item['reservation_id'], ['code']);
+                $result[$i]['reservation_code'] = $reservation[0]['code'];
                 $result[$i]['rooms'] = app('Increment\Hotel\Room\Http\RoomController')->getWithQty($item['category_id'], $item['price_id']);
             }
         }
