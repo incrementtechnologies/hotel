@@ -12,7 +12,7 @@ class PricingController extends APIController
     function __construct(){
     	$this->model = new Pricing();
         $this->notRequired = array(
-           'label'
+           'label', 'refundable'
         );
     }
 
