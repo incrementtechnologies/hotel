@@ -31,42 +31,6 @@ class ReservationController extends APIController
 		);
 	}
 
-	public function retrieveWeb(Request $request)
-	{
-		$data = $request->all();
-		$con = $data['condition'];
-		if (isset($data['filter'])) {
-			$result = Reservation::where($con[0]['column'], $con[0]['clause'], $con[0]['value'])
-				->where($con[1]['column'], $con[1]['clause'], $con[1]['value'])
-				->where($con[2]['column'], $con[2]['clause'], $con[2]['value'])
-				->offset($data['offset'])->limit($data['limit'])->orderBy(array_keys($data['sort'])[0], array_values($data['sort'])[0])->get();
-		} else {
-			$result = Reservation::where($con[0]['column'], $con[0]['clause'], $con[0]['value'])
-				->where($con[1]['column'], $con[1]['clause'], $con[1]['value'])
-				->where($con[2]['column'], $con[2]['clause'], $con[2]['value'])
-				->select('id', 'datetime', 'account_id', 'payload_value', 'code', 'status')
-				->offset($data['offset'])->limit($data['limit'])
-				->orderBy(array_keys($data['sort'])[0], $data['sort'][array_keys($data['sort'])[0]])
-				->get();
-		}
-		if (sizeof($result) > 0) {
-			$i = 0;
-			foreach ($result as $key) {
-				$result[$i]['reservee'] = $this->retrieveNameOnly($result[$i]['account_id']);
-				// $result[$i]['synqt'] = app($this->synqtClass)->retrieveByParams('id', $result[$i]['payload_value']);
-				// $result[$i]['merchant'] = app($this->merchantClass)->getByParams('id', $result[$i]['merchant_id']);
-				// $result[$i]['distance'] = app($this->locationClass)->getLocationDistance('id', $result[$i]['synqt'][0]['location_id'], $result[$i]['merchant']['account_id']);
-				// $result[$i]['total_super_likes'] = app($this->topChoiceClass)->countByParams('synqt_id', $result[$i]['payload_value';
-				// $result[$i]['rating'] = app($this->ratingClass)->getRatingByPayload('merchant_id', $result[$i]['merchant_id']);
-				$result[$i]['date_time_at_human'] = Carbon::createFromFormat('Y-m-d H:i:s', $result[$i]['datetime'])->copy()->tz($this->response['timezone'])->format('F j, Y H:i:s A');
-				$result[$i]['members'] = app($this->messengerGroupClass)->getMembersByParams('payload', $result[$i]['payload_value'], ['id', 'title']);
-				$i++;
-			}
-			$this->response['data'] = $result;
-		}
-		return $this->response();
-	}
-
 	public function retrieveAllDetails(Request $request){
 		$data = $request->all();
 		$reserve = Reservation::where('code', '=', $data['id'])->first();
@@ -368,11 +332,6 @@ class ReservationController extends APIController
 
 	public function retrieveReservationByParams($column, $value, $return){
 		return Reservation::where($column, '=', $value)->get($return);
-	}
-
-	public function callBackPayment(Request $request){
-		$data = $request->all();
-
 	}
 
 	public function retrieveSaleByCoupon($column, $value){
