@@ -11,7 +11,7 @@ class AvailabilityController extends APIController
 {
     function __construct(){
         $this->notRequired = array(
-           'description'
+           'description', 'start_date', 'end_date', 'limit'
         );
     }
     public function create(Request $request){
@@ -72,5 +72,19 @@ class AvailabilityController extends APIController
 
     public function retrieveStatus($roomId){
         return Availability::where('payload_value', '=', $roomId)->first();
+    }
+
+    public function updateByParams($condition, $params){
+        return Availability::where($condition)->update($params);
+    }
+
+    public function createByParams($data){
+        $this->model = new Availability();
+        $this->insertDB($data);
+		return $this->response();
+    }
+
+    public function retrieveByPayloadPayloadValue($payload, $payloadValue){
+        return Availability::where('payload_value', '=', $payloadValue)->where('payload', '=', $payload)->first();
     }
 }

@@ -73,7 +73,7 @@ class RoomController extends APIController
           $query->whereIn('T1.id',  $data['priceType']);
         }
       })
-      ->where('T3.payload', '=', 'room')
+      ->where('T3.payload', '=', 'room_type')
       ->where('T3.status', '=', 'available')
       ->havingRaw("count(rooms.category) >= ?", [$data['number_of_rooms'] !== null ? $data['number_of_rooms'] : 0])
       ->groupBy('rooms.category')
@@ -83,7 +83,7 @@ class RoomController extends APIController
       $size = Room::leftJoin('pricings as T1', 'T1.room_id', '=', 'rooms.id')
       ->leftJoin('payloads as T2', 'T2.id', '=', 'rooms.category')
       ->leftJoin('availabilities as T3', 'T3.payload_value', '=', 'T2.id')
-      ->where('T3.payload', '=', 'room')
+      ->where('T3.payload', '=', 'room_type')
       ->where('T3.status', '=', 'available')
       ->havingRaw("count(rooms.category) > ?", [$data['number_of_rooms'] !== null ? $data['number_of_rooms'] : 0])
       ->groupBy('rooms.category')
@@ -244,5 +244,21 @@ class RoomController extends APIController
 
   public function retrieveTotalPriceById($account_id, $column, $value, $returns){
     return Room::leftJoin('pricings as T1', 'T1.room_id', '=', 'rooms.id')->where('T1.'.$column, '=', $value)->where('T1.account_id', '=', $account_id)->get($returns);
+  }
+
+  public function create(Request $request){
+    $data = $request->all();
+    $this->model = new Room();
+    $this->insertDB($data);
+    $exist = app('Increment\Hotel\Room\Http\AvailabilityController')->retrieveByPayloadPayloadValue('room', $this->response['data']);
+    if($exist === null){
+      $params= array(
+        'payload' => 'room',
+        'payload_value' => $this->response['data'],
+        'status' => $data['status'] === 'publish' ? 'available' : 'not_available'
+      );
+      $res = app('Increment\Hotel\Room\Http\AvailabilityController')->createByParams($params);
+    }
+    return $this->response();
   }
 }
