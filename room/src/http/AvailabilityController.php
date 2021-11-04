@@ -19,7 +19,7 @@ class AvailabilityController extends APIController
 		  return $this->response();
 		}
 		$data = $request->all();
-        $exist = Availability::where('payload_value', '=', $data['payload_value'])->get();
+        $exist = Availability::where('payload_value', '=', $data['payload_value'])->where('payload', '=', 'room_type')->get();
         if(sizeof($exist) > 0){
             $this->response['error'] = 'Already existed';
         }else{
@@ -34,6 +34,7 @@ class AvailabilityController extends APIController
         $con = $data['condition'];
         $res = Availability::leftJoin('payloads as T1', 'T1.id', '=', 'availabilities.payload_value')
             ->where($con[0]['column'] == 'type' ? 'T1.'.$con[0]['column'] : $con[0]['column'], $con[0]['clause'], $con[0]['value'])
+            ->where('availabilities.payload', '=', 'room_type')
             ->limit($data['limit'])
             ->offset($data['offset'])
             ->orderBy(array_keys($data['sort'])[0], array_keys($data['sort'])[0])
@@ -49,7 +50,8 @@ class AvailabilityController extends APIController
 
     public function retrieveById(Request $request){
         $data = $request->all();
-        $result = Availability::where('id', '=', $data['id'])->get();
+        $con = $data['condition'];
+        $result = Availability::where($con[0]['column'], $con[0]['clause'], $con[0]['value'])->where($con[1]['column'], $con[1]['clause'], $con[1]['value'])->get();
         $this->response['data'] = $result;
         return $this->response();
     }
