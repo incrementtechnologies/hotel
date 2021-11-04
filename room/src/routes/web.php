@@ -41,6 +41,7 @@ $route = env('PACKAGE_ROUTE', '').'/availabilities/';
 $controller = 'Increment\Hotel\Room\Http\AvailabilityController@';
 Route::post($route.'create', $controller."create");
 Route::post($route.'retrieve', $controller."retrieve");
+Route::post($route.'retrieve_by_id', $controller."retrieveById");
 Route::post($route.'update', $controller."update");
 Route::post($route.'delete', $controller."delete");
 Route::get($route.'test', $controller."test");

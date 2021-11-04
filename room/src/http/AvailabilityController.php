@@ -19,8 +19,13 @@ class AvailabilityController extends APIController
 		  return $this->response();
 		}
 		$data = $request->all();
-        $this->model = new Availability();
-        $this->insertDB($data);
+        $exist = Availability::where('payload_value', '=', $data['payload_value'])->where('payload', '=', 'room_type')->get();
+        if(sizeof($exist) > 0){
+            $this->response['error'] = 'Already existed';
+        }else{
+            $this->model = new Availability();
+            $this->insertDB($data);
+        }
 		return $this->response();
 	}
 
@@ -29,16 +34,41 @@ class AvailabilityController extends APIController
         $con = $data['condition'];
         $res = Availability::leftJoin('payloads as T1', 'T1.id', '=', 'availabilities.payload_value')
             ->where($con[0]['column'] == 'type' ? 'T1.'.$con[0]['column'] : $con[0]['column'], $con[0]['clause'], $con[0]['value'])
+            ->where('availabilities.payload', '=', 'room_type')
             ->limit($data['limit'])
             ->offset($data['offset'])
             ->orderBy(array_keys($data['sort'])[0], array_keys($data['sort'])[0])
-            ->get(['start_date', 'end_date', 'T1.payload_value', 'limit', 'status']);
+            ->get(['availabilities.id', 'start_date', 'end_date', 'T1.payload_value', 'limit', 'status']);
         for ($i=0; $i <= sizeof($res)-1 ; $i++) { 
             $item = $res[$i];
             $res[$i]['start_date'] = Carbon::createFromFormat('Y-m-d H:i:s', $item['start_date'])->copy()->tz($this->response['timezone'])->format('F d, Y');
             $res[$i]['end_date'] = Carbon::createFromFormat('Y-m-d H:i:s', $item['end_date'])->copy()->tz($this->response['timezone'])->format('F d, Y');
         }
         $this->response['data'] = $res;
+        return $this->response();
+    }
+
+    public function retrieveById(Request $request){
+        $data = $request->all();
+        $con = $data['condition'];
+        $result = Availability::where($con[0]['column'], $con[0]['clause'], $con[0]['value'])->where($con[1]['column'], $con[1]['clause'], $con[1]['value'])->get();
+        $this->response['data'] = $result;
+        return $this->response();
+    }
+
+    public function update(Request $request){
+        $data = $request->all();
+        $params = array(
+            'payload' => $data['payload'],
+            'payload_value' => $data['payload_value'],
+            'limit' => $data['limit'],
+            'start_date' => $data['start_date'],
+            'end_date' => $data['end_date'],
+            'status' => $data['status'],
+            'updated_at' => Carbon::now()
+        );
+        $result = Availability::where('id', '=', $data['id'])->update($params);
+        $this->response['data'] = $result;
         return $this->response();
     }
 

@@ -50,7 +50,7 @@ class CartController extends APIController
             for ($i=0; $i <= sizeof($result) -1; $i++) { 
                 $item = $result[$i];
                 $reservation =app('Increment\Hotel\Reservation\Http\ReservationController')->retrieveReservationByParams('id', $item['reservation_id'], ['code']);
-                $result[$i]['reservation_code'] = $reservation[0]['code'];
+                $result[$i]['reservation_code'] = sizeOf($reservation) > 0 ? $reservation[0]['code'] : null;
                 $result[$i]['rooms'] = app('Increment\Hotel\Room\Http\RoomController')->getWithQty($item['category_id'], $item['price_id']);
             }
         }
