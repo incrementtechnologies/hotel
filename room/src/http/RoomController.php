@@ -122,7 +122,7 @@ class RoomController extends APIController
         // $result[$i]['remaining_qty'] = 0;
         $result[$i]['additional_info'] = json_decode($item['additional_info']);
         $result[$i]['images'] = $images;
-        $result[$i]['isAvailable'] = $roomStatus['status'] === 'available' ? true : false;
+        $result[$i]['isAvailable'] = $roomStatus['status'] === 'available' && $item['status'] === 'publish' ? true : false;
         $result[$i]['room_qty'] = 1;
         if(sizeof($temp) <= 0){
           array_push($temp, $result[$i]);
