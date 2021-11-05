@@ -195,7 +195,7 @@ class ReservationController extends APIController
 		}
 		if(sizeof($con) > 1){
 			array_push($condition, 
-				array('T6.'.$con[1]['column'], $con[1]['clause'], $con[1]['value'])
+				array($con[1]['column'], $con[1]['clause'], $con[1]['value'])
 			);
 		}
 		$res = Reservation::leftJoin('accounts as T2', 'T2.id', '=', 'reservations.account_id')
