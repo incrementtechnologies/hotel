@@ -38,7 +38,7 @@ class CartController extends APIController
     }
 
     public function countByCategory($category){
-        return Cart::where('category_id', '=', $category)->where('deleted_at', '=', null)->count();
+        return Cart::where('category_id', '=', $category)->where('status', '!=', 'pending')->where('deleted_at', '=', null)->count();
     }
     
     public function retrieveByParams(Request $request){
