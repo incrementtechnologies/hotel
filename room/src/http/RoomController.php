@@ -138,25 +138,27 @@ class RoomController extends APIController
         }
       }
     }
-    $temp = array_unique((array)$temp);
-    $temp = array_values($temp);
-    for ($b=0; $b <= sizeof($temp)-1; $b++) { 
-      $element = $temp[$b];
-      $rooms = Room::leftJoin('pricings as T1', 'T1.room_id', '=', 'rooms.id')
-        ->leftJoin('payloads as T2', 'T2.id', '=', 'rooms.category')
-        ->where('rooms.category', '=', $data['category_id'])
-        ->where('T1.id', '!=', $element['price_id'])
-        ->get();
-      for ($c=0; $c <= sizeof($rooms)-1; $c++) { 
-        $each = $rooms[$c];
-        if((int)$each['regular'] === (int)$element['regular'] && (int)$each['refundable'] === (int)$element['refundable'] && $each['label'] == $element['label']){
-          $temp[$b]['room_qty'] += 1;
-        }else{
-          $temp[$b]['room_qty'] = 1;
+    if(sizeof($temp) > 0){
+      $temp = array_unique((array)$temp);
+      $temp = array_values($temp);
+      for ($b=0; $b <= sizeof($temp)-1; $b++) { 
+        $element = $temp[$b];
+        $rooms = Room::leftJoin('pricings as T1', 'T1.room_id', '=', 'rooms.id')
+          ->leftJoin('payloads as T2', 'T2.id', '=', 'rooms.category')
+          ->where('rooms.category', '=', $data['category_id'])
+          ->where('T1.id', '!=', $element['price_id'])
+          ->get();
+        for ($c=0; $c <= sizeof($rooms)-1; $c++) { 
+          $each = $rooms[$c];
+          if((int)$each['regular'] === (int)$element['regular'] && (int)$each['refundable'] === (int)$element['refundable'] && $each['label'] == $element['label']){
+            $temp[$b]['room_qty'] += 1;
+          }else{
+            $temp[$b]['room_qty'] = 1;
+          }
         }
+        $addedToCart  = app('Increment\Hotel\Room\Http\CartController')->countById($element['price_id'], $element['category']);
+        $temp[$b]['remaining_qty'] = (int)$element['room_qty'] - (int)$addedToCart;
       }
-      $addedToCart  = app('Increment\Hotel\Room\Http\CartController')->countById($element['price_id'], $element['category']);
-      $temp[$b]['remaining_qty'] = (int)$element['room_qty'] - (int)$addedToCart;
     }
     $this->response['data'] = $temp;
     return $this->response();
