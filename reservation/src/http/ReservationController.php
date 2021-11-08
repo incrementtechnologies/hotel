@@ -38,7 +38,7 @@ class ReservationController extends APIController
 		$reserve['details'] = json_decode($reserve['details'], true);
 		$reserve['check_in'] = Carbon::createFromFormat('Y-m-d H:i:s', $reserve['check_in'])->copy()->tz($this->response['timezone'])->format('F j, Y');
 		$reserve['check_out'] = Carbon::createFromFormat('Y-m-d H:i:s', $reserve['check_out'])->copy()->tz($this->response['timezone'])->format('F j, Y');
-		$reserve['coupon'] = $reserve['coupon_id'] !== null ? app('App\Http\Controllers\CouponController')->retrieveById($reserve['coupon_id']) : null;
+		$reserve['coupon'] = $reserve['coupon_id'] !== null ? app('App\Http\Controllers\CouponController')->retrieveById($reserve['coupon_id']) : array('code' => null);
 		$array = array(
 			'reservation' => $reserve,
 			'cart' => $cart,
@@ -193,10 +193,16 @@ class ReservationController extends APIController
 				array('T5.regular', $con[0]['clause'], $con[0]['value'])
 			);
 		}
+		if(sizeof($con) > 1){
+			array_push($condition, 
+				array($con[1]['column'], $con[1]['clause'], $con[1]['value'])
+			);
+		}
 		$res = Reservation::leftJoin('accounts as T2', 'T2.id', '=', 'reservations.account_id')
 			->leftJoin('rooms as T3', 'T3.id', 'reservations.payload_value')
 			->leftJoin('account_informations as T4', 'T4.account_id', '=', 'T2.id')
 			->leftJoin('pricings as T5', 'T5.room_id', '=', 'T3.id')
+			->leftJoin('carts as T6', 'T6.reservation_id', '=', 'reservations.id')
 			->where($condition)
 			->orderBy($sortBy, array_values($data['sort'])[0])
 			->limit($data['limit'])
@@ -207,6 +213,7 @@ class ReservationController extends APIController
 			->leftJoin('rooms as T3', 'T3.id', 'reservations.payload_value')
 			->leftJoin('account_informations as T4', 'T4.account_id', '=', 'T2.id')
 			->leftJoin('pricings as T5', 'T5.room_id', '=', 'T3.id')
+			->leftJoin('carts as T6', 'T6.reservation_id', '=', 'reservations.id')
 			->where($condition)
 			->orderBy($sortBy, array_values($data['sort'])[0])
 			->get();

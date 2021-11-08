@@ -43,10 +43,9 @@ class RoomController extends APIController
 
   public function retrieveByType(Request $request){
     $data = $request->all();
-    $whereArray = array();
-    // if($data['number_of_heads'] > 0){
-    //   array_push($whereArray, array(DB::raw('')))
-    // }
+    $whereArray = array(
+      array('rooms.additional_info', 'like', '%'.$data['number_of_heads'].'%')
+    );
     if($data['check_in'] !== null && $data['check_out'] !== null){
       array_push($whereArray, array('T3.check_in', '<=', $data['check_in']));
       array_push($whereArray, array('T3.check_out', '>=', $data['check_out']));
@@ -58,14 +57,37 @@ class RoomController extends APIController
         array_push($whereArray, array('T3.check_out', '>=', $data['check_out']));
       }
     }
+    if($data['max'] > 0){
+      array_push($whereArray, array('T1.regular', '>=', $data['max']));
+      array_push($whereArray, array('T1.regular', '<=', $data['min']));
+    }
     $result = Room::leftJoin('pricings as T1', 'T1.room_id', '=', 'rooms.id')
       ->leftJoin('payloads as T2', 'T2.id', '=', 'rooms.category')
       ->leftJoin('availabilities as T3', 'T3.payload_value', '=', 'T2.id')
-      ->where('T3.payload', '=', 'room')
+      ->where($whereArray)
+      ->where(function($query)use($data){
+        if($data['type'] !== null){
+          $query->whereIn('T2.id',  $data['type']);
+        }
+        if($data['priceType'] !== null){
+          $query->whereIn('T1.id',  $data['priceType']);
+        }
+      })
+      ->where('T3.payload', '=', 'room_type')
       ->where('T3.status', '=', 'available')
-      ->havingRaw("count(rooms.category) > ?", [$data['number_of_rooms']])
+      ->havingRaw("count(rooms.category) >= ?", [$data['number_of_rooms'] !== null ? $data['number_of_rooms'] : 0])
       ->groupBy('rooms.category')
+      ->limit($data['limit'])
+      ->offset($data['offset'])
       ->get(['rooms.*', 'T1.regular', 'T1.refundable', 'T1.currency', 'T1.label', 'T2.payload_value', 'T2.id as category_id', 'T1.id as price_id']);
+      $size = Room::leftJoin('pricings as T1', 'T1.room_id', '=', 'rooms.id')
+      ->leftJoin('payloads as T2', 'T2.id', '=', 'rooms.category')
+      ->leftJoin('availabilities as T3', 'T3.payload_value', '=', 'T2.id')
+      ->where('T3.payload', '=', 'room_type')
+      ->where('T3.status', '=', 'available')
+      ->havingRaw("count(rooms.category) > ?", [$data['number_of_rooms'] !== null ? $data['number_of_rooms'] : 0])
+      ->groupBy('rooms.category')
+      ->get();
     
       for ($i=0; $i <= sizeof($result)-1 ; $i++) { 
         $item = $result[$i];
@@ -76,6 +98,7 @@ class RoomController extends APIController
         $result[$i]['images'] = app('Increment\Hotel\Room\Http\ProductImageController')->getImages($item['id']);
       }
       $this->response['data'] = $result;
+      $this->response['size'] = sizeof($size);
       return $this->response();
   }
   
@@ -99,7 +122,7 @@ class RoomController extends APIController
         // $result[$i]['remaining_qty'] = 0;
         $result[$i]['additional_info'] = json_decode($item['additional_info']);
         $result[$i]['images'] = $images;
-        $result[$i]['isAvailable'] = $roomStatus['status'] === 'available' ? true : false;
+        $result[$i]['isAvailable'] = $roomStatus['status'] === 'available' && $item['status'] === 'publish' ? true : false;
         $result[$i]['room_qty'] = 1;
         if(sizeof($temp) <= 0){
           array_push($temp, $result[$i]);
@@ -115,25 +138,27 @@ class RoomController extends APIController
         }
       }
     }
-    $temp = array_unique((array)$temp);
-    $temp = array_values($temp);
-    for ($b=0; $b <= sizeof($temp)-1; $b++) { 
-      $element = $temp[$b];
-      $rooms = Room::leftJoin('pricings as T1', 'T1.room_id', '=', 'rooms.id')
-        ->leftJoin('payloads as T2', 'T2.id', '=', 'rooms.category')
-        ->where('rooms.category', '=', $data['category_id'])
-        ->where('T1.id', '!=', $element['price_id'])
-        ->get();
-      for ($c=0; $c <= sizeof($rooms)-1; $c++) { 
-        $each = $rooms[$c];
-        if((int)$each['regular'] === (int)$element['regular'] && (int)$each['refundable'] === (int)$element['refundable'] && $each['label'] == $element['label']){
-          $temp[$b]['room_qty'] += 1;
-        }else{
-          $temp[$b]['room_qty'] = 1;
+    if(sizeof($temp) > 0){
+      $temp = array_unique((array)$temp);
+      $temp = array_values($temp);
+      for ($b=0; $b <= sizeof($temp)-1; $b++) { 
+        $element = $temp[$b];
+        $rooms = Room::leftJoin('pricings as T1', 'T1.room_id', '=', 'rooms.id')
+          ->leftJoin('payloads as T2', 'T2.id', '=', 'rooms.category')
+          ->where('rooms.category', '=', $data['category_id'])
+          ->where('T1.id', '!=', $element['price_id'])
+          ->get();
+        for ($c=0; $c <= sizeof($rooms)-1; $c++) { 
+          $each = $rooms[$c];
+          if((int)$each['regular'] === (int)$element['regular'] && (int)$each['refundable'] === (int)$element['refundable'] && $each['label'] == $element['label']){
+            $temp[$b]['room_qty'] += 1;
+          }else{
+            $temp[$b]['room_qty'] = 1;
+          }
         }
+        $addedToCart  = app('Increment\Hotel\Room\Http\CartController')->countById($element['price_id'], $element['category']);
+        $temp[$b]['remaining_qty'] = (int)$element['room_qty'] - (int)$addedToCart;
       }
-      $addedToCart  = app('Increment\Hotel\Room\Http\CartController')->countById($element['price_id'], $element['category']);
-      $temp[$b]['remaining_qty'] = (int)$element['room_qty'] - (int)$addedToCart;
     }
     $this->response['data'] = $temp;
     return $this->response();
@@ -221,5 +246,21 @@ class RoomController extends APIController
 
   public function retrieveTotalPriceById($account_id, $column, $value, $returns){
     return Room::leftJoin('pricings as T1', 'T1.room_id', '=', 'rooms.id')->where('T1.'.$column, '=', $value)->where('T1.account_id', '=', $account_id)->get($returns);
+  }
+
+  public function create(Request $request){
+    $data = $request->all();
+    $this->model = new Room();
+    $this->insertDB($data);
+    $exist = app('Increment\Hotel\Room\Http\AvailabilityController')->retrieveByPayloadPayloadValue('room', $this->response['data']);
+    if($exist === null){
+      $params= array(
+        'payload' => 'room',
+        'payload_value' => $this->response['data'],
+        'status' => $data['status'] === 'publish' ? 'available' : 'not_available'
+      );
+      $res = app('Increment\Hotel\Room\Http\AvailabilityController')->createByParams($params);
+    }
+    return $this->response();
   }
 }
