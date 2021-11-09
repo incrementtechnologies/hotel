@@ -21,6 +21,7 @@ $controller = 'Increment\\Hotel\Room\Http\PricingController@';
 Route::post($route.'create', $controller."create");
 Route::post($route.'retrieve', $controller."retrieve");
 Route::post($route.'retrieve_pricings', $controller."retrievePricings");
+Route::post($route.'retrieve_min_max', $controller."retrieveMaxMin");
 Route::post($route.'update', $controller."update");
 Route::post($route.'delete', $controller."delete");
 Route::get($route.'test', $controller."test");
