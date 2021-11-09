@@ -5,6 +5,7 @@ namespace Increment\Hotel\Room\Http;
 use Illuminate\Http\Request;
 use App\Http\Controllers\APIController;
 use Increment\Hotel\Room\Models\Room;
+use Increment\Hotel\Room\Models\Availability;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 class RoomController extends APIController
@@ -201,6 +202,18 @@ class RoomController extends APIController
     );
     $room['updated_at'] = Carbon::now();
     $res = Room::where('id', '=', $data['id'])->update($room);
+    $availID = app('Increment\Hotel\Room\Http\AvailabilityController')->retrieveByPayloadPayloadValue('room_id', $data['id']);
+    $avail = array(
+      'payload' => 'room_id',
+      'payload_value' => $data['id'],
+      'status' => $data['status'] === 'publish' ? 'available' : 'not_available'
+    );
+    $avail['updated_at'] = Carbon::now();
+    $con = array(
+      'id' => $availID['id']
+    );
+    $availIDs = app('Increment\Hotel\Room\Http\AvailabilityController')->updateByParams($con, $avail);
+    // dd($availIDs);
     if(isset($data['images'])){
       if(sizeof($data['images']) > 0){
         for ($i=0; $i <= sizeof($data['images'])-1 ; $i++) {
@@ -255,7 +268,7 @@ class RoomController extends APIController
     $exist = app('Increment\Hotel\Room\Http\AvailabilityController')->retrieveByPayloadPayloadValue('room', $this->response['data']);
     if($exist === null){
       $params= array(
-        'payload' => 'room',
+        'payload' => 'room_id',
         'payload_value' => $this->response['data'],
         'status' => $data['status'] === 'publish' ? 'available' : 'not_available'
       );
@@ -263,4 +276,8 @@ class RoomController extends APIController
     }
     return $this->response();
   }
+
+  public function updateByParams($condition, $params){
+    return Room::where($condition)->update($params);
+}
 }
