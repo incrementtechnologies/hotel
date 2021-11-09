@@ -68,6 +68,14 @@ class AvailabilityController extends APIController
             'updated_at' => Carbon::now()
         );
         $result = Availability::where('id', '=', $data['id'])->update($params);
+        $avail = array(
+					'status' => $data['status'] === 'available' ? 'publish' : 'pending'
+				);
+				$avail['updated_at'] = Carbon::now();
+				$con = array(
+					'id' => $data['payload_value']
+				);
+        $res = app('Increment\Hotel\Room\Http\RoomController')->updateByParams($con, $avail);
         $this->response['data'] = $result;
         return $this->response();
     }
@@ -81,8 +89,13 @@ class AvailabilityController extends APIController
     }
 
     public function createByParams($data){
-        $this->model = new Availability();
-        $this->insertDB($data);
+        $exist = Availability::where('payload_value', '=', $data['payload_value'])->where('payload', '=', 'room_id')->get();
+        if(sizeof($exist) > 0){
+            $this->response['error'] = 'Already existed';
+        }else{
+            $this->model = new Availability();
+            $this->insertDB($data);
+        }
 		return $this->response();
     }
 
