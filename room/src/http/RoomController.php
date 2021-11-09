@@ -47,8 +47,8 @@ class RoomController extends APIController
       array('rooms.additional_info', 'like', '%'.$data['number_of_heads'].'%')
     );
     if($data['check_in'] !== null && $data['check_out'] !== null){
-      array_push($whereArray, array('T3.check_in', '<=', $data['check_in']));
-      array_push($whereArray, array('T3.check_out', '>=', $data['check_out']));
+      array_push($whereArray, array('T3.start_date', '<=', $data['check_in']));
+      array_push($whereArray, array('T3.end_date', '>=', $data['check_out']));
     }else{
       if($data['check_in'] !== null){
         array_push($whereArray, array('T3.check_in', '<=', $data['check_in']));
