@@ -410,4 +410,31 @@ class ReservationController extends APIController
 		return $this->response();
 	}
 
+	public function retrieveDashboard(Request $request){
+		$data = $request->all();
+		$currDate = Carbon::now();
+		$month = Carbon::now()->subDays(30)->month;
+		$diffinWeeks = Carbon::now()->diffinWeeks(Carbon::now()->subDays(30));
+		$carbon = Carbon::now()->subDays(30);
+		$dates = [];
+		$result = [];
+		$i=0;
+		while ($carbon < $currDate){
+			$dates[$carbon->weekOfMonth][$i] = $carbon->toDateString();
+			$carbon->addDay();
+			$i++;
+		}
+		foreach ($dates as $key) {
+			$reservations = Reservation::whereBetween('created_at', [$key[array_key_first($key)], end($key)])->count();
+			$sales = Reservation::whereBetween('created_at', [$key[array_key_first($key)], end($key)])->sum('total');
+			array_push($result, array(
+				'date' => end($key),
+				'total_reservations' => $reservations,
+				'total_sales' => $sales
+			));
+		}
+		$this->response['data'] = $result;
+		return $this->response();
+	}
+
 }
