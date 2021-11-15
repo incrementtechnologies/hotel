@@ -7,6 +7,7 @@ Route::post($route.'create', $controller."create");
 Route::post($route.'checkout', $controller."checkout");
 Route::post($route.'retrieve', $controller."retrieve");
 Route::post($route.'retrieve_web', $controller."retrieveWeb");
+Route::post($route.'retrieve_dashboard', $controller."retrieveDashboard");
 Route::post($route.'retrieve_bookings', $controller."retrieveBookings");
 Route::post($route.'retrieve_all_details', $controller."retrieveAllDetails");
 Route::post($route.'retrieve_details', $controller."retrieveDetails");
