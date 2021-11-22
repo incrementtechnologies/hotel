@@ -82,7 +82,7 @@ class ReservationController extends APIController
 			$condition = array(
 				array('account_id', '=', $data['account_id']),
 				array('category_id', '=', $item->category),
-				array('reservation_id', '=', $item->reservation_id),
+				array('reservation_id', '=', $item->id),
 				array('deleted_at', '=', null),
 				array('status', '=', 'in_progress')
 			);
