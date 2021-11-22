@@ -27,7 +27,7 @@ class ReservationController extends APIController
 	{
 		$this->model = new Reservation();
 		$this->notRequired = array(
-			'code', 'coupon_id', 'payload', 'payload_value', 'total'
+			'code', 'coupon_id', 'payload', 'payload_value', 'total', 'merchant_id'
 		);
 	}
 
