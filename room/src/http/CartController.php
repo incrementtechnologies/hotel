@@ -45,7 +45,7 @@ class CartController extends APIController
         $data = $request->all();
         $result = Cart::where('carts.account_id', '=', $data['account_id'])->where('carts.status', '!=', $data['status'])
             ->groupBy('carts.price_id')
-            ->get(['qty', 'price_id', 'reservation_id', 'category_id', DB::raw('Sum(qty) as checkoutQty')]);
+            ->get(['id', 'qty', 'price_id', 'reservation_id', 'category_id', DB::raw('Sum(qty) as checkoutQty')]);
         if(sizeof($result) > 0 ){
             for ($i=0; $i <= sizeof($result) -1; $i++) { 
                 $item = $result[$i];
