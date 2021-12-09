@@ -82,7 +82,7 @@ class ReservationController extends APIController
 			$condition = array(
 				array('account_id', '=', $data['account_id']),
 				array('category_id', '=', $item->category),
-				array('reservation_id', '=', $item->id),
+				array('reservation_id', '=', $item->reservation_id),
 				array('deleted_at', '=', null),
 				array('status', '=', 'in_progress')
 			);
@@ -320,14 +320,16 @@ class ReservationController extends APIController
 		$res = Reservation::where('code', '=', $data['roomCode'])->update(array(
 			'status' => $data['status']
 		));
-		for ($i=0; $i <= sizeof($data['booking'])-1; $i++) { 
-			$item = $data['booking'][$i];
-			$params = array(
-				'reservation_id' =>  $data['reservation_id'],
-				'room_id' => $item['room_id'], 
-				'room_type_id' => $item['category']
-			);
-			Booking::create($params);
+		if(sizeof($data['booking']) > 0){
+			for ($i=0; $i <= sizeof($data['booking'])-1; $i++) {
+				$item = $data['booking'][$i];
+				$params = array(
+					'reservation_id' =>  $data['reservation_id'],
+					'room_id' => $item['room_id'], 
+					'room_type_id' => $item['category']
+				);
+				Booking::create($params);
+			}
 		}
 		$this->response['data'] = $res;
 		return $this->response();

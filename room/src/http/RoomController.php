@@ -45,7 +45,8 @@ class RoomController extends APIController
   public function retrieveByType(Request $request){
     $data = $request->all();
     $whereArray = array(
-      array('T3.limit', 'like', '%'.$data['number_of_heads'].'%')
+      array('T3.limit', 'like', '%'.$data['number_of_heads'].'%'),
+      array('rooms.deleted_at', '=', null)
     );
     if($data['check_in'] !== null && $data['check_out'] !== null){
       array_push($whereArray, array('T3.start_date', '<=', $data['check_in']));
@@ -59,9 +60,10 @@ class RoomController extends APIController
       }
     }
     if($data['max'] > 0){
-      array_push($whereArray, array('T1.regular', '<=', $data['max']));
+      // array_push($whereArray, array('T1.regular', '<=', $data['max']));
       array_push($whereArray, array('T1.regular', '>=', $data['min']));
     }
+    // dd($whereArray);
     $result = Room::leftJoin('pricings as T1', 'T1.room_id', '=', 'rooms.id')
       ->leftJoin('payloads as T2', 'T2.id', '=', 'rooms.category')
       ->leftJoin('availabilities as T3', 'T3.payload_value', '=', 'T2.id')
