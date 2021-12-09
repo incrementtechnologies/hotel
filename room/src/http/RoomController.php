@@ -104,7 +104,7 @@ class RoomController extends APIController
       $this->response['size'] = sizeof($size);
       return $this->response();
   }
-  
+
   public function retrieveUnique(Request $request){
     $data = $request->all();
     $result = Room::leftJoin('pricings as T1', 'T1.room_id', '=', 'rooms.id')
