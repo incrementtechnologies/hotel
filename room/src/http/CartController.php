@@ -43,7 +43,11 @@ class CartController extends APIController
     
     public function retrieveByParams(Request $request){
         $data = $request->all();
-        $result = Cart::where('carts.account_id', '=', $data['account_id'])->where('carts.status', '!=', $data['status'])
+        $result = Cart::where('carts.account_id', '=', $data['account_id'])
+            ->where(function($query){
+                $query->where('status', '=', 'pending')
+                ->orWhere('status', '=', 'in_progress');
+            })
             ->groupBy('carts.price_id')
             ->get(['id', 'qty', 'price_id', 'reservation_id', 'category_id', DB::raw('Sum(qty) as checkoutQty')]);
         if(sizeof($result) > 0 ){
@@ -92,6 +96,19 @@ class CartController extends APIController
 
     public function retrieveCartWithRoomDetails($reservation_id){
         $result = Cart::where('reservation_id', '=', $reservation_id)
+            ->groupBy('carts.price_id')
+            ->get(['qty', 'price_id', 'category_id', DB::raw('Sum(qty) as checkoutQty')]);
+        if(sizeof($result) > 0 ){
+            for ($i=0; $i <= sizeof($result) -1; $i++) {
+                $item = $result[$i];
+                $result[$i]['rooms'] = app('Increment\Hotel\Room\Http\RoomController')->getWithQty($item['category_id'], $item['price_id']);
+            }
+        }
+        return $result;
+    }
+
+    public function retrieveByCondition($condition){
+        $result = Cart::where($condition)
             ->groupBy('carts.price_id')
             ->get(['qty', 'price_id', 'category_id', DB::raw('Sum(qty) as checkoutQty')]);
         if(sizeof($result) > 0 ){
