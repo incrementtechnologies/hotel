@@ -30,6 +30,20 @@ class PricingController extends APIController
     	return $this->response();
     }
 
+		public function create(Request $request){
+			$data = $request->all();
+			$this->insertDB($data);
+			if($this->response['data']){
+				$params = array(
+					'price_id' => $this->response['data'],
+					'category_id' => $data['category_id'],
+					'status' => 'available'
+				);
+				app('Increment/Hotel/Room/Http/RoomPriceStatus')->insertPriceStatus($params);
+			}
+			return $this->response();
+		}
+
 		public function retrievePricings(Request $request){
 			$data = $request->all();
 			$con = $data['condition'];
