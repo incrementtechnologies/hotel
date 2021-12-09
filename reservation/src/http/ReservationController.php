@@ -35,16 +35,20 @@ class ReservationController extends APIController
 		$data = $request->all();
 		$reserve = Reservation::where('code', '=', $data['id'])->first();
 		$cart = app('Increment\Hotel\Room\Http\CartController')->retrieveCartWithRooms($reserve['id']);
-		$reserve['details'] = json_decode($reserve['details'], true);
-		$reserve['check_in'] = Carbon::createFromFormat('Y-m-d H:i:s', $reserve['check_in'])->copy()->tz($this->response['timezone'])->format('F j, Y');
-		$reserve['check_out'] = Carbon::createFromFormat('Y-m-d H:i:s', $reserve['check_out'])->copy()->tz($this->response['timezone'])->format('F j, Y');
-		$reserve['coupon'] = $reserve['coupon_id'] !== null ? app('App\Http\Controllers\CouponController')->retrieveById($reserve['coupon_id']) : array('code' => null);
-		$array = array(
-			'reservation' => $reserve,
-			'cart' => $cart,
-			'customer' => $this->retrieveAccountDetails($reserve['account_id']),
-		);
-		$this->response['data'] = $array;
+		if(sizeof($cart) > 0){
+			$reserve['details'] = json_decode($reserve['details'], true);
+			$reserve['check_in'] = Carbon::createFromFormat('Y-m-d H:i:s', $reserve['check_in'])->copy()->tz($this->response['timezone'])->format('F j, Y');
+			$reserve['check_out'] = Carbon::createFromFormat('Y-m-d H:i:s', $reserve['check_out'])->copy()->tz($this->response['timezone'])->format('F j, Y');
+			$reserve['coupon'] = $reserve['coupon_id'] !== null ? app('App\Http\Controllers\CouponController')->retrieveById($reserve['coupon_id']) : array('code' => null);
+			$array = array(
+				'reservation' => $reserve,
+				'cart' => $cart,
+				'customer' => $this->retrieveAccountDetails($reserve['account_id']),
+			);
+			$this->response['data'] = $array;
+		}else{
+			$this->response['data'] = [];
+		}
 		return $this->response();
 	}
 
@@ -204,6 +208,7 @@ class ReservationController extends APIController
 			->leftJoin('pricings as T5', 'T5.room_id', '=', 'T3.id')
 			->leftJoin('carts as T6', 'T6.reservation_id', '=', 'reservations.id')
 			->where($condition)
+			->where('T6.deleted_at', '=', null)
 			->orderBy($sortBy, array_values($data['sort'])[0])
 			->limit($data['limit'])
 			->offset($data['offset'])
@@ -320,15 +325,17 @@ class ReservationController extends APIController
 		$res = Reservation::where('code', '=', $data['roomCode'])->update(array(
 			'status' => $data['status']
 		));
-		if(sizeof($data['booking']) > 0){
-			for ($i=0; $i <= sizeof($data['booking'])-1; $i++) {
-				$item = $data['booking'][$i];
-				$params = array(
-					'reservation_id' =>  $data['reservation_id'],
-					'room_id' => $item['room_id'], 
-					'room_type_id' => $item['category']
-				);
-				Booking::create($params);
+		if(isset($data['booking'])){
+			if(sizeof($data['booking']) > 0){
+				for ($i=0; $i <= sizeof($data['booking'])-1; $i++) {
+					$item = $data['booking'][$i];
+					$params = array(
+						'reservation_id' =>  $data['reservation_id'],
+						'room_id' => $item['room_id'], 
+						'room_type_id' => $item['category']
+					);
+					Booking::create($params);
+				}
 			}
 		}
 		$this->response['data'] = $res;
