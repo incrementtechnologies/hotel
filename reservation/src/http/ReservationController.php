@@ -275,6 +275,7 @@ class ReservationController extends APIController
 			->where(function($query){
 				$query->where('status', '=', 'in_progress')
 					->orWhere('status', '=', 'failed')
+					->orWhere('status', '=', 'for_approval')
 					->orWhere('status', '=', 'pending');
 			})
 			->get();
