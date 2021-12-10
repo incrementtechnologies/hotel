@@ -1,8 +1,9 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace Increment\Hotel\Room\Http;
 
 use Illuminate\Http\Request;
+use App\Http\Controllers\APIController;
 use  Increment\Hotel\Room\Models\RoomPriceStatus;
 use Carbon\Carbon;
 
@@ -17,7 +18,7 @@ class RoomPriceStatusController extends APIController
     }
 
     public function checkIfPriceExist($params){
-        return RoomPriceStatus::where($condition)->get();
+        return RoomPriceStatus::where($params)->get();
     }
 
     public function updateQtyById($id, $value){

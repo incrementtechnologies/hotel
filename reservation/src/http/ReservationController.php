@@ -127,16 +127,16 @@ class ReservationController extends APIController
 			);
 			$updateCart = app('Increment\Hotel\Room\Http\CartController')->updateByParams($condition, $updates);
 			if($updateCart){
-				$cart = app('Increment\Hotel\Room\Http\CartController')->getByReservationId($reservation['id']);
+				$cart = app('Increment\Hotel\Room\Http\CartController')->getByReservationId($reserve['id']);
 				$priceStatusParams = array(
 					'price_id' => $cart['price_id'],
 					'category_id' => $cart['category_id']
 				);
-				$existingPriceStatus = app('Increment\Hotel\Room\Http\RoomPriceController')->checkIfPriceExist($priceStatusParams);
+				$existingPriceStatus = app('Increment\Hotel\Room\Http\RoomPriceStatusController')->checkIfPriceExist($priceStatusParams);
 				if(sizeof($existingPriceStatus) > 0){
-					$roomPriceUpdate = app('Increment\Hotel\Room\Http\RoomPriceController')->updateQtyByPriceId($cart['price_id'], $cart['category_id'], ((int)$existingPriceStatus['qty'] + $cart['qty']));
+					$roomPriceUpdate = app('Increment\Hotel\Room\Http\RoomPriceStatusController')->updateQtyByPriceId($cart['price_id'], $cart['category_id'], ((int)$existingPriceStatus[0]['qty'] + $cart['qty']));
 				}else{
-					$roomPriceUpdate = app('Increment\Hotel\Room\Http\RoomPriceController')->updateQtyByPriceId($cart['price_id'], $cart['category_id'], 1);
+					$roomPriceUpdate = app('Increment\Hotel\Room\Http\RoomPriceStatusController')->updateQtyByPriceId($cart['price_id'], $cart['category_id'], 1);
 				}
 			}
 			if($res !== null){
@@ -434,11 +434,11 @@ class ReservationController extends APIController
 				'price_id' => $cart['price_id'],
 				'category_id' => $cart['category_id']
 			);
-			$existingPriceStatus = app('Increment\Hotel\Room\Http\RoomPriceController')->checkIfPriceExist($priceStatusParams);
+			$existingPriceStatus = app('Increment\Hotel\Room\Http\RoomPriceStatusController')->checkIfPriceExist($priceStatusParams);
 			if(sizeof($existingPriceStatus) > 0){
-				$roomPriceUpdate = app('Increment\Hotel\Room\Http\RoomPriceController')->updateQtyByPriceId($cart['price_id'], $cart['category_id'], ((int)$existingPriceStatus['qty'] + 1));
+				$roomPriceUpdate = app('Increment\Hotel\Room\Http\RoomPriceStatusController')->updateQtyByPriceId($cart['price_id'], $cart['category_id'], ((int)$existingPriceStatus['qty'] + 1));
 			}else{
-				$roomPriceUpdate = app('Increment\Hotel\Room\Http\RoomPriceController')->updateQtyByPriceId($cart['price_id'], $cart['category_id'], 1);
+				$roomPriceUpdate = app('Increment\Hotel\Room\Http\RoomPriceStatusController')->updateQtyByPriceId($cart['price_id'], $cart['category_id'], 1);
 			}
 		}
 		return $this->response();
