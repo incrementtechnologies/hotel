@@ -1,7 +1,7 @@
 <?php
 
 // Products
-$route = env('PACKAGE_ROUTE', '').'/room/';
+$route = env('PACKAGE_ROUTE', '').'/rooms/';
 $controller = 'Increment\Hotel\Room\Http\RoomController@';
 Route::post($route.'create', $controller."create");
 Route::post($route.'retrieve', $controller."retrieve");

@@ -40,12 +40,12 @@ class PricingController extends APIController
 					array('amount', '=', $priceId['regular'])
 				);
 				$exist = 	app('Increment/Hotel/Room/Http/RoomPriceStatus')->insertPriceStatus($checkIfExist);
-				if(sizeof($checkIfExist) > 0){
-					app('Increment/Hotel/Room/Http/RoomPriceStatus')->updateQtyById($priceId['id'], sizeof($prices));
-				}else{
+				if(sizeof($exist) <= 0){
 					$params = array(
 						'price_id' => $this->response['data'],
 						'category_id' => $data['category_id'],
+						'amount' => $data['regular'],
+						'qty' => 0,
 						'status' => 'available'
 					);
 					app('Increment/Hotel/Room/Http/RoomPriceStatus')->insertPriceStatus($params);
