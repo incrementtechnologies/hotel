@@ -123,4 +123,8 @@ class CartController extends APIController
     public function updateByParams($conditions, $updates){
         return Cart::where($conditions)->update($updates);
     }
+
+    public function getByReservationId($reservationId){
+        return Cart::where('reservation_id', '=', $reservationId)->where('status', '=', 'for_approval')->groupBy('price_id')->first();
+    }
 }

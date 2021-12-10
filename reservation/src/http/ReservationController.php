@@ -125,7 +125,20 @@ class ReservationController extends APIController
 				'status' => $data['status'],
 				'updated_at' => Carbon::now()
 			);
-			app('Increment\Hotel\Room\Http\CartController')->updateByParams($condition, $updates);
+			$updateCart = app('Increment\Hotel\Room\Http\CartController')->updateByParams($condition, $updates);
+			if($updateCart){
+				$cart = app('Increment\Hotel\Room\Http\CartController')->getByReservationId($reservation['id']);
+				$priceStatusParams = array(
+					'price_id' => $cart['price_id'],
+					'category_id' => $cart['category_id']
+				);
+				$existingPriceStatus = app('Increment\Hotel\Room\Http\RoomPriceController')->checkIfPriceExist($priceStatusParams);
+				if(sizeof($existingPriceStatus) > 0){
+					$roomPriceUpdate = app('Increment\Hotel\Room\Http\RoomPriceController')->updateQtyByPriceId($cart['price_id'], $cart['category_id'], ((int)$existingPriceStatus['qty'] + $cart['qty']));
+				}else{
+					$roomPriceUpdate = app('Increment\Hotel\Room\Http\RoomPriceController')->updateQtyByPriceId($cart['price_id'], $cart['category_id'], 1);
+				}
+			}
 			if($res !== null){
 				$this->response['data'] = $reserve;
 			}
@@ -415,6 +428,17 @@ class ReservationController extends APIController
 				$this->response['data'] = $res['data'];
 			}else{
 				$this->response['data'] = $res['error'];
+			}
+			$cart = app('Increment\Hotel\Room\Http\CartController')->getByReservationId($reservation['id']);
+			$priceStatusParams = array(
+				'price_id' => $cart['price_id'],
+				'category_id' => $cart['category_id']
+			);
+			$existingPriceStatus = app('Increment\Hotel\Room\Http\RoomPriceController')->checkIfPriceExist($priceStatusParams);
+			if(sizeof($existingPriceStatus) > 0){
+				$roomPriceUpdate = app('Increment\Hotel\Room\Http\RoomPriceController')->updateQtyByPriceId($cart['price_id'], $cart['category_id'], ((int)$existingPriceStatus['qty'] + 1));
+			}else{
+				$roomPriceUpdate = app('Increment\Hotel\Room\Http\RoomPriceController')->updateQtyByPriceId($cart['price_id'], $cart['category_id'], 1);
 			}
 		}
 		return $this->response();
