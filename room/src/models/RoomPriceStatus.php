@@ -3,6 +3,7 @@
 namespace Increment\Hotel\Room\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use App\APIModel;
 
 class RoomPriceStatus extends APIModel
 {
