@@ -34,12 +34,22 @@ class PricingController extends APIController
 			$data = $request->all();
 			$this->insertDB($data);
 			if($this->response['data']){
-				$params = array(
-					'price_id' => $this->response['data'],
-					'category_id' => $data['category_id'],
-					'status' => 'available'
+				$priceId = Pricing::leftJoin('rooms as T1', 'T1.id', '=', 'pricings.room_id')->where('id', '=', $this->response['data'])->first();
+				$prices = Pricing::leftJoin('rooms as T1', 'T1.id', '=', 'pricings.room_id')->where('regular', '=', $priceId['regular'])->where('label', '=', $priceId['label'])->where('T1.category', '=', $priceId['ategory']);
+				$checkIfExist = array(
+					array('amount', '=', $priceId['regular'])
 				);
-				app('Increment/Hotel/Room/Http/RoomPriceStatus')->insertPriceStatus($params);
+				$exist = 	app('Increment/Hotel/Room/Http/RoomPriceStatus')->insertPriceStatus($checkIfExist);
+				if(sizeof($checkIfExist) > 0){
+					app('Increment/Hotel/Room/Http/RoomPriceStatus')->updateQtyById($priceId['id'], sizeof($prices));
+				}else{
+					$params = array(
+						'price_id' => $this->response['data'],
+						'category_id' => $data['category_id'],
+						'status' => 'available'
+					);
+					app('Increment/Hotel/Room/Http/RoomPriceStatus')->insertPriceStatus($params);
+				}
 			}
 			return $this->response();
 		}
