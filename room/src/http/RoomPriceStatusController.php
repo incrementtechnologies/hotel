@@ -14,4 +14,15 @@ class RoomPriceStatusController extends APIController
     public function insertPriceStatus($data){
         return $this->insertDB($data);
     }
+
+    public function checkIfPriceExist($params){
+        return RoomPriceStatus::where($condition)->get();
+    }
+
+    public function updateQtyById($id, $value){
+        return RoomPriceStatus::where('id', '=', $id)->update(array(
+            'qty' => $qty,
+            'updated_at' => $value
+        ));
+    }
 }

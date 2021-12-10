@@ -4,7 +4,7 @@ use Illuminate\Support\Facades\Schema;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Database\Migrations\Migration;
 
-class CreateTableRoomPriceStatus extends Migration
+class CreateRoomPriceStatus extends Migration
 {
     /**
      * Run the migrations.
@@ -17,6 +17,8 @@ class CreateTableRoomPriceStatus extends Migration
             $table->bigIncrements('id');
             $table->bigInteger('price_id');
             $table->bigInteger('category_id');
+            $table->double('amount', 8, 2);
+            $table->bigInteger('qty');
             $table->string('status');
             $table->timestamps();
             $table->softDeletes();

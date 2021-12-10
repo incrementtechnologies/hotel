@@ -7,5 +7,5 @@ use Illuminate\Database\Eloquent\Model;
 class RoomPriceStatus extends APIModel
 {
     protected $table='room_price_status';
-    protected $fillable=['price_id', 'category_id', 'status'];
+    protected $fillable=['price_id', 'category_id', 'amount', 'qty',  'status'];
 }
