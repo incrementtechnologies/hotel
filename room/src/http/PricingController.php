@@ -43,7 +43,7 @@ class PricingController extends APIController
 				if($exist){
 					$params = array(
 						'price_id' => $this->response['data'],
-						'category_id' => $data['category_id'],
+						'category_id' => $data['category'],
 						'amount' => $data['regular'],
 						'qty' => 0,
 						'status' => 'available'
