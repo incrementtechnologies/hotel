@@ -34,13 +34,13 @@ class PricingController extends APIController
 			$data = $request->all();
 			$this->insertDB($data);
 			if($this->response['data']){
-				$priceId = Pricing::leftJoin('rooms as T1', 'T1.id', '=', 'pricings.room_id')->where('id', '=', $this->response['data'])->first();
-				$prices = Pricing::leftJoin('rooms as T1', 'T1.id', '=', 'pricings.room_id')->where('regular', '=', $priceId['regular'])->where('label', '=', $priceId['label'])->where('T1.category', '=', $priceId['ategory']);
+				$priceId = Pricing::leftJoin('rooms as T1', 'T1.id', '=', 'pricings.room_id')->where('pricings.id', '=', $this->response['data'])->first();
+				$prices = Pricing::leftJoin('rooms as T1', 'T1.id', '=', 'pricings.room_id')->where('pricings.regular', '=', $priceId['regular'])->where('pricings.label', '=', $priceId['label'])->where('T1.category', '=', $priceId['ategory']);
 				$checkIfExist = array(
 					array('amount', '=', $priceId['regular'])
 				);
-				$exist = 	app('Increment/Hotel/Room/Http/RoomPriceStatus')->insertPriceStatus($checkIfExist);
-				if(sizeof($exist) <= 0){
+				$exist = 	app('Increment\Hotel\Room\Http\RoomPriceStatusController')->insertPriceStatus($checkIfExist);
+				if($exist){
 					$params = array(
 						'price_id' => $this->response['data'],
 						'category_id' => $data['category_id'],
@@ -48,7 +48,7 @@ class PricingController extends APIController
 						'qty' => 0,
 						'status' => 'available'
 					);
-					app('Increment/Hotel/Room/Http/RoomPriceStatus')->insertPriceStatus($params);
+					app('Increment\Hotel\Room\Http\RoomPriceStatusController')->insertPriceStatus($params);
 				}
 			}
 			return $this->response();
