@@ -56,7 +56,7 @@ class ReservationController extends APIController
 	{
 		$data = $request->all();
 		$this->model = new Reservation();
-		$temp = Reservation::where('account_id', '=', $data['account_id'])->count();
+		$temp = Reservation::count();
 		$data['code'] = $this->generateCode($temp);
 		$this->insertDB($data);
 		if($this->response['data']){
