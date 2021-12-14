@@ -45,7 +45,6 @@ class RoomController extends APIController
   public function retrieveByType(Request $request){
     $data = $request->all();
     $whereArray = array(
-      array('T3.limit', 'like', '%'.$data['number_of_heads'].'%'),
       array('rooms.deleted_at', '=', null)
     );
     if($data['check_in'] !== null && $data['check_out'] !== null){
@@ -58,6 +57,9 @@ class RoomController extends APIController
       if($data['check_out'] !== null){
         array_push($whereArray, array('T3.check_out', '>=', $data['check_out']));
       }
+    }
+    if($data['number_of_heads'] !== null && $data['number_of_heads'] > 0){
+      array_push($whereArray, array('rooms.max_capacity', '=', $data['number_of_heads']));
     }
     if($data['max'] > 0){
       // array_push($whereArray, array('T1.regular', '<=', $data['max']));
@@ -82,7 +84,7 @@ class RoomController extends APIController
       ->groupBy('rooms.category')
       ->limit($data['limit'])
       ->offset($data['offset'])
-      ->get(['rooms.*', 'T1.regular', 'T1.refundable', 'T1.currency', 'T1.label', 'T2.payload_value', 'T2.id as category_id', 'T1.id as price_id']);
+      ->get(['rooms.*', 'T1.regular', 'T1.refundable', 'T1.currency', 'T1.label', 'T2.payload_value', 'T2.id as category_id', 'T1.id as price_id', 'T2.category as general_description', 'T2.details as general_features']);
       $size = Room::leftJoin('pricings as T1', 'T1.room_id', '=', 'rooms.id')
       ->leftJoin('payloads as T2', 'T2.id', '=', 'rooms.category')
       ->leftJoin('availabilities as T3', 'T3.payload_value', '=', 'T2.id')
@@ -99,6 +101,7 @@ class RoomController extends APIController
         $result[$i]['fullyBooked'] =  (int)($roomsQty - $addedToCart) > 0 ? false : true;
         $result[$i]['additional_info'] = json_decode($item['additional_info']);
         $result[$i]['images'] = app('Increment\Hotel\Room\Http\ProductImageController')->getImages($item['id']);
+        $result[$i]['general_features'] = json_decode($item['general_features']);
       }
       $this->response['data'] = $result;
       $this->response['size'] = sizeof($size);
@@ -236,6 +239,7 @@ class RoomController extends APIController
   public function getWithQty($categoryId, $priceId){
     $result = Room::leftJoin('pricings as T1', 'T1.room_id', '=', 'rooms.id')
       ->leftJoin('payloads as T2', 'T2.id', '=', 'rooms.category')
+      ->where('T1.id', '=', $priceId)
       ->where('rooms.category', '=', $categoryId)
       ->groupBy('T1.regular')
       ->get(['rooms.*', 'T1.regular', 'T1.refundable', 'T1.currency', 'T1.label', DB::raw('COUNT("T1.regular") as room_qty'), 'T1.id as price_id', 'T2.payload_value']);
