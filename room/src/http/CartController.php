@@ -34,7 +34,10 @@ class CartController extends APIController
     }
 
     public function countById($priceId, $categoryId){
-        return Cart::where('price_id', '=', $priceId)->where('category_id', '=', $categoryId)->where('deleted_at', '=', null)->count();
+        return Cart::where('price_id', '=', $priceId)->where('category_id', '=', $categoryId)->where('deleted_at', '=', null)->where(function($query){
+            $query->where('status', '=', 'completed')
+                ->orWhere('status', '=', 'for_approval');
+        })->count();
     }
 
     public function countByCategory($category){
@@ -126,5 +129,12 @@ class CartController extends APIController
 
     public function getByReservationId($reservationId){
         return Cart::where('reservation_id', '=', $reservationId)->where('status', '=', 'for_approval')->groupBy('price_id')->first();
+    }
+
+    public function getTotalReservations($priceId, $categoryId){
+        return Cart::where('price_id', '=', $priceId)->where('category_id', '=', $categoryId)->where(function($query){
+            $query->where('status', '=', 'for_approval')
+                ->orwhere('status', '=', 'completed');
+        })->sum('qty');
     }
 }

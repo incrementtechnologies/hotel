@@ -102,6 +102,19 @@ class RoomController extends APIController
         $result[$i]['additional_info'] = json_decode($item['additional_info']);
         $result[$i]['images'] = app('Increment\Hotel\Room\Http\ProductImageController')->getImages($item['id']);
         $result[$i]['general_features'] = json_decode($item['general_features']);
+        //get available rooms
+
+        $result[$i]['price'] = null;
+        $result[$i]['remaining_qty'] = null;
+        $availableRooms = app('Increment\Hotel\Room\Http\RoomPriceStatusController')->getTotalByPricesWithDetails($item['regular'], $item['category']);
+        if($availableRooms !== null && $availableRooms['remaining_qty'] > 0){
+          $result[$i]['price'] = $availableRooms['amount'];
+          $result[$i]['remaining_qty'] = $availableRooms['remaining_qty'];
+        }
+        // dd($addedToCarts);
+        // dd($availableRooms);
+        //get least price of available rooms
+        // $result[$i]['display_price'] = 
       }
       $this->response['data'] = $result;
       $this->response['size'] = sizeof($size);
@@ -149,21 +162,9 @@ class RoomController extends APIController
       $temp = array_values($temp);
       for ($b=0; $b <= sizeof($temp)-1; $b++) { 
         $element = $temp[$b];
-        $rooms = Room::leftJoin('pricings as T1', 'T1.room_id', '=', 'rooms.id')
-          ->leftJoin('payloads as T2', 'T2.id', '=', 'rooms.category')
-          ->where('rooms.category', '=', $data['category_id'])
-          ->where('T1.id', '!=', $element['price_id'])
-          ->get();
-        for ($c=0; $c <= sizeof($rooms)-1; $c++) { 
-          $each = $rooms[$c];
-          if((int)$each['regular'] === (int)$element['regular'] && (int)$each['refundable'] === (int)$element['refundable'] && $each['label'] == $element['label']){
-            $temp[$b]['room_qty'] += 1;
-          }else{
-            $temp[$b]['room_qty'] = 1;
-          }
-        }
+        $rooms =  app('Increment\Hotel\Room\Http\RoomPriceStatusController')->getTotalByPricesWithDetails($element['regular'], $item['category']);
         $addedToCart  = app('Increment\Hotel\Room\Http\CartController')->countById($element['price_id'], $element['category']);
-        $temp[$b]['remaining_qty'] = (int)$element['room_qty'] - (int)$addedToCart;
+        $temp[$b]['remaining_qty'] = (int)$rooms['remaining_qty'] - (int)$addedToCart;
       }
     }
     $this->response['data'] = $temp;
@@ -253,12 +254,14 @@ class RoomController extends APIController
     }
     return $result;
   }
+
   public function retrieveByParams(Request $request){
     $data = $request->all();
     $result = Room::where('category', '=', $data['category_id'])->where('status', '=', 'publish')->get();
     $this->response['data'] = $result;
     return $this->response();
   }
+
   public function retrieveByCategory($categoryId){
     return Room::where('category', '=', $categoryId)->get();
   }
@@ -285,5 +288,5 @@ class RoomController extends APIController
 
   public function updateByParams($condition, $params){
     return Room::where($condition)->update($params);
-}
+  }
 }
