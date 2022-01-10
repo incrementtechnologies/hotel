@@ -228,13 +228,14 @@ class ReservationController extends APIController
 			->get(['reservations.*', 'T2.email', 'T3.title', 'T5.regular']);
 
 		$size = Reservation::leftJoin('accounts as T2', 'T2.id', '=', 'reservations.account_id')
-			->leftJoin('rooms as T3', 'T3.id', 'reservations.payload_value')
-			->leftJoin('account_informations as T4', 'T4.account_id', '=', 'T2.id')
-			->leftJoin('pricings as T5', 'T5.room_id', '=', 'T3.id')
-			->leftJoin('carts as T6', 'T6.reservation_id', '=', 'reservations.id')
-			->where($condition)
-			->orderBy($sortBy, array_values($data['sort'])[0])
-			->get();
+		->leftJoin('rooms as T3', 'T3.id', 'reservations.payload_value')
+		->leftJoin('account_informations as T4', 'T4.account_id', '=', 'T2.id')
+		->leftJoin('pricings as T5', 'T5.room_id', '=', 'T3.id')
+		->leftJoin('carts as T6', 'T6.reservation_id', '=', 'reservations.id')
+		->where($condition)
+		->where('T6.deleted_at', '=', null)
+		->orderBy($sortBy, array_values($data['sort'])[0])
+		->get();
 		
 		for ($i=0; $i <= sizeof($res)-1; $i++) { 
 			$item = $res[$i];
