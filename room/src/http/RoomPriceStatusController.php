@@ -23,7 +23,7 @@ class RoomPriceStatusController extends APIController
                )
            ); 
         }else{
-            $this->insertDB($data);
+            RoomPriceStatus::create($data);
         }
         return $this->response['data'];
     }
