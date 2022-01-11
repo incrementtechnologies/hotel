@@ -52,10 +52,10 @@ class RoomController extends APIController
       array_push($whereArray, array('T3.end_date', '>=', $data['check_out']));
     }else{
       if($data['check_in'] !== null){
-        array_push($whereArray, array('T3.check_in', '<=', $data['check_in']));
+        array_push($whereArray, array('T3.start_date', 'like', '%'.$data['check_in'].'%'));
       }
       if($data['check_out'] !== null){
-        array_push($whereArray, array('T3.check_out', '>=', $data['check_out']));
+        array_push($whereArray, array('T3.end_date', 'like', '%'.$data['check_out'].'%'));
       }
     }
     if($data['number_of_heads'] !== null && $data['number_of_heads'] > 0){
@@ -111,12 +111,17 @@ class RoomController extends APIController
           $result[$i]['price'] = $availableRooms['amount'];
           $result[$i]['remaining_qty'] = $availableRooms['remaining_qty'];
         }
-        // dd($addedToCarts);
-        // dd($availableRooms);
-        //get least price of available rooms
-        // $result[$i]['display_price'] = 
       }
-      $this->response['data'] = $result;
+
+      if($data['flag'] == 'false'){
+        $pricings = app('Increment\Hotel\Room\Http\PricingController')->retrieveLabel();
+        $minMax = app('Increment\Hotel\Room\Http\PricingController')->retrieveMaxMin();
+        $category = app('Increment\Common\Payload\Http\PayloadController')->retrieveAll();
+        $this->response['data']['pricings'] = $pricings;
+        $this->response['data']['min_max'] = $minMax;
+        $this->response['data']['category'] = $category;
+      }
+      $this->response['data']['rooms'] = $result;
       $this->response['size'] = sizeof($size);
       return $this->response();
   }

@@ -66,14 +66,16 @@ class PricingController extends APIController
       return (sizeof($result) > 0) ? $result : null;
     }
 
-		public function retrieveMaxMin(Request $request){
-			$data=$request->all();
+		public function retrieveMaxMin(){
 			$min = Pricing::where('deleted_at', '=', null)->orderBy('regular', 'asc')->first();
 			$max = Pricing::where('deleted_at', '=', null)->orderBy('regular', 'desc')->first();
-			$this->response['data'] = array(
-				'min' => $min !== null ? $min['regular'] : 0,
-				'max' => $max !== null ? $max['regular'] : 0
+			return array(
+				'min' => $min !== null ? (int)$min['regular'] : 0,
+				'max' => $max !== null ? (int)$max['regular'] : 0
 			);
-			return $this->response();
+		}
+
+		public function retrieveLabel(){
+			return Pricing::groupBy('label')->get(['id', 'label']);
 		}
 }
