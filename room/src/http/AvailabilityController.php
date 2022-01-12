@@ -39,12 +39,19 @@ class AvailabilityController extends APIController
             ->offset($data['offset'])
             ->orderBy(array_keys($data['sort'])[0], array_keys($data['sort'])[0])
             ->get(['availabilities.id', 'start_date', 'end_date', 'T1.payload_value', 'limit', 'status']);
+        
+        $size = Availability::leftJoin('payloads as T1', 'T1.id', '=', 'availabilities.payload_value')
+            ->where($con[0]['column'] == 'type' ? 'T1.'.$con[0]['column'] : $con[0]['column'], $con[0]['clause'], $con[0]['value'])
+            ->where('availabilities.payload', '=', 'room_type')
+            ->get();
         for ($i=0; $i <= sizeof($res)-1 ; $i++) { 
             $item = $res[$i];
             $res[$i]['start_date'] = $item['start_date'] !== null ? Carbon::createFromFormat('Y-m-d H:i:s', $item['start_date'])->copy()->tz($this->response['timezone'])->format('F d, Y') : null;
             $res[$i]['end_date'] = $item['end_date'] !== null ? Carbon::createFromFormat('Y-m-d H:i:s', $item['end_date'])->copy()->tz($this->response['timezone'])->format('F d, Y') : null;
         }
         $this->response['data'] = $res;
+        $this->response['size'] = sizeof($size);
+        
         return $this->response();
     }
 
