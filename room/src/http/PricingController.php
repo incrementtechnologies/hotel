@@ -35,7 +35,7 @@ class PricingController extends APIController
 			$this->insertDB($data);
 			if($this->response['data']){
 				$priceId = Pricing::leftJoin('rooms as T1', 'T1.id', '=', 'pricings.room_id')->where('pricings.id', '=', $this->response['data'])->first();
-				$prices = Pricing::leftJoin('rooms as T1', 'T1.id', '=', 'pricings.room_id')->where('pricings.regular', '=', $priceId['regular'])->where('pricings.label', '=', $priceId['label'])->where('T1.category', '=', $priceId['ategory']);
+				$prices = Pricing::leftJoin('rooms as T1', 'T1.id', '=', 'pricings.room_id')->where('pricings.regular', '=', $priceId['regular'])->where('pricings.label', '=', $priceId['label'])->where('T1.category', '=', $priceId['category'])->get();
 				
 				$params = array(
 					'price_id' => $this->response['data'],
