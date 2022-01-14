@@ -33,15 +33,15 @@ class AvailabilityController extends APIController
         $data = $request->all();
         $con = $data['condition'];
         $res = Availability::leftJoin('payloads as T1', 'T1.id', '=', 'availabilities.payload_value')
-            ->where($con[0]['column'] == 'type' ? 'T1.'.$con[0]['column'] : $con[0]['column'], $con[0]['clause'], $con[0]['value'])
+            ->where($con[0]['column'] == 'payload_value' ? 'T1.'.$con[0]['column'] : $con[0]['column'], $con[0]['clause'], $con[0]['value'])
             ->where('availabilities.payload', '=', 'room_type')
             ->limit($data['limit'])
             ->offset($data['offset'])
-            ->orderBy(array_keys($data['sort'])[0], array_keys($data['sort'])[0])
+            ->orderBy($con[0]['column'] == 'payload_value' ? 'T1.'.array_keys($data['sort'])[0] : array_keys($data['sort'])[0], array_values($data['sort'])[0])
             ->get(['availabilities.id', 'start_date', 'end_date', 'T1.payload_value', 'limit', 'status']);
         
         $size = Availability::leftJoin('payloads as T1', 'T1.id', '=', 'availabilities.payload_value')
-            ->where($con[0]['column'] == 'type' ? 'T1.'.$con[0]['column'] : $con[0]['column'], $con[0]['clause'], $con[0]['value'])
+            ->where($con[0]['column'] == 'payload_value' ? 'T1.payload_value' : $con[0]['column'], $con[0]['clause'], $con[0]['value'])
             ->where('availabilities.payload', '=', 'room_type')
             ->get();
         for ($i=0; $i <= sizeof($res)-1 ; $i++) { 
