@@ -17,15 +17,16 @@ class CartController extends APIController
         $exist = Cart::where('account_id', '=', $data['account_id'])
             ->where('price_id', '=', $data['price_id'])
             ->where('category_id', '=', $data['category_id'])
-            ->where('status', '!=', 'completed')->first();
+            ->where(function($query){
+                $query->where('status', '=', 'pending')
+                ->orWhere('status', '=', 'in_progress')
+                ->orWhere('status', '=', 'for_approval');
+            })->first();
         if($exist !== null){
-            // $res = Cart::where('account_id', '=', $data['account_id'])
-            // ->where('price_id', '=', $data['price_id'])
-            // ->where('category_id', '=', $data['category_id'])
-            // ->where('status', '=', 'pending')->update(array(
-            //     'qty' => (int)$exist['qty'] + (int)$data['qty']
-            // ));
-            // $this->response['data'] = $res;
+            $res = Cart::where('id', '=', $exist['id'])->update(array(
+                'qty' => (int)$exist['qty'] + (int)$data['qty']
+            ));
+            $this->response['data'] = $res;
         }else{
             $res = Cart::create($data);
             $this->response['data'] = $res;
@@ -35,9 +36,11 @@ class CartController extends APIController
 
     public function countById($priceId, $categoryId){
         return Cart::where('price_id', '=', $priceId)->where('category_id', '=', $categoryId)->where('deleted_at', '=', null)->where(function($query){
-            $query->where('status', '=', 'completed')
-                ->orWhere('status', '=', 'for_approval');
-        })->count();
+            $query->where('status', '=', 'pending')
+                ->orWhere('status', '=', 'in_progress')
+                ->orWhere('status', '=', 'for_approval')
+                ->orWhere('status', '=', 'completed');
+        })->sum('qty');
     }
 
     public function countByCategory($category){
