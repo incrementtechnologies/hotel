@@ -429,9 +429,9 @@ class ReservationController extends APIController
 				"contact_number" => $details->contactNumber,
 				"payload" => "reservation",
 				"payload_value" => $reservation['id'],
-				"successUrl" => env('SUCCESS_CALLBACK').$data['reservation_code'],
-				"failUrl" => env('FAILED_CALLBACK').$data['reservation_code'],
-				"cancelUrl" => env('FAILED_CALLBACK').$data['reservation_code']
+				"successUrl" => $data['success_url'],
+				"failUrl" => $data['failure_url'],
+				"cancelUrl" => $data['cancel_url']
 			);
 			$res = app('Increment\Hotel\Payment\Http\PaymentController')->checkout($params);
 			if($res['data'] !== null){
