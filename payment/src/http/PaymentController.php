@@ -79,6 +79,7 @@ class PaymentController extends APIController
         "cancel" => url($data['cancelUrl']),
 			);
 			$exec = $itemCheckout->execute();
+			dd($exec);
 			if($exec == false){
 				$error = $itemCheckout::getError();
 				return array(

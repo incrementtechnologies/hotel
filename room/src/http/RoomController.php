@@ -138,7 +138,7 @@ class RoomController extends APIController
     ->get(['url']);
     $temp = [];
     if(sizeof($result) > 0){
-      for ($i=0; $i <= sizeof($result)-1; $i++) { 
+      for ($i=0; $i <= sizeof($result)-1; $i++) {
         $item = $result[$i];
         $addedToCart  = app('Increment\Hotel\Room\Http\CartController')->countById($item['price_id'], $item['category']);
         $roomStatus =  app('Increment\Hotel\Room\Http\AvailabilityController')->retrieveStatus($item['id']);
@@ -153,10 +153,10 @@ class RoomController extends APIController
         }else{
           for ($a=0; $a <= sizeof($temp)-1; $a++) { 
             $each = $temp[$a];
-            if((int)$each['regular'] === (int)$item['regular'] && (int)$each['refundable'] === (int)$item['refundable'] && $each['label'] == $item['label']){
-              unset($result[$i]);
-            }else{
+            if((int)$each['regular'] !== (int)$item['regular'] && (int)$each['refundable'] !== (int)$item['refundable'] && $each['label'] !== $item['label']){
               array_push($temp, $result[$i]);
+              // unset($result[$i]);
+            }else{
             }
           }
         }
@@ -277,16 +277,22 @@ class RoomController extends APIController
 
   public function create(Request $request){
     $data = $request->all();
-    $this->model = new Room();
-    $this->insertDB($data);
-    $exist = app('Increment\Hotel\Room\Http\AvailabilityController')->retrieveByPayloadPayloadValue('room', $this->response['data']);
-    if($exist === null){
-      $params= array(
-        'payload' => 'room_id',
-        'payload_value' => $this->response['data'],
-        'status' => $data['status'] === 'publish' ? 'available' : 'not_available'
-      );
-      $res = app('Increment\Hotel\Room\Http\AvailabilityController')->createByParams($params);
+    $exist = Room::where('title', '=', $data['title'])->get();
+    if(sizeof($exist) > 0){
+      $this->response['data'] = null;
+      $this->response['error'] = 'Room title already exist';
+    }else{
+      $this->model = new Room();
+      $this->insertDB($data);
+      $exist = app('Increment\Hotel\Room\Http\AvailabilityController')->retrieveByPayloadPayloadValue('room', $this->response['data']);
+      if($exist === null){
+        $params= array(
+          'payload' => 'room_id',
+          'payload_value' => $this->response['data'],
+          'status' => $data['status'] === 'publish' ? 'available' : 'not_available'
+        );
+        $res = app('Increment\Hotel\Room\Http\AvailabilityController')->createByParams($params);
+      }
     }
     return $this->response();
   }
