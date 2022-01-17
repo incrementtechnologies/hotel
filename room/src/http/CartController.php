@@ -52,7 +52,8 @@ class CartController extends APIController
         $result = Cart::where('carts.account_id', '=', $data['account_id'])
             ->where(function($query){
                 $query->where('status', '=', 'pending')
-                ->orWhere('status', '=', 'in_progress');
+                ->orWhere('status', '=', 'in_progress')
+                ->orWhere('status', '=', 'for_approval');
             })
             ->groupBy('carts.price_id')
             ->get(['id', 'qty', 'price_id', 'reservation_id', 'category_id', DB::raw('Sum(qty) as checkoutQty')]);
@@ -142,5 +143,25 @@ class CartController extends APIController
             $query->where('status', '=', 'for_approval')
                 ->orwhere('status', '=', 'completed');
         })->sum('qty');
+    }
+
+    public function retrieveOwn($account_id){
+        $result = Cart::where('carts.account_id', '=', $account_id)
+            ->where(function($query){
+                $query->where('status', '=', 'pending')
+                ->orWhere('status', '=', 'in_progress')
+                ->orWhere('status', '=', 'for_approval');
+            })
+            ->groupBy('carts.price_id')
+            ->get(['id', 'qty', 'price_id', 'reservation_id', 'category_id', DB::raw('Sum(qty) as checkoutQty')]);
+        if(sizeof($result) > 0 ){
+            for ($i=0; $i <= sizeof($result) -1; $i++) { 
+                $item = $result[$i];
+                $reservation =app('Increment\Hotel\Reservation\Http\ReservationController')->retrieveReservationByParams('id', $item['reservation_id'], ['code']);
+                $result[$i]['reservation_code'] = sizeOf($reservation) > 0 ? $reservation[0]['code'] : null;
+                $result[$i]['rooms'] = app('Increment\Hotel\Room\Http\RoomController')->getWithQty($item['category_id'], $item['price_id']);
+            }
+        }
+        return $result;
     }
 }
