@@ -226,6 +226,7 @@ class ReservationController extends APIController
 			->leftJoin('carts as T6', 'T6.reservation_id', '=', 'reservations.id')
 			->where($condition)
 			->where('T6.deleted_at', '=', null)
+			->where('reservations.deleted_at', '=', null)
 			->orderBy($sortBy, array_values($data['sort'])[0])
 			->limit($data['limit'])
 			->offset($data['offset'])
@@ -417,8 +418,18 @@ class ReservationController extends APIController
 			$details->payment_method = $data['payment_method'];
 			Reservation::where('code', '=', $data['reservation_code'])->update(array(
 				'total' => $data['amount'],
-				'details' => json_encode($details)
+				'details' => json_encode($details),
+				'status' => 'for_approval'
 			));
+			$condition = array(
+				array('reservation_id', '=', $reservation['id']),
+				array('account_id', '=', $data['account_id'])
+			);
+			$updates = array(
+				'status' => 'for_approval',
+				'updated_at' => Carbon::now()
+			);
+			app('Increment\Hotel\Room\Http\CartController')->updateByParams($condition, $updates);
 			$details = json_decode($reservation['details']);
 			$params = array(
 				"account_id" => $data['account_id'],
