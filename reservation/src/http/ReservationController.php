@@ -344,9 +344,18 @@ class ReservationController extends APIController
 
 	public function updateReservations(Request $request){
 		$data = $request->all();
+		$reservation = Reservation::where('code', '=', $data['roomCode'])->first();
 		$res = Reservation::where('code', '=', $data['roomCode'])->update(array(
 			'status' => $data['status']
 		));
+		$condition = array(
+			array('reservation_id', '=', $reservation['id'])
+		);
+		$updates = array(
+			'status' => $data['status'],
+			'updated_at' => Carbon::now()
+		);
+		app('Increment\Hotel\Room\Http\CartController')->updateByParams($condition, $updates);
 		if(isset($data['booking'])){
 			if(sizeof($data['booking']) > 0){
 				for ($i=0; $i <= sizeof($data['booking'])-1; $i++) {
