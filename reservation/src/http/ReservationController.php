@@ -86,13 +86,17 @@ class ReservationController extends APIController
 			$condition = array(
 				array('account_id', '=', $data['account_id']),
 				array('category_id', '=', $item->category),
-				array('reservation_id', '=', $item->reservation_id),
 				array('deleted_at', '=', null),
-				array('status', '=', 'in_progress')
+				array(function($query){
+					$query->where('status', '=', 'in_progress')
+					->orWhere('status', '=', 'pending')
+					->orWhere('status', '=', 'in_progress');
+				})
 			);
 			$updates = array(
 				'status' => 'in_progress',
 				'qty' => $item->checkoutQty,
+				'reservation_id' => $data['id'],
 				'updated_at' => Carbon::now()
 			);
 			app('Increment\Hotel\Room\Http\CartController')->updateByParams($condition, $updates);
@@ -289,8 +293,9 @@ class ReservationController extends APIController
 			->where(function($query){
 				$query->where('status', '=', 'in_progress')
 					->orWhere('status', '=', 'failed')
+					->orWhere('status', '=', 'for_approval')
 					->orWhere('status', '=', 'pending');
-			})
+			})->where('details', 'not like', '%'.'"payment_method":"credit"'.'%')
 			->get();
 		// $rooms = [];
 		if(sizeof($result) > 0){
@@ -300,7 +305,9 @@ class ReservationController extends APIController
 				$result[$i]['payload_value'] =  json_decode($item['payload_value']);;
 			}
 		}
-		$this->response['data'] = $result;
+		$carts = app('Increment\Hotel\Room\Http\CartController')->retrieveOwn($con[0]['value']);
+		$this->response['data']['reservations'] = $result;
+		$this->response['data']['carts'] = $carts;
 		return $this->response();
 	}
 
@@ -406,8 +413,11 @@ class ReservationController extends APIController
 		$data = $request->all();
 		$reservation = Reservation::where('account_id', '=', $data['account_id'])->where('code', '=', $data['reservation_code'])->first();
 		if($reservation !== null){
+			$details = json_decode($reservation['details']);
+			$details->payment_method = $data['payment_method'];
 			Reservation::where('code', '=', $data['reservation_code'])->update(array(
-				'total' => $data['amount']
+				'total' => $data['amount'],
+				'details' => json_encode($details)
 			));
 			$details = json_decode($reservation['details']);
 			$params = array(
@@ -419,9 +429,9 @@ class ReservationController extends APIController
 				"contact_number" => $details->contactNumber,
 				"payload" => "reservation",
 				"payload_value" => $reservation['id'],
-				"successUrl" => $data['success_url'],
-				"failUrl" => $data['failure_url'],
-				"cancelUrl" => $data['cancel_url']
+				"successUrl" => env('SUCCESS_CALLBACK').$data['reservation_code'],
+				"failUrl" => env('FAILED_CALLBACK').$data['reservation_code'],
+				"cancelUrl" => env('FAILED_CALLBACK').$data['reservation_code']
 			);
 			$res = app('Increment\Hotel\Payment\Http\PaymentController')->checkout($params);
 			if($res['data'] !== null){
@@ -436,7 +446,7 @@ class ReservationController extends APIController
 			);
 			$existingPriceStatus = app('Increment\Hotel\Room\Http\RoomPriceStatusController')->checkIfPriceExist($priceStatusParams);
 			if(sizeof($existingPriceStatus) > 0){
-				$roomPriceUpdate = app('Increment\Hotel\Room\Http\RoomPriceStatusController')->updateQtyByPriceId($cart['price_id'], $cart['category_id'], ((int)$existingPriceStatus['qty'] + 1));
+				$roomPriceUpdate = app('Increment\Hotel\Room\Http\RoomPriceStatusController')->updateQtyByPriceId($cart['price_id'], $cart['category_id'], ((int)$existingPriceStatus[0]['qty'] + 1));
 			}else{
 				$roomPriceUpdate = app('Increment\Hotel\Room\Http\RoomPriceStatusController')->updateQtyByPriceId($cart['price_id'], $cart['category_id'], 1);
 			}
@@ -470,5 +480,4 @@ class ReservationController extends APIController
 		$this->response['data'] = $result;
 		return $this->response();
 	}
-
 }
