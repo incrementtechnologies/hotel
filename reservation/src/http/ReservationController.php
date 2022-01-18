@@ -64,7 +64,10 @@ class ReservationController extends APIController
 				array('account_id', '=', $data['account_id']),
 				array('reservation_id', '=', null),
 				array('deleted_at', '=', null),
-				array('status', '=', 'pending')
+				array(function($query){
+					$query->where('status', '=', 'pending')
+					->orWhere('status', '=', 'in_progress');
+				})
 			);
 			$updates = array(
 				'status' => 'in_progress',
@@ -79,35 +82,41 @@ class ReservationController extends APIController
 	public function update(Request $request){
 		$data = $request->all();
 		$this->model = new Reservation();
-		// $this->insertDB($data);
-		$cart = json_decode($data['carts']);
-		for ($i=0; $i <= sizeof($cart)-1 ; $i++) { 
-			$item = $cart[$i];
-			$condition = array(
-				array('account_id', '=', $data['account_id']),
-				array('category_id', '=', $item->category),
-				array('deleted_at', '=', null),
-				array(function($query){
-					$query->where('status', '=', 'in_progress')
-					->orWhere('status', '=', 'pending')
-					->orWhere('status', '=', 'in_progress');
-				})
-			);
-			$updates = array(
-				'status' => 'in_progress',
-				'qty' => $item->checkoutQty,
-				'reservation_id' => $data['id'],
-				'updated_at' => Carbon::now()
-			);
-			app('Increment\Hotel\Room\Http\CartController')->updateByParams($condition, $updates);
+		$confirmed = Reservation::where('id', '=', $data['id'])->first();
+		if($confirmed['status'] === 'confirm'){
+			$this->response['data'] = null;
+			$this->response['error'] = 'Your reservation has been confirmed by the admin';
+			return $this->response();;
+		}else{
+			$cart = json_decode($data['carts']);
+			for ($i=0; $i <= sizeof($cart)-1 ; $i++) { 
+				$item = $cart[$i];
+				$condition = array(
+					array('account_id', '=', $data['account_id']),
+					array('category_id', '=', $item->category),
+					array('deleted_at', '=', null),
+					array(function($query){
+						$query->where('status', '=', 'in_progress')
+						->orWhere('status', '=', 'pending')
+						->orWhere('status', '=', 'in_progress');
+					})
+				);
+				$updates = array(
+					'status' => 'in_progress',
+					'qty' => $item->checkoutQty,
+					'reservation_id' => $data['id'],
+					'updated_at' => Carbon::now()
+				);
+				app('Increment\Hotel\Room\Http\CartController')->updateByParams($condition, $updates);
+			}
+			$update = Reservation::where('id', '=', $data['id'])->update(array(
+				'details' => $data['details'],
+				'check_in' => $data['check_in'],
+				'check_out' => $data['check_out'],
+			));
+			$this->response['data'] = $update;
+			return $this->response();
 		}
-		$update = Reservation::where('id', '=', $data['id'])->update(array(
-			'details' => $data['details'],
-			'check_in' => $data['check_in'],
-			'check_out' => $data['check_out'],
-		));
-		$this->response['data'] = $update;
-		return $this->response();
 	}
 
 	public function updateCoupon(Request $request){
@@ -306,7 +315,7 @@ class ReservationController extends APIController
 				$result[$i]['payload_value'] =  json_decode($item['payload_value']);;
 			}
 		}
-		$carts = app('Increment\Hotel\Room\Http\CartController')->retrieveOwn($con[0]['value']);
+		$carts = app('Increment\Hotel\Room\Http\CartController')->retrieveOwn($data);
 		$this->response['data']['reservations'] = $result;
 		$this->response['data']['carts'] = $carts;
 		return $this->response();
