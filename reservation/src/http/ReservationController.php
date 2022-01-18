@@ -8,6 +8,7 @@ use App\TopChoice;
 use Increment\Hotel\Reservation\Models\Reservation;
 use Increment\Hotel\Reservation\Models\Booking;
 use Carbon\Carbon;
+use Carbon\CarbonPeriod;
 use Illuminate\Support\Facades\DB;
 
 class ReservationController extends APIController
@@ -205,7 +206,14 @@ class ReservationController extends APIController
 		$con = $data['condition'];
 		$sortBy = 'reservations.'.array_keys($data['sort'])[0];
 		$condition = array(
-			array('reservations.' . $con[0]['column'], $con[0]['clause'], $con[0]['value'])
+			array('reservations.' . $con[0]['column'], $con[0]['clause'], $con[0]['value']),
+			array(function($query){
+				$query->where('reservations.status', '=', 'for_approval')
+					->orWhere('reservations.status', '=', 'confirm')
+					->orWhere('reservations.status', '=', 'completed')
+					->orWhere('reservations.status', '=', 'cancelled')
+					->orWhere('reservations.status', '=', 'refunded');
+			})
 		);
 		if ($con[0]['column'] == 'email') {
 			$sortBy = 'T2.'.array_keys($data['sort'])[0];
@@ -486,27 +494,42 @@ class ReservationController extends APIController
 	public function retrieveDashboard(Request $request){
 		$data = $request->all();
 		$currDate = Carbon::now();
-		$month = Carbon::now()->subDays(30)->month;
+		$month = Carbon::now()->subDays(30);
 		$diffinWeeks = Carbon::now()->diffinWeeks(Carbon::now()->subDays(30));
 		$carbon = Carbon::now()->subDays(30);
 		$dates = [];
 		$result = [];
 		$i=0;
-		while ($carbon < $currDate){
-			$dates[$carbon->weekOfMonth][$i] = $carbon->toDateString();
-			$carbon->addDay();
-			$i++;
+		$dateList = CarbonPeriod::create($carbon->toDateTimeString(), $currDate->toDateTimeString());
+		foreach ($dateList as $date) {
+			array_push($dates, $date->toDateString());
 		}
 		foreach ($dates as $key) {
-			$reservations = Reservation::whereBetween('created_at', [$key[array_key_first($key)], end($key)])->count();
-			$sales = Reservation::whereBetween('created_at', [$key[array_key_first($key)], end($key)])->sum('total');
+			$reservations = Reservation::where('created_at', 'like', '%'.$key.'%')->count();
+			$sales = Reservation::where('created_at', 'like', '%'.$key.'%')->sum('total');
 			array_push($result, array(
-				'date' => end($key),
+				'date' => $key,
 				'total_reservations' => $reservations,
 				'total_sales' => $sales
 			));
 		}
 		$this->response['data'] = $result;
 		return $this->response();
+	// 	while ($carbon < $currDate){
+	// 		$dates[$carbon->weekOfMonth][$i] = $carbon->toDateString();
+	// 		$carbon->addDay();
+	// 		$i++;
+	// 	}
+	// 	foreach ($dates as $key) {
+	// 		$reservations = Reservation::whereBetween('created_at', [$key[array_key_first($key)], end($key)])->count();
+	// 		$sales = Reservation::whereBetween('created_at', [$key[array_key_first($key)], end($key)])->sum('total');
+	// 		array_push($result, array(
+	// 			'date' => end($key),
+	// 			'total_reservations' => $reservations,
+	// 			'total_sales' => $sales
+	// 		));
+	// 	}
+	// 	$this->response['data'] = $result;
+	// 	return $this->response();
 	}
 }
