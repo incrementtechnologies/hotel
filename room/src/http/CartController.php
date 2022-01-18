@@ -52,8 +52,7 @@ class CartController extends APIController
         $result = Cart::where('carts.account_id', '=', $data['account_id'])
             ->where(function($query){
                 $query->where('status', '=', 'pending')
-                ->orWhere('status', '=', 'in_progress')
-                ->orWhere('status', '=', 'for_approval');
+                ->orWhere('status', '=', 'in_progress');
             })
             ->groupBy('carts.price_id')
             ->get(['id', 'qty', 'price_id', 'reservation_id', 'category_id', DB::raw('Sum(qty) as checkoutQty')]);
@@ -145,14 +144,28 @@ class CartController extends APIController
         })->sum('qty');
     }
 
-    public function retrieveOwn($account_id){
-        $result = Cart::where('carts.account_id', '=', $account_id)
+    public function retrieveOwn($params){
+        $result = null;
+        $account_id = $params['condition'][0]['value']; 
+        if($params['method'] === 'update'){
+            $result = Cart::where('carts.account_id', '=', $account_id)
+            ->where(function($query){
+                $query->where('status', '=', 'pending')
+                ->orWhere('status', '=', 'in_progress')
+                ->orWhere('status', '=', 'for_approval');
+            })
+            ->groupBy('carts.price_id')
+            ->get(['id', 'qty', 'price_id', 'reservation_id', 'category_id', DB::raw('Sum(qty) as checkoutQty')]);
+        }else{
+            $result = Cart::where('carts.account_id', '=', $account_id)
             ->where(function($query){
                 $query->where('status', '=', 'pending')
                 ->orWhere('status', '=', 'in_progress');
             })
             ->groupBy('carts.price_id')
             ->get(['id', 'qty', 'price_id', 'reservation_id', 'category_id', DB::raw('Sum(qty) as checkoutQty')]);
+        }
+        
         if(sizeof($result) > 0 ){
             for ($i=0; $i <= sizeof($result) -1; $i++) { 
                 $item = $result[$i];
