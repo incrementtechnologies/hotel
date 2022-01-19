@@ -536,13 +536,13 @@ class ReservationController extends APIController
 	public function successCallback(Request $request){
 		$data = $request->all();
 		
-		header('Location: http://localhost:8006/successpage/'.$data['code']);
+		header('Location: '.env('FRONT_URL_SUCCESS').$data['code']);
 		exit(1);
 	}
 
 	public function failCallback(Request $request){
 		$data = $request->all();
-		header('Location: http://localhost:8006/failedpage/'.$data['code']);
+		header('Location: '.env('FRONT_URL_FAIL').$data['code']);
 		exit(1);
 	}
 }
