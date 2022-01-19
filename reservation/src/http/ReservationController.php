@@ -209,7 +209,7 @@ class ReservationController extends APIController
 			array('reservations.' . $con[0]['column'], $con[0]['clause'], $con[0]['value']),
 			array(function($query){
 				$query->where('reservations.status', '=', 'for_approval')
-					->orWhere('reservations.status', '=', 'confirm')
+					->orWhere('reservations.status', '=', 'confirmed')
 					->orWhere('reservations.status', '=', 'completed')
 					->orWhere('reservations.status', '=', 'cancelled')
 					->orWhere('reservations.status', '=', 'refunded');
