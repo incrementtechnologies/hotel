@@ -12,6 +12,8 @@ Route::post($route.'retrieve_bookings', $controller."retrieveBookings");
 Route::post($route.'retrieve_all_details', $controller."retrieveAllDetails");
 Route::post($route.'retrieve_details', $controller."retrieveDetails");
 Route::post($route.'retrieve_my_bookings', $controller."retrieveMyBookings");
+Route::get($route.'success_callback', $controller."successCallback");
+Route::get($route.'failure_callback', $controller."failCallback");
 Route::post($route.'search', $controller."search");
 Route::post($route.'update', $controller."update");
 Route::post($route.'update_reservation', $controller."updateReservations");

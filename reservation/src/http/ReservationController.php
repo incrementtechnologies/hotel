@@ -532,4 +532,17 @@ class ReservationController extends APIController
 	// 	$this->response['data'] = $result;
 	// 	return $this->response();
 	}
+	
+	public function successCallback(Request $request){
+		$data = $request->all();
+		
+		header('Location: http://localhost:8006/successpage/'.$data['code']);
+		exit(1);
+	}
+
+	public function failCallback(Request $request){
+		$data = $request->all();
+		header('Location: http://localhost:8006/failedpage/'.$data['code']);
+		exit(1);
+	}
 }
