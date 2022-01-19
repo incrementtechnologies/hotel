@@ -17,15 +17,16 @@ class CartController extends APIController
         $exist = Cart::where('account_id', '=', $data['account_id'])
             ->where('price_id', '=', $data['price_id'])
             ->where('category_id', '=', $data['category_id'])
-            ->where('status', '!=', 'completed')->first();
+            ->where(function($query){
+                $query->where('status', '=', 'pending')
+                ->orWhere('status', '=', 'in_progress')
+                ->orWhere('status', '=', 'for_approval');
+            })->first();
         if($exist !== null){
-            // $res = Cart::where('account_id', '=', $data['account_id'])
-            // ->where('price_id', '=', $data['price_id'])
-            // ->where('category_id', '=', $data['category_id'])
-            // ->where('status', '=', 'pending')->update(array(
-            //     'qty' => (int)$exist['qty'] + (int)$data['qty']
-            // ));
-            // $this->response['data'] = $res;
+            $res = Cart::where('id', '=', $exist['id'])->update(array(
+                'qty' => (int)$exist['qty'] + (int)$data['qty']
+            ));
+            $this->response['data'] = $res;
         }else{
             $res = Cart::create($data);
             $this->response['data'] = $res;
@@ -35,9 +36,11 @@ class CartController extends APIController
 
     public function countById($priceId, $categoryId){
         return Cart::where('price_id', '=', $priceId)->where('category_id', '=', $categoryId)->where('deleted_at', '=', null)->where(function($query){
-            $query->where('status', '=', 'completed')
-                ->orWhere('status', '=', 'for_approval');
-        })->count();
+            $query->where('status', '=', 'pending')
+                ->orWhere('status', '=', 'in_progress')
+                ->orWhere('status', '=', 'for_approval')
+                ->orWhere('status', '=', 'completed');
+        })->sum('qty');
     }
 
     public function countByCategory($category){
@@ -73,22 +76,25 @@ class CartController extends APIController
             for ($i=0; $i <= sizeof($result) -1; $i++) {
                 $temp = [];
                 $item = $result[$i];
-                $result[$i]['rooms'] = app('Increment\Hotel\Room\Http\RoomController')->getWithQty($item['category_id'], $item['price_id']);
+                $rooms = app('Increment\Hotel\Room\Http\RoomController')->getWithQty($item['category_id'], $item['price_id']);
+                $result[$i]['rooms'] = $rooms;
                 $result[$i]['specificRooms'] = app('Increment\Hotel\Room\Http\RoomController')->retrieveByCategory($item['category_id']);
-                $booking = app('Increment\Hotel\Reservation\Http\ReservationController')->retrieveBookingsByParams('room_id',  $result[$i]['rooms'][0]['id']);
-                if(sizeof($booking) > 0){
-                    for ($a=0; $a <= sizeof($booking)-1; $a++) { 
-                        $each = $booking[$a];
-                        array_push($temp, array(
-                            'room_id' => $each['room_id'],
-                            'category' => $each['room_type_id']
-                        ));
-                    }
-                }else{
-                    for ($a=0; $a <= $item['qty']-1 ; $a++) {
-                        array_push($temp, array(
-                            'category' => null
-                        ));
+                if(sizeOf($rooms) > 0){
+                    $booking = app('Increment\Hotel\Reservation\Http\ReservationController')->retrieveBookingsByParams('room_id',  $result[$i]['rooms'][0]['id']);
+                    if(sizeof($booking) > 0){
+                        for ($a=0; $a <= sizeof($booking)-1; $a++) { 
+                            $each = $booking[$a];
+                            array_push($temp, array(
+                                'room_id' => $each['room_id'],
+                                'category' => $each['room_type_id']
+                            ));
+                        }
+                    }else{
+                        for ($a=0; $a <= $item['qty']-1 ; $a++) {
+                            array_push($temp, array(
+                                'category' => null
+                            ));
+                        }
                     }
                 }
                 $result[$i]['inputs'] = $temp;
@@ -136,5 +142,38 @@ class CartController extends APIController
             $query->where('status', '=', 'for_approval')
                 ->orwhere('status', '=', 'completed');
         })->sum('qty');
+    }
+
+    public function retrieveOwn($params){
+        $result = null;
+        $account_id = $params['condition'][0]['value']; 
+        if($params['method'] === 'update'){
+            $result = Cart::where('carts.account_id', '=', $account_id)
+            ->where(function($query){
+                $query->where('status', '=', 'pending')
+                ->orWhere('status', '=', 'in_progress')
+                ->orWhere('status', '=', 'for_approval');
+            })
+            ->groupBy('carts.price_id')
+            ->get(['id', 'qty', 'price_id', 'reservation_id', 'category_id', DB::raw('Sum(qty) as checkoutQty')]);
+        }else{
+            $result = Cart::where('carts.account_id', '=', $account_id)
+            ->where(function($query){
+                $query->where('status', '=', 'pending')
+                ->orWhere('status', '=', 'in_progress');
+            })
+            ->groupBy('carts.price_id')
+            ->get(['id', 'qty', 'price_id', 'reservation_id', 'category_id', DB::raw('Sum(qty) as checkoutQty')]);
+        }
+        
+        if(sizeof($result) > 0 ){
+            for ($i=0; $i <= sizeof($result) -1; $i++) { 
+                $item = $result[$i];
+                $reservation =app('Increment\Hotel\Reservation\Http\ReservationController')->retrieveReservationByParams('id', $item['reservation_id'], ['code']);
+                $result[$i]['reservation_code'] = sizeOf($reservation) > 0 ? $reservation[0]['code'] : null;
+                $result[$i]['rooms'] = app('Increment\Hotel\Room\Http\RoomController')->getWithQty($item['category_id'], $item['price_id']);
+            }
+        }
+        return $result;
     }
 }
