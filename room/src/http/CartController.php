@@ -19,8 +19,7 @@ class CartController extends APIController
             ->where('category_id', '=', $data['category_id'])
             ->where(function($query){
                 $query->where('status', '=', 'pending')
-                ->orWhere('status', '=', 'in_progress')
-                ->orWhere('status', '=', 'for_approval');
+                ->orWhere('status', '=', 'in_progress');
             })->first();
         if($exist !== null){
             $res = Cart::where('id', '=', $exist['id'])->update(array(
