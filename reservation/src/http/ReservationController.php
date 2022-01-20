@@ -341,7 +341,7 @@ class ReservationController extends APIController
 
 	public function updateByCouponCode($couponId, $id){
 		return Reservation::where('id', '=', $id)->update(array(
-			'coupon_id' => $id
+			'coupon_id' => $couponId
 		));
 	}
 
