@@ -41,7 +41,7 @@ class PricingController extends APIController
 					'price_id' => $this->response['data'],
 					'category_id' => $data['category'],
 					'amount' => $data['regular'],
-					'qty' => 0,
+					'qty' => 1,
 					'status' => 'available'
 				);
 				app('Increment\Hotel\Room\Http\RoomPriceStatusController')->insertPriceStatus($params);

@@ -209,7 +209,7 @@ class ReservationController extends APIController
 			array('reservations.' . $con[0]['column'], $con[0]['clause'], $con[0]['value']),
 			array(function($query){
 				$query->where('reservations.status', '=', 'for_approval')
-					->orWhere('reservations.status', '=', 'confirm')
+					->orWhere('reservations.status', '=', 'confirmed')
 					->orWhere('reservations.status', '=', 'completed')
 					->orWhere('reservations.status', '=', 'cancelled')
 					->orWhere('reservations.status', '=', 'refunded');
@@ -531,5 +531,18 @@ class ReservationController extends APIController
 	// 	}
 	// 	$this->response['data'] = $result;
 	// 	return $this->response();
+	}
+	
+	public function successCallback(Request $request){
+		$data = $request->all();
+		
+		header('Location: '.env('FRONT_URL_SUCCESS').'?code='.$data['code']);
+		exit(1);
+	}
+
+	public function failCallback(Request $request){
+		$data = $request->all();
+		header('Location: '.env('FRONT_URL_FAIL').'?code='.$data['code']);
+		exit(1);
 	}
 }

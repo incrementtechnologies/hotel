@@ -19,8 +19,7 @@ class CartController extends APIController
             ->where('category_id', '=', $data['category_id'])
             ->where(function($query){
                 $query->where('status', '=', 'pending')
-                ->orWhere('status', '=', 'in_progress')
-                ->orWhere('status', '=', 'for_approval');
+                ->orWhere('status', '=', 'in_progress');
             })->first();
         if($exist !== null){
             $res = Cart::where('id', '=', $exist['id'])->update(array(
@@ -35,12 +34,14 @@ class CartController extends APIController
     }
 
     public function countById($priceId, $categoryId){
-        return Cart::where('price_id', '=', $priceId)->where('category_id', '=', $categoryId)->where('deleted_at', '=', null)->where(function($query){
+        // dd($priceId, $categoryId);
+        $result = Cart::where('price_id', '=', $priceId)->where('category_id', '=', $categoryId)->where('deleted_at', '=', null)->where(function($query){
             $query->where('status', '=', 'pending')
                 ->orWhere('status', '=', 'in_progress')
                 ->orWhere('status', '=', 'for_approval')
                 ->orWhere('status', '=', 'completed');
         })->sum('qty');
+        return $result;
     }
 
     public function countByCategory($category){

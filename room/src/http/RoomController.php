@@ -138,6 +138,7 @@ class RoomController extends APIController
     $result = Room::leftJoin('pricings as T1', 'T1.room_id', '=', 'rooms.id')
       ->leftJoin('payloads as T2', 'T2.id', '=', 'rooms.category')
       ->where('rooms.category', '=', $data['category_id'])
+      ->orderBy('rooms.id', 'desc')
       ->get(['rooms.*', 'T1.regular', 'T1.refundable', 'T1.currency', 'T1.label', 'T1.id as price_id']);
     $images = Room::leftJoin('payloads as T1', 'T1.id', '=', 'rooms.category')
     ->leftJoin('product_images as T2', 'T2.room_id', '=', 'rooms.id')
@@ -160,10 +161,9 @@ class RoomController extends APIController
         }else{
           for ($a=0; $a <= sizeof($temp)-1; $a++) { 
             $each = $temp[$a];
-            if((int)$each['regular'] !== (int)$item['regular'] && (int)$each['refundable'] !== (int)$item['refundable'] && $each['label'] !== $item['label']){
+            $unique = $this->getUnique($temp, $item['regular'], $item['refundable']);
+            if($unique === false){
               array_push($temp, $result[$i]);
-              // unset($result[$i]);
-            }else{
             }
           }
         }
@@ -181,6 +181,21 @@ class RoomController extends APIController
     }
     $this->response['data'] = $temp;
     return $this->response();
+  }
+
+  public function getUnique($array, $amount1, $amount2){
+    $counter = 0;
+    for ($i=0; $i <sizeof($array); $i++) { 
+      $item = $array[$i];
+      if((int)$item['regular'] === (int)$amount1 || (int)$item['refundable'] === (int)$amount2){
+        $counter += 1;
+      }
+    }
+    if($counter > 0){
+      return true;
+    }else{
+      return false;
+    }
   }
   
   public function retrieveById(Request $request){
