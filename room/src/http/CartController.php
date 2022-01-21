@@ -148,21 +148,36 @@ class CartController extends APIController
     public function retrieveOwn($params){
         $result = null;
         $account_id = $params['condition'][0]['value']; 
+        $whereArray = array(
+            array('account_id', '=', $account_id)
+        );
         if($params['method'] === 'update'){
-            $result = Cart::where('carts.account_id', '=', $account_id)
-            ->where(function($query){
-                $query->where('status', '=', 'pending')
-                ->orWhere('status', '=', 'in_progress')
-                ->orWhere('status', '=', 'for_approval');
-            })
+            array_push($whereArray, array(
+                function($query){
+                    $query->where('status', '=', 'pending')
+                    ->orWhere('status', '=', 'in_progress')
+                    ->orWhere('status', '=', 'for_approval');
+                }
+            ));
+        }else{
+            array_push($whereArray, array(
+                function($query){
+                    $query->where('status', '=', 'pending')
+                    ->orWhere('status', '=', 'in_progress');
+                }
+            ));
+        }
+        if(isset($params['reservation_id'])){
+            array_push($whereArray, array(
+                'reservation_id', '=', $params['reservation_id']
+            ));
+        }
+        if($params['method'] === 'update'){
+            $result = Cart::where($whereArray)
             ->groupBy('carts.price_id')
             ->get(['id', 'qty', 'price_id', 'reservation_id', 'category_id', DB::raw('Sum(qty) as checkoutQty')]);
         }else{
-            $result = Cart::where('carts.account_id', '=', $account_id)
-            ->where(function($query){
-                $query->where('status', '=', 'pending')
-                ->orWhere('status', '=', 'in_progress');
-            })
+            $result = Cart::where($whereArray)
             ->groupBy('carts.price_id')
             ->get(['id', 'qty', 'price_id', 'reservation_id', 'category_id', DB::raw('Sum(qty) as checkoutQty')]);
         }

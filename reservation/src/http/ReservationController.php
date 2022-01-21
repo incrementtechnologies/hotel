@@ -38,6 +38,8 @@ class ReservationController extends APIController
 		$cart = app('Increment\Hotel\Room\Http\CartController')->retrieveCartWithRooms($reserve['id']);
 		if(sizeof($cart) > 0){
 			$reserve['details'] = json_decode($reserve['details'], true);
+			$reserve['account_info'] = app('Increment\Account\Http\AccountInformationController')->getByParamsWithColumns($reserve['account_id'], ['first_name as name', 'cellular_number as contactNumber']);
+			$reserve['account_info']['email'] = app('Increment\Account\Http\AccountController')->getByParamsWithColumns($reserve['account_id'], ['email'])['email'];
 			$reserve['check_in'] = Carbon::createFromFormat('Y-m-d H:i:s', $reserve['check_in'])->copy()->tz($this->response['timezone'])->format('F j, Y');
 			$reserve['check_out'] = Carbon::createFromFormat('Y-m-d H:i:s', $reserve['check_out'])->copy()->tz($this->response['timezone'])->format('F j, Y');
 			$reserve['coupon'] = $reserve['coupon_id'] !== null ? app('App\Http\Controllers\CouponController')->retrieveById($reserve['coupon_id']) : array('code' => null);
@@ -56,6 +58,13 @@ class ReservationController extends APIController
 	public function create(Request $request)
 	{
 		$data = $request->all();
+		$data['account_info'] = json_decode($data['account_info']);
+		$customerInfo = array(
+			'account_id' => $data['account_id'],
+			'first_name' => $data['account_info']->name,
+			'cellular_number' => $data['account_info']->contactNumber
+		);
+		app('Increment\Account\Http\AccountInformationController')->createByParams($customerInfo);
 		$this->model = new Reservation();
 		$temp = Reservation::count();
 		$data['code'] = $this->generateCode($temp);
@@ -89,6 +98,12 @@ class ReservationController extends APIController
 			$this->response['error'] = 'Your reservation has been confirmed by the admin';
 			return $this->response();;
 		}else{
+			$data['account_info'] = json_decode($data['account_info']);
+			$accountInfo = array(
+				'first_name' => $data['account_info']->name,
+				'cellular_number' => $data['account_info']->contactNumber
+			);
+			app('Increment\Account\Http\AccountInformationController')->updateByAccountId($data['account_id'], $accountInfo);
 			$cart = json_decode($data['carts']);
 			for ($i=0; $i <= sizeof($cart)-1 ; $i++) { 
 				$item = $cart[$i];
@@ -324,8 +339,11 @@ class ReservationController extends APIController
 			}
 		}
 		$carts = app('Increment\Hotel\Room\Http\CartController')->retrieveOwn($data);
+		$accountInfo = app('Increment\Account\Http\AccountInformationController')->getByParamsWithColumns($con[0]['value'], ['first_name as name', 'cellular_number as contactNumber']);
+		$accountInfo['email'] = app('Increment\Account\Http\AccountController')->getByParamsWithColumns($con[0]['value'], ['email'])['email'];
 		$this->response['data']['reservations'] = $result;
 		$this->response['data']['carts'] = $carts;
+		$this->response['data']['account_info'] = $accountInfo;
 		return $this->response();
 	}
 
