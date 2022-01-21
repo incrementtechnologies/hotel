@@ -21,14 +21,14 @@ class AddOnController extends APIController
 		$sortBy = 'add_ons.'.array_keys($data['sort'])[0];
 		$condition = array(
 			array('add_ons.' . $con[0]['column'], $con[0]['clause'], $con[0]['value']),
-			array('add_ons.' . $con[1]['column'], $con[1]['clause'], $con[1]['value']),
-			array('add_ons.' . $con[2]['column'], $con[2]['clause'], $con[2]['value'])
+			array('add_ons.' . $con[1]['column'], $con[1]['clause'], $con[1]['value'])
 		);
 		$results = DB::table('add_ons')
 			->where($condition)
 			->where('deleted_at', '=', null)
 			->limit($data['limit'])
 			->offset($data['offset'])
+			->orderBy(array_keys($data['sort'])[0], array_values($data['sort'])[0])
 			->get();
 		$this->response['data'] = $results;
 		$this->response['size'] = AddOn::where('deleted_at', '=', null)->count();
