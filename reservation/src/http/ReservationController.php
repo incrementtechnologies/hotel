@@ -458,30 +458,18 @@ class ReservationController extends APIController
 		$data = $request->all();
 		$reservation = Reservation::where('account_id', '=', $data['account_id'])->where('code', '=', $data['reservation_code'])->first();
 		if($reservation !== null){
+			$accountEmail = app('Increment\Account\Http\AccountController')->getByParamsWithColumns($data['account_id'], ['email']);
+			$accountInformation = app('Increment\Account\Http\AccountInformationController')->getByParamsWithColumns($data['account_id'], ['cellular_number', 'first_name']);
 			$details = json_decode($reservation['details']);
 			$details->payment_method = $data['payment_method'];
-			Reservation::where('code', '=', $data['reservation_code'])->update(array(
-				'total' => $data['amount'],
-				'details' => json_encode($details),
-				'status' => 'for_approval'
-			));
-			$condition = array(
-				array('reservation_id', '=', $reservation['id']),
-				array('account_id', '=', $data['account_id'])
-			);
-			$updates = array(
-				'status' => 'for_approval',
-				'updated_at' => Carbon::now()
-			);
-			app('Increment\Hotel\Room\Http\CartController')->updateByParams($condition, $updates);
 			$details = json_decode($reservation['details']);
 			$params = array(
 				"account_id" => $data['account_id'],
 				"amount" => $data['amount'],
-				"name" => $details->name,
-				"email" => $details->email,
+				"name" => $accountInformation->first_name,
+				"email" => $accountEmail['email'],
 				"referenceNumber" => $reservation['code'],
-				"contact_number" => $details->contactNumber,
+				"contact_number" => $accountInformation->cellular_number,
 				"payload" => "reservation",
 				"payload_value" => $reservation['id'],
 				"successUrl" => $data['success_url'],
@@ -490,6 +478,20 @@ class ReservationController extends APIController
 			);
 			$res = app('Increment\Hotel\Payment\Http\PaymentController')->checkout($params);
 			if($res['data'] !== null){
+				Reservation::where('code', '=', $data['reservation_code'])->update(array(
+					'total' => $data['amount'],
+					'details' => json_encode($details),
+					'status' => 'for_approval'
+				));
+				$condition = array(
+					array('reservation_id', '=', $reservation['id']),
+					array('account_id', '=', $data['account_id'])
+				);
+				$updates = array(
+					'status' => 'for_approval',
+					'updated_at' => Carbon::now()
+				);
+				app('Increment\Hotel\Room\Http\CartController')->updateByParams($condition, $updates);
 				$this->response['data'] = $res['data'];
 			}else{
 				$this->response['data'] = $res['error'];
