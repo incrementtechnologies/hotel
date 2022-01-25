@@ -621,7 +621,7 @@ class ReservationController extends APIController
 			->orderBy($sortBy, array_values($data['sort'])[0])
 			->limit($data['limit'])
 			->offset($data['offset'])
-			->get(['reservations.*', 'T2.email', 'T3.room_id', 'T5.regular']);
+			->get(['reservations.*', 'T2.email', 'T3.room_id', 'T5.regular', 'T4.first_name as name']);
 		// dd($res);
 		$size = Reservation::leftJoin('accounts as T2', 'T2.id', '=', 'reservations.account_id')
 		->leftJoin('bookings as T3', 'T3.reservation_id', 'reservations.id')
@@ -632,13 +632,12 @@ class ReservationController extends APIController
 		->where('T6.deleted_at', '=', null)
 		->orderBy($sortBy, array_values($data['sort'])[0])
 		->get();
-		
+
 		for ($i=0; $i <= sizeof($res)-1; $i++) { 
 			$item = $res[$i];
 			$res[$i]['details'] = json_decode($item['details']);
 			$res[$i]['check_in'] = Carbon::createFromFormat('Y-m-d H:i:s', $item['check_in'])->copy()->tz($this->response['timezone'])->format('F j, Y');
 			$res[$i]['check_out'] = Carbon::createFromFormat('Y-m-d H:i:s', $item['check_out'])->copy()->tz($this->response['timezone'])->format('F j, Y');
-			$res[$i]['name'] = $this->retrieveNameOnly($item['account']);
 			$res[$i]['room'] = app('Increment\Hotel\Room\Http\RoomController')->retrieveByIDParams($item['room_id']);
 		}
 
