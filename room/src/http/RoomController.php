@@ -62,7 +62,7 @@ class RoomController extends APIController
       array_push($whereArray, array('rooms.max_capacity', '=', $data['number_of_heads']));
     }
     if($data['max'] > 0){
-      // array_push($whereArray, array('T1.regular', '<=', $data['max']));
+      array_push($whereArray, array('T1.regular', '<=', $data['max']));
       array_push($whereArray, array('T1.regular', '>=', $data['min']));
     }
     // dd($whereArray);
