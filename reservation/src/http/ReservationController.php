@@ -59,12 +59,17 @@ class ReservationController extends APIController
 	{
 		$data = $request->all();
 		$data['account_info'] = json_decode($data['account_info']);
+		$existAccount = app('Increment\Account\Http\AccountInformationController')->getByParamsWithColumns($data['account_id'], ['first_name']);
 		$customerInfo = array(
 			'account_id' => $data['account_id'],
 			'first_name' => $data['account_info']->name,
 			'cellular_number' => $data['account_info']->contactNumber
 		);
-		app('Increment\Account\Http\AccountInformationController')->createByParams($customerInfo);
+		if($existAccount != null){
+			app('Increment\Account\Http\AccountInformationController')->updateByAccountId($data['account_id'], $customerInfo);
+		}else{
+			app('Increment\Account\Http\AccountInformationController')->createByParams($customerInfo);
+		}
 		$this->model = new Reservation();
 		$temp = Reservation::count();
 		$data['code'] = $this->generateCode($temp);
@@ -262,7 +267,7 @@ class ReservationController extends APIController
 			->orderBy($sortBy, array_values($data['sort'])[0])
 			->limit($data['limit'])
 			->offset($data['offset'])
-			->get(['reservations.*', 'T2.email', 'T3.title', 'T5.regular']);
+			->get(['reservations.*', 'T2.email', 'T4.first_name as name', 'T3.title', 'T5.regular']);
 
 		$size = Reservation::leftJoin('accounts as T2', 'T2.id', '=', 'reservations.account_id')
 		->leftJoin('rooms as T3', 'T3.id', 'reservations.payload_value')
@@ -273,13 +278,11 @@ class ReservationController extends APIController
 		->where('T6.deleted_at', '=', null)
 		->orderBy($sortBy, array_values($data['sort'])[0])
 		->get();
-		
 		for ($i=0; $i <= sizeof($res)-1; $i++) { 
 			$item = $res[$i];
 			$res[$i]['details'] = json_decode($item['details']);
 			$res[$i]['check_in'] = Carbon::createFromFormat('Y-m-d H:i:s', $item['check_in'])->copy()->tz($this->response['timezone'])->format('F j, Y');
 			$res[$i]['check_out'] = Carbon::createFromFormat('Y-m-d H:i:s', $item['check_out'])->copy()->tz($this->response['timezone'])->format('F j, Y');
-			$res[$i]['name'] = $this->retrieveNameOnly($item['account']);
 		}
 
 		$this->response['size'] = sizeOf($size);
