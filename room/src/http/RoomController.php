@@ -296,6 +296,11 @@ class RoomController extends APIController
     return Room::where('category', '=', $categoryId)->get();
   }
 
+
+  public function retrieveByIDParams($id){
+    return Room::where('id', '=', $id)->get();
+  }
+
   public function retrieveTotalPriceById($account_id, $column, $value, $returns){
     return Room::leftJoin('pricings as T1', 'T1.room_id', '=', 'rooms.id')->where('T1.'.$column, '=', $value)->where('T1.account_id', '=', $account_id)->get($returns);
   }
