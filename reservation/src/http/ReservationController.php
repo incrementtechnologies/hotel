@@ -481,17 +481,8 @@ class ReservationController extends APIController
 				Reservation::where('code', '=', $data['reservation_code'])->update(array(
 					'total' => $data['amount'],
 					'details' => json_encode($details),
-					'status' => 'for_approval'
+					'status' => 'in_progress'
 				));
-				$condition = array(
-					array('reservation_id', '=', $reservation['id']),
-					array('account_id', '=', $data['account_id'])
-				);
-				$updates = array(
-					'status' => 'for_approval',
-					'updated_at' => Carbon::now()
-				);
-				app('Increment\Hotel\Room\Http\CartController')->updateByParams($condition, $updates);
 				$this->response['data'] = $res['data'];
 			}else{
 				$this->response['data'] = $res['error'];
@@ -555,7 +546,19 @@ class ReservationController extends APIController
 	
 	public function successCallback(Request $request){
 		$data = $request->all();
-		
+		$reservation = Reservation::where('code', '=', $data['code'])->first();
+		Reservation::where('code', '=', $data['code'])->update(array(
+			'status' => 'for_approval'
+		));
+		$condition = array(
+			array('reservation_id', '=', $reservation['id']),
+			array('account_id', '=', $reservation['account_id'])
+		);
+		$updates = array(
+			'status' => 'for_approval',
+			'updated_at' => Carbon::now()
+		);
+		app('Increment\Hotel\Room\Http\CartController')->updateByParams($condition, $updates);
 		header('Location: '.env('FRONT_URL_SUCCESS').'?code='.$data['code']);
 		exit(1);
 	}
