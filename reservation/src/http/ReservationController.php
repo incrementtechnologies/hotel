@@ -444,13 +444,20 @@ class ReservationController extends APIController
 			->where('reservations.account_id', '=', $data['account_id'])
 			->groupBy('T1.reservation_id')
 			->limit($data['limit'])
-			->offset($data['offset'])->get(['reservations.*', 'T2.regular', 'T2.refundable', 'T2.currency', 'T2.label']);
+			->offset($data['offset'])
+			->get(['reservations.*', 'T2.regular', 'T2.refundable', 'T2.currency', 'T2.label']);
+		$size = Reservation::leftJoin('carts as T1', 'T1.reservation_id', '=', 'reservations.id')
+			->leftJoin('pricings as T2', 'T2.id', '=', 'T1.price_id')
+			->where('reservations.account_id', '=', $data['account_id'])
+			->groupBy('T1.reservation_id')
+			->get(['reservations.*', 'T2.regular', 'T2.refundable', 'T2.currency', 'T2.label']);
+		dd(sizeof($size));
 		if(sizeof($result) > 0){
 			for ($i=0; $i <= sizeof($result)-1 ; $i++) { 
 				$item = $result[$i];
 				$result[$i]['details'] = json_decode($item['details']);
 				$result[$i]['check_in'] = Carbon::createFromFormat('Y-m-d H:i:s', $item['check_in'])->copy()->tz($this->response['timezone'])->format('F d, Y');
-        $result[$i]['check_out'] = Carbon::createFromFormat('Y-m-d H:i:s', $item['check_out'])->copy()->tz($this->response['timezone'])->format('F d, Y');
+        		$result[$i]['check_out'] = Carbon::createFromFormat('Y-m-d H:i:s', $item['check_out'])->copy()->tz($this->response['timezone'])->format('F d, Y');
 				$result[$i]['rooms'] = app('Increment\Hotel\Room\Http\CartController')->retrieveCartWithRoomDetails($item['id']);
 			}
 		}
