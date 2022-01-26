@@ -156,7 +156,9 @@ class CartController extends APIController
                 function($query){
                     $query->where('status', '=', 'pending')
                     ->orWhere('status', '=', 'in_progress')
-                    ->orWhere('status', '=', 'for_approval');
+                    ->orWhere('status', '=', 'for_approval')
+					->orWhere('status', '=', 'cancelled')
+					->orWhere('status', '=', 'refunded');
                 }
             ));
         }else{
