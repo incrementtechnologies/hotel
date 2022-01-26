@@ -74,6 +74,7 @@ class ReservationController extends APIController
 		$this->model = new Reservation();
 		$temp = Reservation::count();
 		$data['code'] = $this->generateCode($temp);
+		$data['reservation_code'] = $this->generateReservationCode();
 		$this->insertDB($data);
 		if($this->response['data']){
 			$condition = array(
@@ -219,6 +220,17 @@ class ReservationController extends APIController
 		$length = strlen((string)$counter);
     $code = '00000000';
     return 'MEZZO_'.substr_replace($code, $counter, intval(7 - $length));
+	}
+
+	public function generateReservationCode()
+	{
+		$code = 'res_'.substr(str_shuffle($this->codeSource), 0, 60);
+		$codeExist = Reservation::where('reservation_code', '=', $code)->get();
+		if(sizeof($codeExist) > 0){
+			$this->generateReservationCode();
+		}else{
+			return $code;
+		}
 	}
 
 	public function retrieveBookings(Request $request)
