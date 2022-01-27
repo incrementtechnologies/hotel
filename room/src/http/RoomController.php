@@ -123,7 +123,7 @@ class RoomController extends APIController
       if($data['flag'] == 'false'){
         $pricings = app('Increment\Hotel\Room\Http\PricingController')->retrieveLabel();
         $minMax = app('Increment\Hotel\Room\Http\PricingController')->retrieveMaxMin();
-        $category = app('Increment\Common\Payload\Http\PayloadController')->retrieveAll();
+        $category = app('Increment\Common\Payload\Http\PayloadController')->retrieveAllData();
         $this->response['data']['pricings'] = $pricings;
         $this->response['data']['min_max'] = $minMax;
         $this->response['data']['category'] = $category;
