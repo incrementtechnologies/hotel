@@ -38,6 +38,17 @@ class ReservationController extends APIController
 		$reserve = Reservation::where('code', '=', $data['id'])->first();
 		$cart = app('Increment\Hotel\Room\Http\CartController')->retrieveCartWithRooms($reserve['id']);
 		if(sizeof($cart) > 0){
+			for ($i=0; $i <= sizeof($cart) -1; $i++) {
+				$item = $cart[$i];
+				$start = Carbon::createFromFormat('Y-m-d H:i:s', $reserve['check_in']);
+				$end = Carbon::createFromFormat('Y-m-d H:i:s', $reserve['check_out']);
+				$nightsDays = $end->diffInDays($start);
+				if($item['rooms'][0]['label'] === 'MONTH'){
+					$nightsDays = $end->diffInMonths($start);
+				}
+				$cart[$i]['price_per_qty'] = ($item['rooms'][0]['refundable'] !== null ? $item['rooms'][0]['refundable']  : $item['rooms'][0]['regular']) * $item['checkoutQty'];
+				$cart[$i]['price_with_number_of_days'] = $cart[$i]['price_per_qty'] * $nightsDays;
+			}
 			$reserve['details'] = json_decode($reserve['details'], true);
 			$reserve['account_info'] = app('Increment\Account\Http\AccountInformationController')->getByParamsWithColumns($reserve['account_id'], ['first_name as name', 'cellular_number as contactNumber']);
 			$reserve['account_info']['email'] = app('Increment\Account\Http\AccountController')->getByParamsWithColumns($reserve['account_id'], ['email'])['email'];
