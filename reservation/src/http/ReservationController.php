@@ -349,14 +349,32 @@ class ReservationController extends APIController
 	public function retrieveDetails(Request $request){
 		$data = $request->all();
 		$con = $data['condition'];
-		$result = Reservation::where($con[0]['column'], $con[0]['clause'], $con[0]['value'])
-			->where(function($query){
+		$whereArray = array(
+			array($con[0]['column'], $con[0]['clause'], $con[0]['value']),
+			array('details', 'not like', '%'.'"payment_method":"credit"'.'%')
+		);
+		if(isset($data['reservation_id'])){
+			array_push($whereArray, array('reservation_code', '=', $data['reservation_id']),
+			array(function($query){
+				$query
+					->orWhere('status', '=', 'failed')
+					->orWhere('status', '=', 'for_approval')
+					->orWhere('status', '=', 'confirmed')
+					->orWhere('status', '=', 'cancelled')
+					->orWhere('status', '=', 'refunded');
+				}
+			));
+		}else{
+			array_push($whereArray, array(function($query){
 				$query->where('status', '=', 'in_progress')
 					->orWhere('status', '=', 'failed')
 					->orWhere('status', '=', 'for_approval')
 					->orWhere('status', '=', 'pending');
-			})->where('details', 'not like', '%'.'"payment_method":"credit"'.'%')
-			->get();
+				}
+			));
+		}
+		// dd($whereArray);
+		$result = Reservation::where($whereArray)->get();
 		// $rooms = [];
 		if(sizeof($result) > 0){
 			for ($i=0; $i <= sizeof($result) -1; $i++) { 
@@ -364,6 +382,10 @@ class ReservationController extends APIController
 				$result[$i]['details'] = json_decode($item['details']);
 				$result[$i]['payload_value'] =  json_decode($item['payload_value']);;
 			}
+		}
+		if(isset($data['reservation_id'])){
+			$reservation = Reservation::where('reservation_code', '=', $data['reservation_id'])->first();
+			$data['reservation_id'] = $reservation['id'];
 		}
 		$carts = app('Increment\Hotel\Room\Http\CartController')->retrieveOwn($data);
 		$accountInfo = app('Increment\Account\Http\AccountInformationController')->getByParamsWithColumns($con[0]['value'], ['first_name as name', 'cellular_number as contactNumber']);
@@ -459,7 +481,14 @@ class ReservationController extends APIController
 			array('reservations.'.$con[0]['column'], $con[0]['clause'], $con[0]['value']),
 			array('reservations.'.$con[1]['column'], $con[1]['clause'], $con[1]['value']),
 			array('reservations.'.$con[2]['column'], $con[2]['clause'], $con[2]['value']),
-			array('reservations.'.$con[3]['column'], $con[3]['clause'], $con[3]['value'])
+			array('reservations.'.$con[3]['column'], $con[3]['clause'], $con[3]['value']),
+			array(function($query){
+				$query->where('reservations.status', '=', 'for_approval')
+					->orWhere('reservations.status', '=', 'confirmed')
+					->orWhere('reservations.status', '=', 'completed')
+					->orWhere('reservations.status', '=', 'cancelled')
+					->orWhere('reservations.status', '=', 'refunded');
+			})
 		);
 		$result = Reservation::leftJoin('carts as T1', 'T1.reservation_id', '=', 'reservations.id')
 			->leftJoin('pricings as T2', 'T2.id', '=', 'T1.price_id')
@@ -467,16 +496,24 @@ class ReservationController extends APIController
 			->where('reservations.account_id', '=', $data['account_id'])
 			->groupBy('T1.reservation_id')
 			->limit($data['limit'])
-			->offset($data['offset'])->get(['reservations.*', 'T2.regular', 'T2.refundable', 'T2.currency', 'T2.label']);
+			->offset($data['offset'])
+			->get(['reservations.*', 'T2.regular', 'T2.refundable', 'T2.currency', 'T2.label']);
+		$size = Reservation::leftJoin('carts as T1', 'T1.reservation_id', '=', 'reservations.id')
+			->leftJoin('pricings as T2', 'T2.id', '=', 'T1.price_id')
+			->where($whereArray)
+			->where('reservations.account_id', '=', $data['account_id'])
+			->groupBy('T1.reservation_id')
+			->get(['reservations.*', 'T2.regular', 'T2.refundable', 'T2.currency', 'T2.label']);
 		if(sizeof($result) > 0){
 			for ($i=0; $i <= sizeof($result)-1 ; $i++) { 
 				$item = $result[$i];
 				$result[$i]['details'] = json_decode($item['details']);
 				$result[$i]['check_in'] = Carbon::createFromFormat('Y-m-d H:i:s', $item['check_in'])->copy()->tz($this->response['timezone'])->format('F d, Y');
-        $result[$i]['check_out'] = Carbon::createFromFormat('Y-m-d H:i:s', $item['check_out'])->copy()->tz($this->response['timezone'])->format('F d, Y');
+        		$result[$i]['check_out'] = Carbon::createFromFormat('Y-m-d H:i:s', $item['check_out'])->copy()->tz($this->response['timezone'])->format('F d, Y');
 				$result[$i]['rooms'] = app('Increment\Hotel\Room\Http\CartController')->retrieveCartWithRoomDetails($item['id']);
 			}
 		}
+		$this->response['size'] = sizeof($size);
 		$this->response['data'] = $result;
 		return $this->response();
 	}
