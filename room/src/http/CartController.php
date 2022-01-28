@@ -15,23 +15,38 @@ class CartController extends APIController
 
     public function create(Request $request){
         $data = $request->all();
-        $exist = Cart::where('account_id', '=', $data['account_id'])
-            ->where('price_id', '=', $data['price_id'])
-            ->where('category_id', '=', $data['category_id'])
+        $hasExistingCart = Cart::where('account_id', '=', $data['account_id'])
             ->where(function($query){
                 $query->where('status', '=', 'pending')
                 ->orWhere('status', '=', 'in_progress');
-            })->first();
-        if($exist !== null){
-            $res = Cart::where('id', '=', $exist['id'])->update(array(
-                'qty' => (int)$exist['qty'] + (int)$data['qty']
-            ));
-            $this->response['data'] = $res;
+            })->get();
+        if(sizeof($hasExistingCart) > 0){
+            $date1 = app('Increment\Hotel\Room\Http\AvailabilityController')->retrieveByPayloadPayloadValue('room_type', $hasExistingCart[0]['category_id']);
+            $date2 = app('Increment\Hotel\Room\Http\AvailabilityController')->retrieveByPayloadPayloadValue('room_type', $data['category_id']);
+            if($date1['start_date'] != $date2['start_date']){
+                $this->response['data'] = [];
+                $this->response['error'] = 'Cannot Add multiple room with different date';
+                return $this->response();
+            }
         }else{
-            $res = Cart::create($data);
-            $this->response['data'] = $res;
+            $exist = Cart::where('account_id', '=', $data['account_id'])
+                ->where('price_id', '=', $data['price_id'])
+                ->where('category_id', '=', $data['category_id'])
+                ->where(function($query){
+                    $query->where('status', '=', 'pending')
+                    ->orWhere('status', '=', 'in_progress');
+                })->first();
+            if($exist !== null){
+                $res = Cart::where('id', '=', $exist['id'])->update(array(
+                    'qty' => (int)$exist['qty'] + (int)$data['qty']
+                ));
+                $this->response['data'] = $res;
+            }else{
+                $res = Cart::create($data);
+                $this->response['data'] = $res;
+            }
+            return $this->response();
         }
-        return $this->response();
     }
 
     public function countById($priceId, $categoryId){
