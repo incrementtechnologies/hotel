@@ -63,6 +63,18 @@ class AvailabilityController extends APIController
         return $this->response();
     }
 
+    public function compareDates(Request $request){
+        $data = $request->all();
+        $date1 = Availability::where('payload_value', '=', $data['category_id1'])->where('payload', '=', 'room_type')->first();
+        $date2 = Availability::where('payload_value', '=', $data['category_id2'])->where('payload', '=', 'room_type')->first();
+        if($date1['start_date'] == $date2['start_date']){
+            $this->response['data'] = true;
+        }else{
+            $this->response['data'] = false;
+        }
+        return $this->response();
+    }
+
     public function update(Request $request){
         $data = $request->all();
         $params = array(

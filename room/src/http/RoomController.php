@@ -45,18 +45,13 @@ class RoomController extends APIController
   public function retrieveByType(Request $request){
     $data = $request->all();
     $whereArray = array(
-      array('rooms.deleted_at', '=', null)
+      array('rooms.deleted_at', '=', null),
+      array('check_in', '!=', null),
+      array('check_out', '!=', null)
     );
     if($data['check_in'] !== null && $data['check_out'] !== null){
       array_push($whereArray, array('T3.start_date', '<=', $data['check_in']));
       array_push($whereArray, array('T3.end_date', '>=', $data['check_out']));
-    }else{
-      if($data['check_in'] !== null){
-        array_push($whereArray, array('T3.start_date', 'like', '%'.$data['check_in'].'%'));
-      }
-      if($data['check_out'] !== null){
-        array_push($whereArray, array('T3.end_date', 'like', '%'.$data['check_out'].'%'));
-      }
     }
     if($data['number_of_heads'] !== null && $data['number_of_heads'] > 0){
       array_push($whereArray, array('rooms.max_capacity', '=', $data['number_of_heads']));
@@ -65,7 +60,6 @@ class RoomController extends APIController
       array_push($whereArray, array('T1.regular', '<=', $data['max']));
       array_push($whereArray, array('T1.regular', '>=', $data['min']));
     }
-    // dd($whereArray);
     $result = Room::leftJoin('pricings as T1', 'T1.room_id', '=', 'rooms.id')
       ->leftJoin('payloads as T2', 'T2.id', '=', 'rooms.category')
       ->leftJoin('availabilities as T3', 'T3.payload_value', '=', 'T2.id')
@@ -84,6 +78,7 @@ class RoomController extends APIController
       ->groupBy('rooms.category')
       ->limit($data['limit'])
       ->offset($data['offset'])
+      ->orderBy('T3.start_date', 'desc')
       ->get(['rooms.*', 'T1.regular', 'T1.refundable', 'T1.currency', 'T1.label', 'T2.payload_value', 'T2.id as category_id', 'T1.id as price_id', 'T2.category as general_description', 'T2.details as general_features']);
       $size = Room::leftJoin('pricings as T1', 'T1.room_id', '=', 'rooms.id')
       ->leftJoin('payloads as T2', 'T2.id', '=', 'rooms.category')

@@ -390,7 +390,15 @@ class ReservationController extends APIController
 		$carts = app('Increment\Hotel\Room\Http\CartController')->retrieveOwn($data);
 		$accountInfo = app('Increment\Account\Http\AccountInformationController')->getByParamsWithColumns($con[0]['value'], ['first_name as name', 'cellular_number as contactNumber']);
 		$accountInfo['email'] = app('Increment\Account\Http\AccountController')->getByParamsWithColumns($con[0]['value'], ['email'])['email'];
+		if(sizeof($carts) > 0){
+			$availability = app('Increment\Hotel\Room\Http\AvailabilityController')->retrieveByPayloadPayloadValue('room_type', $carts[0]['category_id']);
+		}
+		$available = array(
+			'check_in' =>  $availability['start_date'],
+			'check_out' =>  $availability['end_date']
+		);
 		$this->response['data']['reservations'] = $result;
+		$this->response['data']['availability'] = $available;
 		$this->response['data']['carts'] = $carts;
 		$this->response['data']['account_info'] = $accountInfo;
 		return $this->response();
