@@ -62,17 +62,19 @@ class CartController extends APIController
             for ($i=0; $i <= sizeof($result) -1; $i++) { 
                 $item = $result[$i];
                 $reservation =app('Increment\Hotel\Reservation\Http\ReservationController')->retrieveReservationByParams('id', $item['reservation_id'], ['code', 'check_in', 'check_out']);
-                $start = Carbon::createFromFormat('Y-m-d H:i:s', $reservation[0]['check_in']);
-                $end = Carbon::createFromFormat('Y-m-d H:i:s', $reservation[0]['check_out']);
-                $nightsDays = $end->diffInDays($start);
-                $result[$i]['date'] = $reservation;
-                $result[$i]['reservation_code'] = sizeOf($reservation) > 0 ? $reservation[0]['code'] : null;
-                $result[$i]['rooms'] = app('Increment\Hotel\Room\Http\RoomController')->getWithQty($item['category_id'], $item['price_id']);
-                if($result[$i]['rooms'][0]['label'] === 'MONTH'){
-                    $nightsDays = $end->diffInMonths($start);
+                if(sizeof($reservation) > 0){
+                    $start = Carbon::createFromFormat('Y-m-d H:i:s', $reservation[0]['check_in']);
+                    $end = Carbon::createFromFormat('Y-m-d H:i:s', $reservation[0]['check_out']);
+                    $nightsDays = $end->diffInDays($start);
+                    $result[$i]['date'] = $reservation;
+                    $result[$i]['reservation_code'] = sizeOf($reservation) > 0 ? $reservation[0]['code'] : null;
+                    $result[$i]['rooms'] = app('Increment\Hotel\Room\Http\RoomController')->getWithQty($item['category_id'], $item['price_id']);
+                    if($result[$i]['rooms'][0]['label'] === 'MONTH'){
+                        $nightsDays = $end->diffInMonths($start);
+                    }
+                    $result[$i]['price_per_qty'] = ($result[$i]['rooms'][0]['refundable'] !== null ? $result[$i]['rooms'][0]['refundable']  : $result[$i]['rooms'][0]['regular']) * $item['checkoutQty'];
+                    $result[$i]['price_with_number_of_days'] = $result[$i]['price_per_qty'] * $nightsDays;
                 }
-                $result[$i]['price_per_qty'] = ($result[$i]['rooms'][0]['refundable'] !== null ? $result[$i]['rooms'][0]['refundable']  : $result[$i]['rooms'][0]['regular']) * $item['checkoutQty'];
-                $result[$i]['price_with_number_of_days'] = $result[$i]['price_per_qty'] * $nightsDays;
             }
         }
         $this->response['data'] = $result;
