@@ -46,8 +46,8 @@ class RoomController extends APIController
     $data = $request->all();
     $whereArray = array(
       array('rooms.deleted_at', '=', null),
-      array('check_in', '!=', null),
-      array('check_out', '!=', null)
+      array('T3.start_date', '!=', null),
+      array('T3.end_date', '!=', null)
     );
     if($data['check_in'] !== null && $data['check_out'] !== null){
       array_push($whereArray, array('T3.start_date', '<=', $data['check_in']));

@@ -583,7 +583,7 @@ class ReservationController extends APIController
 		$dates = [];
 		$result = [];
 		$i=0;
-		$dateList = CarbonPeriod::create($carbon->toDateTimeString(), $currDate->toDateTimeString());
+		$dateList = CarbonPeriod::create($carbon->toDateTimeString(), Carbon::yesterday()->toDateTimeString());
 		foreach ($dateList as $date) {
 			array_push($dates, $date->toDateString());
 		}
