@@ -6,7 +6,7 @@ $controller = 'Increment\Hotel\Room\Http\RoomController@';
 Route::post($route.'create', $controller."create");
 Route::post($route.'retrieve', $controller."retrieve");
 Route::post($route.'retrieve_by_type', $controller."retrieveByType");
-Route::post($route.'retrieve_by_id', $controller."retrieveById");
+Route::post($route.'retrieve_by_code', $controller."retrieveByCode");
 Route::post($route.'retrieve_unique', $controller."retrieveUnique");
 Route::post($route.'retrieve_basic', $controller."retrieveBasic");
 Route::post($route.'retrieve_by_params', $controller."retrieveByParams");

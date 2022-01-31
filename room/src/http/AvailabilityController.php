@@ -57,8 +57,13 @@ class AvailabilityController extends APIController
 
     public function retrieveById(Request $request){
         $data = $request->all();
-        $con = $data['condition'];
-        $result = Availability::where($con[0]['column'], $con[0]['clause'], $con[0]['value'])->where($con[1]['column'], $con[1]['clause'], $con[1]['value'])->get();
+        if(isset($data['room_code'])){
+            $roomId = app('Increment\Hotel\Room\Http\RoomController')->retrieveIDByCode($data['room_code']);
+            $result = Availability::where('payload', '=', 'room_id')->where('payload_value', '=', $roomId)->get();
+        }else{
+            $con = $data['condition'];
+            $result = Availability::where($con[0]['column'], $con[0]['clause'], $con[0]['value'])->where($con[1]['column'], $con[1]['clause'], $con[1]['value'])->get();
+        }
         $this->response['data'] = $result;
         return $this->response();
     }
