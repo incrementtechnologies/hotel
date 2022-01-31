@@ -291,6 +291,10 @@ class RoomController extends APIController
     return Room::where('category', '=', $categoryId)->get();
   }
 
+  public function retrieveIDByCode($room_code){
+    return Room::where('code', '=', $room_code)->get(['id']);
+  }
+
 
   public function retrieveByIDParams($id){
     return Room::where('id', '=', $id)->get();
