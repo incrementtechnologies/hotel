@@ -244,76 +244,6 @@ class ReservationController extends APIController
 		}
 	}
 
-	public function retrieveBookings(Request $request)
-	{
-		$data = $request->all();
-		$con = $data['condition'];
-		$sortBy = 'reservations.'.array_keys($data['sort'])[0];
-		$condition = array(
-			array('reservations.' . $con[0]['column'], $con[0]['clause'], $con[0]['value']),
-			array(function($query){
-				$query->where('reservations.status', '=', 'for_approval')
-					->orWhere('reservations.status', '=', 'confirmed')
-					->orWhere('reservations.status', '=', 'completed')
-					->orWhere('reservations.status', '=', 'cancelled')
-					->orWhere('reservations.status', '=', 'refunded');
-			})
-		);
-		if ($con[0]['column'] == 'email') {
-			$sortBy = 'T2.'.array_keys($data['sort'])[0];
-			$condition = array(
-				array('T2.' . $con[0]['column'], $con[0]['clause'], $con[0]['value'])
-			);
-		} else if ($con[0]['column'] == 'payload_value') {
-			$sortBy = 'T3.'.array_keys($data['sort'])[0];
-			$condition = array(
-				array('T3.title', $con[0]['clause'], $con[0]['value'])
-			);
-		}else if ($con[0]['column'] == 'price') {
-			$sortBy = 'T5.'.array_keys($data['sort'])[0];
-			$condition = array(
-				array('T5.regular', $con[0]['clause'], $con[0]['value'])
-			);
-		}
-		if(sizeof($con) > 1){
-			array_push($condition, 
-				array($con[1]['column'], $con[1]['clause'], $con[1]['value'])
-			);
-		}
-		$res = Reservation::leftJoin('accounts as T2', 'T2.id', '=', 'reservations.account_id')
-			->leftJoin('rooms as T3', 'T3.id', 'reservations.payload_value')
-			->leftJoin('account_informations as T4', 'T4.account_id', '=', 'T2.id')
-			->leftJoin('pricings as T5', 'T5.room_id', '=', 'T3.id')
-			->leftJoin('carts as T6', 'T6.reservation_id', '=', 'reservations.id')
-			->where($condition)
-			->where('T6.deleted_at', '=', null)
-			->where('reservations.deleted_at', '=', null)
-			->orderBy($sortBy, array_values($data['sort'])[0])
-			->limit($data['limit'])
-			->offset($data['offset'])
-			->get(['reservations.*', 'T2.email', 'T4.first_name as name', 'T3.title', 'T5.regular']);
-
-		$size = Reservation::leftJoin('accounts as T2', 'T2.id', '=', 'reservations.account_id')
-		->leftJoin('rooms as T3', 'T3.id', 'reservations.payload_value')
-		->leftJoin('account_informations as T4', 'T4.account_id', '=', 'T2.id')
-		->leftJoin('pricings as T5', 'T5.room_id', '=', 'T3.id')
-		->leftJoin('carts as T6', 'T6.reservation_id', '=', 'reservations.id')
-		->where($condition)
-		->where('T6.deleted_at', '=', null)
-		->orderBy($sortBy, array_values($data['sort'])[0])
-		->get();
-		for ($i=0; $i <= sizeof($res)-1; $i++) { 
-			$item = $res[$i];
-			$res[$i]['details'] = json_decode($item['details']);
-			$res[$i]['check_in'] = Carbon::createFromFormat('Y-m-d H:i:s', $item['check_in'])->copy()->tz($this->response['timezone'])->format('F j, Y');
-			$res[$i]['check_out'] = Carbon::createFromFormat('Y-m-d H:i:s', $item['check_out'])->copy()->tz($this->response['timezone'])->format('F j, Y');
-		}
-
-		$this->response['size'] = sizeOf($size);
-		$this->response['data'] = $res;
-		return $this->response();
-	}
-
 	public function retrieveTotalPreviousBookings(){
 		$currDate = Carbon::now()->toDateTimeString();
 		$res = Reservation::where('status', '=', 'verified')->where('created_at', '<', $currDate)->count();
@@ -656,53 +586,63 @@ class ReservationController extends APIController
 					->orWhere('reservations.status', '=', 'refunded');
 			})
 		);
-		if ($con[0]['column'] == 'email') {
-			$sortBy = 'T2.'.array_keys($data['sort'])[0];
-			$condition = array(
-				array('T2.' . $con[0]['column'], $con[0]['clause'], $con[0]['value'])
-			);
-		} else if ($con[0]['column'] == 'payload_value') {
-			$sortBy = 'T3.'.array_keys($data['sort'])[0];
-			$condition = array(
-				array('T3.title', $con[0]['clause'], $con[0]['value'])
-			);
-		}else if ($con[0]['column'] == 'price') {
-			$sortBy = 'T5.'.array_keys($data['sort'])[0];
-			$condition = array(
-				array('T5.regular', $con[0]['clause'], $con[0]['value'])
-			);
-		}
-		if(sizeof($con) > 1){
-			array_push($condition, 
-				array($con[1]['column'], $con[1]['clause'], $con[1]['value'])
-			);
-		}
+		// if ($con[0]['column'] == 'email') {
+		// 	$sortBy = 'T2.'.array_keys($data['sort'])[0];
+		// 	$condition = array(
+		// 		array('T2.' . $con[0]['column'], $con[0]['clause'], $con[0]['value'])
+		// 	);
+		// } else if ($con[0]['column'] == 'payload_value') {
+		// 	$sortBy = 'T3.'.array_keys($data['sort'])[0];
+		// 	$condition = array(
+		// 		array('T3.title', $con[0]['clause'], $con[0]['value'])
+		// 	);
+		// }else if ($con[0]['column'] == 'price') {
+		// 	$sortBy = 'T5.'.array_keys($data['sort'])[0];
+		// 	$condition = array(
+		// 		array('T5.regular', $con[0]['clause'], $con[0]['value'])
+		// 	);
+		// }
+		// if(sizeof($con) > 1){
+		// 	array_push($condition, 
+		// 		array($con[1]['column'], $con[1]['clause'], $con[1]['value'])
+		// 	);
+		// }
+		
+		$res = Reservation::where($condition)
+				->orderBy($sortBy, array_values($data['sort'])[0])
+				->limit($data['limit'])
+				->offset($data['offset'])
+				->get();
 
-		$res = Reservation::leftJoin('accounts as T2', 'T2.id', '=', 'reservations.account_id')
-			->leftJoin('bookings as T3', 'T3.reservation_id', 'reservations.id')
-			->leftJoin('account_informations as T4', 'T4.account_id', '=', 'T2.id')
-			->leftJoin('pricings as T5', 'T5.room_id', '=', 'T3.id')
-			->leftJoin('carts as T6', 'T6.reservation_id', '=', 'reservations.id')
-			->where($condition)
-			->where('T6.deleted_at', '=', null)
-			->where('reservations.deleted_at', '=', null)
+		$size =  Reservation::where($condition)
 			->orderBy($sortBy, array_values($data['sort'])[0])
-			->limit($data['limit'])
-			->offset($data['offset'])
-			->get(['reservations.*', 'T2.email', 'T3.room_id', 'T5.regular', 'T4.first_name as name']);
-		// dd($res);
-		$size = Reservation::leftJoin('accounts as T2', 'T2.id', '=', 'reservations.account_id')
-		->leftJoin('bookings as T3', 'T3.reservation_id', 'reservations.id')
-		->leftJoin('account_informations as T4', 'T4.account_id', '=', 'T2.id')
-		->leftJoin('pricings as T5', 'T5.room_id', '=', 'T3.id')
-		->leftJoin('carts as T6', 'T6.reservation_id', '=', 'reservations.id')
-		->where($condition)
-		->where('T6.deleted_at', '=', null)
-		->orderBy($sortBy, array_values($data['sort'])[0])
-		->get();
+			->get();
+		// $res = Reservation::leftJoin('accounts as T2', 'T2.id', '=', 'reservations.account_id')
+		// 	->leftJoin('bookings as T3', 'T3.reservation_id', 'reservations.id')
+		// 	->leftJoin('account_informations as T4', 'T4.account_id', '=', 'T2.id')
+		// 	->leftJoin('pricings as T5', 'T5.room_id', '=', 'T3.id')
+		// 	->leftJoin('carts as T6', 'T6.reservation_id', '=', 'reservations.id')
+		// 	->where($condition)
+		// 	->where('T6.deleted_at', '=', null)
+		// 	->where('reservations.deleted_at', '=', null)
+		// 	->orderBy($sortBy, array_values($data['sort'])[0])
+		// 	->limit($data['limit'])
+		// 	->offset($data['offset'])
+		// 	->get(['reservations.*', 'T2.email', 'T3.room_id', 'T5.regular', 'T4.first_name as name']);
+		// // dd($res);
+		// $size = Reservation::leftJoin('accounts as T2', 'T2.id', '=', 'reservations.account_id')
+		// ->leftJoin('bookings as T3', 'T3.reservation_id', 'reservations.id')
+		// ->leftJoin('account_informations as T4', 'T4.account_id', '=', 'T2.id')
+		// ->leftJoin('pricings as T5', 'T5.room_id', '=', 'T3.id')
+		// ->leftJoin('carts as T6', 'T6.reservation_id', '=', 'reservations.id')
+		// ->where($condition)
+		// ->where('T6.deleted_at', '=', null)
+		// ->orderBy($sortBy, array_values($data['sort'])[0])
+		// ->get();
 
 		for ($i=0; $i <= sizeof($res)-1; $i++) { 
 			$item = $res[$i];
+			$res[$i]['name'] = app('Increment\Account\Http\AccountInformationController')->getByParamsWithColumns($item['account_id'], ['first_name'])['first_name'];
 			$res[$i]['details'] = json_decode($item['details']);
 			$res[$i]['check_in'] = Carbon::createFromFormat('Y-m-d H:i:s', $item['check_in'])->copy()->tz($this->response['timezone'])->format('F j, Y');
 			$res[$i]['check_out'] = Carbon::createFromFormat('Y-m-d H:i:s', $item['check_out'])->copy()->tz($this->response['timezone'])->format('F j, Y');
