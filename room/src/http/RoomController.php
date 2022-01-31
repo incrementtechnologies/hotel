@@ -193,15 +193,15 @@ class RoomController extends APIController
     }
   }
   
-  public function retrieveById(Request $request){
+  public function retrieveByCode(Request $request){
     $data = $request->all();
     $result = Room::leftJoin('pricings as T1', 'T1.room_id', '=', 'rooms.id')
-      ->where('rooms.id', '=', $data['room_id'])
+      ->where('rooms.code', '=', $data['room_code'])
       ->where('rooms.deleted_at', '=', null)
       ->get(['rooms.*', 'T1.regular', 'T1.refundable', 'T1.currency', 'T1.label', 'T1.id as price_id']);
       
       $size = Room::leftJoin('pricings as T1', 'T1.room_id', '=', 'rooms.id')
-      ->where('rooms.id', '=', $data['room_id'])
+      ->where('rooms.code', '=', $data['room_code'])
       ->where('rooms.deleted_at', '=', null)
       ->get();
 
