@@ -265,7 +265,6 @@ class RoomController extends APIController
       ->where('rooms.category', '=', $categoryId)
       ->groupBy('T1.regular')
       ->get(['rooms.*', 'T1.regular', 'T1.refundable', 'T1.currency', 'T1.label', DB::raw('COUNT("T1.regular") as room_qty'), 'T1.id as price_id', 'T2.payload_value']);
-    
     if(sizeof($result) > 0){
       for ($i=0; $i <= sizeof($result)-1 ; $i++) { 
         $item = $result[$i];
