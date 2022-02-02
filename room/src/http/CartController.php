@@ -41,9 +41,11 @@ class CartController extends APIController
                     'qty' => (int)$exist['qty'] + (int)$data['qty']
                 ));
                 $this->response['data'] = $res;
+                $this->response['error'] = null;
             }else{
                 $res = Cart::create($data);
                 $this->response['data'] = $res;
+                $this->response['error'] = null;
             }
             return $this->response();
         }
