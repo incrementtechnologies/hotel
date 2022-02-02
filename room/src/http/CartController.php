@@ -27,6 +27,11 @@ class CartController extends APIController
                 $this->response['data'] = [];
                 $this->response['error'] = 'Cannot Add multiple room with different date';
                 return $this->response();
+            }else{
+                $res = Cart::create($data);
+                $this->response['data'] = $res;
+                $this->response['error'] = null;
+                return $this->response();
             }
         }else{
             $exist = Cart::where('account_id', '=', $data['account_id'])
