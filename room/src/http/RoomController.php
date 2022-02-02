@@ -204,7 +204,6 @@ class RoomController extends APIController
       ->where('rooms.code', '=', $data['room_code'])
       ->where('rooms.deleted_at', '=', null)
       ->get();
-
     for ($i=0; $i <= sizeof($result)-1 ; $i++) {
       $item = $result[$i];
       $result[$i]['category'] = app('Increment\Common\Payload\Http\PayloadController')->retrieveByParams($item['category']);
@@ -312,6 +311,7 @@ class RoomController extends APIController
       $this->response['error'] = 'Room title already exist';
     }else{
       $this->model = new Room();
+      $data['code'] = $this->generateReservationCode();
       $this->insertDB($data);
       $exist = app('Increment\Hotel\Room\Http\AvailabilityController')->retrieveByPayloadPayloadValue('room', $this->response['data']);
       if($exist === null){
@@ -325,6 +325,18 @@ class RoomController extends APIController
     }
     return $this->response();
   }
+
+  public function generateCode()
+	{
+		$code = 'room_' . substr(str_shuffle($this->codeSource), 0, 60);
+		$codeExist = Room::where('code', '=', $code)->get();
+		if (sizeof($codeExist) > 0) {
+			$this->generateCode();
+		} else {
+			return $code;
+		}
+	}
+
 
   public function updateByParams($condition, $params){
     return Room::where($condition)->update($params);
