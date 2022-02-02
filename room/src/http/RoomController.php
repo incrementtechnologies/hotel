@@ -228,11 +228,12 @@ class RoomController extends APIController
       'status' => $data['status']
     );
     $room['updated_at'] = Carbon::now();
-    $res = Room::where('id', '=', $data['id'])->update($room);
-    $availID = app('Increment\Hotel\Room\Http\AvailabilityController')->retrieveByPayloadPayloadValue('room_id', $data['id']);
+    $id = Room::where('code', '=', $data['id'])->get(['id']);
+    $res = Room::where('id', '=', $id[0]['id'])->update($room);
+    $availID = app('Increment\Hotel\Room\Http\AvailabilityController')->retrieveByPayloadPayloadValue('room_id', $id[0]['id']);
     $avail = array(
       'payload' => 'room_id',
-      'payload_value' => $data['id'],
+      'payload_value' => $id[0]['id'],
       'status' => $data['status'] === 'publish' ? 'available' : 'not_available'
     );
     $avail['updated_at'] = Carbon::now();
@@ -240,13 +241,12 @@ class RoomController extends APIController
       'id' => $availID['id']
     );
     $availIDs = app('Increment\Hotel\Room\Http\AvailabilityController')->updateByParams($con, $avail);
-    // dd($availIDs);
     if(isset($data['images'])){
       if(sizeof($data['images']) > 0){
         for ($i=0; $i <= sizeof($data['images'])-1 ; $i++) {
           $item = $data['images'][$i];
           $params = array(
-            'room_id' => $data['id'],
+            'room_id' => $id[0]['id'],
             'url' => $item['url'],
             'status' => 'room_images'
           );
@@ -254,7 +254,7 @@ class RoomController extends APIController
         }
       }
     }
-    $this->response['data'] = $res;
+    $this->response['data'] = $res === 1 ? $id[0]['id'] : $res;
     return $this->response();
   }
 
@@ -311,7 +311,7 @@ class RoomController extends APIController
       $this->response['error'] = 'Room title already exist';
     }else{
       $this->model = new Room();
-      $data['code'] = $this->generateReservationCode();
+      $data['code'] = $this->generateCode();
       $this->insertDB($data);
       $exist = app('Increment\Hotel\Room\Http\AvailabilityController')->retrieveByPayloadPayloadValue('room', $this->response['data']);
       if($exist === null){

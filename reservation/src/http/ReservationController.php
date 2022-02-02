@@ -35,7 +35,7 @@ class ReservationController extends APIController
 
 	public function retrieveAllDetails(Request $request){
 		$data = $request->all();
-		$reserve = Reservation::where('code', '=', $data['id'])->first();
+		$reserve = Reservation::where('reservation_code', '=', $data['id'])->first();
 		$cart = app('Increment\Hotel\Room\Http\CartController')->retrieveCartWithRooms($reserve['id']);
 		if(sizeof($cart) > 0){
 			for ($i=0; $i <= sizeof($cart) -1; $i++) {
