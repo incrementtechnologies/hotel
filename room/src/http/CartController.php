@@ -2,7 +2,8 @@
 
 namespace Increment\Hotel\Room\Http;
 use Illuminate\Http\Request;
-use  Increment\Hotel\Room\Models\Cart;
+use Increment\Hotel\Reservation\Models\Reservation;
+use Increment\Hotel\Room\Models\Cart;
 use App\Http\Controllers\APIController;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
@@ -66,13 +67,23 @@ class CartController extends APIController
     
     public function retrieveByParams(Request $request){
         $data = $request->all();
-        $result = Cart::where('carts.account_id', '=', $data['account_id'])
-            ->where(function($query){
-                $query->where('status', '=', 'pending')
-                ->orWhere('status', '=', 'in_progress');
-            })
-            ->groupBy('carts.price_id')
-            ->get(['id', 'qty', 'price_id', 'reservation_id', 'category_id', DB::raw('Sum(qty) as checkoutQty')]);
+        if(isset($data['reservation_code'])){
+            $reservationId = Reservation::where('reservation_code', '=', $data['reservation_code'])->get(['id']);
+            // dd($reservationId[0]['id']);
+            $result = Cart::where('carts.account_id', '=', $data['account_id'])
+                ->where('reservation_id', '=', $reservationId[0]['id'])
+                ->groupBy('carts.price_id')
+                ->get(['id', 'qty', 'price_id', 'reservation_id', 'category_id', DB::raw('Sum(qty) as checkoutQty')]);
+            // dd($result);
+        }else{
+            $result = Cart::where('carts.account_id', '=', $data['account_id'])
+                ->where(function($query){
+                    $query->where('status', '=', 'pending')
+                    ->orWhere('status', '=', 'in_progress');
+                })
+                ->groupBy('carts.price_id')
+                ->get(['id', 'qty', 'price_id', 'reservation_id', 'category_id', DB::raw('Sum(qty) as checkoutQty')]);
+        }
         if(sizeof($result) > 0 ){
             for ($i=0; $i <= sizeof($result) -1; $i++) { 
                 $item = $result[$i];
@@ -184,7 +195,6 @@ class CartController extends APIController
                     $query->where('status', '=', 'pending')
                     ->orWhere('status', '=', 'in_progress')
                     ->orWhere('status', '=', 'for_approval')
-					->orWhere('status', '=', 'cancelled')
 					->orWhere('status', '=', 'refunded');
                 }
             ));
@@ -192,6 +202,7 @@ class CartController extends APIController
             array_push($whereArray, array(
                 function($query){
                     $query->where('status', '=', 'pending')
+					->orWhere('status', '=', 'cancelled')
                     ->orWhere('status', '=', 'in_progress');
                 }
             ));
