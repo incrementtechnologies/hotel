@@ -198,7 +198,7 @@ class RoomController extends APIController
     $result = Room::leftJoin('pricings as T1', 'T1.room_id', '=', 'rooms.id')
       ->where('rooms.code', '=', $data['room_code'])
       ->where('rooms.deleted_at', '=', null)
-      ->get(['rooms.*', 'T1.regular', 'T1.refundable', 'T1.currency', 'T1.label', 'T1.id as price_id']);
+      ->get(['rooms.*', 'T1.regular', 'T1.refundable', 'T1.currency', 'T1.label', 'T1.id as price_id', 'T1.tax']);
       
       $size = Room::leftJoin('pricings as T1', 'T1.room_id', '=', 'rooms.id')
       ->where('rooms.code', '=', $data['room_code'])
