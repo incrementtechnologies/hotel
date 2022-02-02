@@ -39,6 +39,7 @@ class AddOnController extends APIController
 		$data = $request->all();
 		$results = DB::table('add_ons')
 			->where('deleted_at', '=', null)
+			->where('type', '=', $data['type'])
 			->get();
 		$this->response['data'] = $results;
 		$this->response['size'] = AddOn::where('deleted_at', '=', null)->count();
