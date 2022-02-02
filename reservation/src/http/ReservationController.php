@@ -46,7 +46,7 @@ class ReservationController extends APIController
 				if($item['rooms'][0]['label'] === 'MONTH'){
 					$nightsDays = $end->diffInMonths($start);
 				}
-				$cart[$i]['price_per_qty'] = ($item['rooms'][0]['refundable'] !== null ? $item['rooms'][0]['refundable']  : $item['rooms'][0]['regular']) * $item['checkoutQty'];
+				$cart[$i]['price_per_qty'] = ($item['rooms'][0]['refundable'] !== null && $item['rooms'][0]['refundable'] > 0 ? $item['rooms'][0]['refundable']  : $item['rooms'][0]['regular']) * $item['checkoutQty'];
 				$cart[$i]['price_with_number_of_days'] = $cart[$i]['price_per_qty'] * $nightsDays;
 			}
 			$reserve['details'] = json_decode($reserve['details'], true);
@@ -320,6 +320,7 @@ class ReservationController extends APIController
 		$carts = app('Increment\Hotel\Room\Http\CartController')->retrieveOwn($data);
 		$accountInfo = app('Increment\Account\Http\AccountInformationController')->getByParamsWithColumns($con[0]['value'], ['first_name as name', 'cellular_number as contactNumber']);
 		$accountInfo['email'] = app('Increment\Account\Http\AccountController')->getByParamsWithColumns($con[0]['value'], ['email'])['email'];
+		$availability = null;
 		if(sizeof($carts) > 0){
 			$availability = app('Increment\Hotel\Room\Http\AvailabilityController')->retrieveByPayloadPayloadValue('room_type', $carts[0]['category_id']);
 		}
@@ -458,29 +459,26 @@ class ReservationController extends APIController
 
 	public function checkout(Request $request){
 		$data = $request->all();
-		$reservation = Reservation::where('account_id', '=', $data['account_id'])->where('code', '=', $data['reservation_code'])->first();
+		$reservation = Reservation::where('account_id', '=', $data['account_id'])->where('reservation_code', '=', $data['reservation_code'])->first();
 		if($reservation !== null){
 			$accountEmail = app('Increment\Account\Http\AccountController')->getByParamsWithColumns($data['account_id'], ['email']);
 			$accountInformation = app('Increment\Account\Http\AccountInformationController')->getByParamsWithColumns($data['account_id'], ['cellular_number', 'first_name']);
 			$details = json_decode($reservation['details']);
 			$details->payment_method = $data['payment_method'];
-			$details = json_decode($reservation['details']);
 			$params = array(
 				"account_id" => $data['account_id'],
 				"amount" => $data['amount'],
 				"name" => $accountInformation->first_name,
 				"email" => $accountEmail['email'],
 				"referenceNumber" => $reservation['code'],
+				"reservation_code" => $reservation['reservation_code'],
 				"contact_number" => $accountInformation->cellular_number,
 				"payload" => "reservation",
-				"payload_value" => $reservation['id'],
-				"successUrl" => $data['success_url'],
-				"failUrl" => $data['failure_url'],
-				"cancelUrl" => $data['cancel_url']
+				"payload_value" => $reservation['id']
 			);
 			$res = app('Increment\Hotel\Payment\Http\PaymentController')->checkout($params);
 			if($res['data'] !== null){
-				Reservation::where('code', '=', $data['reservation_code'])->update(array(
+				Reservation::where('reservation_code', '=', $data['reservation_code'])->update(array(
 					'total' => $data['amount'],
 					'details' => json_encode($details),
 					'status' => 'in_progress'
@@ -650,6 +648,15 @@ class ReservationController extends APIController
 		}
 
 		$this->response['size'] = sizeOf($size);
+		$this->response['data'] = $res;
+		return $this->response();
+	}
+
+	public function delete(Request $request){
+		$data = $request->all();
+		$res = Reservation::where('id', '=', $data['id'])->update(array(
+			'deleted_at' =>  Carbon::now()
+		));
 		$this->response['data'] = $res;
 		return $this->response();
 	}

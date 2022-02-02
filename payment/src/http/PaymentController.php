@@ -74,9 +74,9 @@ class PaymentController extends APIController
 			$itemCheckout->requestReferenceNumber = $data['referenceNumber'];
 			$itemCheckout->items = array($params);
 			$itemCheckout->redirectUrl = array(
-				"success" => url(env('SUCCESS_CALLBACK').'?code='.$data['referenceNumber']),
-        "failure" => url(env('FAILED_CALLBACK').'?code='.$data['referenceNumber']),
-        "cancel" => url(env('FAILED_CALLBACK').'?code='.$data['referenceNumber']),
+				"success" => url(env('SUCCESS_CALLBACK').'?code='.$data['reservation_code']),
+        "failure" => url(env('FAILED_CALLBACK').'?code='.$data['reservation_code']),
+        "cancel" => url(env('FAILED_CALLBACK').'?code='.$data['reservation_code']),
 			);
 			$exec = $itemCheckout->execute();
 			if($exec == false){
