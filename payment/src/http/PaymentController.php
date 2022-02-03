@@ -118,7 +118,7 @@ class PaymentController extends APIController
 			$params = array(
 				'id' => $data['id'],
 				'payment_method'=> 'credit',
-				'status' => trtolower($checkout['paymentStatus']) === 'payment_success' ? 'for_approval' : 'failed'
+				'status' => strtolower($checkout['paymentStatus']) === 'payment_success' ? 'for_approval' : 'failed'
 			);
 			app('Increment\Hotel\Reservation\Http\ReservationController')->updateReservationCart($params);
 			//======End=========
