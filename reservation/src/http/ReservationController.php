@@ -384,6 +384,11 @@ class ReservationController extends APIController
 		$res = Reservation::where('code', '=', $data['roomCode'])->update(array(
 			'status' => $data['status']
 		));
+		if(!$reservation){
+			$this->response['error'] = 'Invalid Code';
+			return $this->response();
+		}
+		
 		$condition = array(
 			array('reservation_id', '=', $reservation['id'])
 		);
