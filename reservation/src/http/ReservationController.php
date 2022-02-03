@@ -380,33 +380,31 @@ class ReservationController extends APIController
 
 	public function updateReservations(Request $request){
 		$data = $request->all();
-		$reservation = Reservation::where('code', '=', $data['roomCode'])->first();
-		$res = Reservation::where('code', '=', $data['roomCode'])->update(array(
-			'status' => $data['status']
-		));
-		if(!$reservation){
-			$this->response['error'] = 'Invalid Code';
-			return $this->response();
-		}
-		
-		$condition = array(
-			array('reservation_id', '=', $reservation['id'])
-		);
-		$updates = array(
-			'status' => $data['status'],
-			'updated_at' => Carbon::now()
-		);
-		app('Increment\Hotel\Room\Http\CartController')->updateByParams($condition, $updates);
-		if(isset($data['booking'])){
-			if(sizeof($data['booking']) > 0){
-				for ($i=0; $i <= sizeof($data['booking'])-1; $i++) {
-					$item = $data['booking'][$i];
-					$params = array(
-						'reservation_id' =>  $data['reservation_id'],
-						'room_id' => $item['room_id'], 
-						'room_type_id' => $item['category']
-					);
-					Booking::create($params);
+		$reservation = Reservation::where('reservation_code', '=', $data['roomCode'])->first();
+		$res = null;
+		if($reservation !== null){
+			$res = Reservation::where('reservation_code', '=', $data['roomCode'])->update(array(
+				'status' => $data['status']
+			));
+			$condition = array(
+				array('reservation_id', '=', $reservation['id'])
+			);
+			$updates = array(
+				'status' => $data['status'],
+				'updated_at' => Carbon::now()
+			);
+			app('Increment\Hotel\Room\Http\CartController')->updateByParams($condition, $updates);
+			if(isset($data['booking'])){
+				if(sizeof($data['booking']) > 0){
+					for ($i=0; $i <= sizeof($data['booking'])-1; $i++) {
+						$item = $data['booking'][$i];
+						$params = array(
+							'reservation_id' =>  $data['reservation_id'],
+							'room_id' => $item['room_id'], 
+							'room_type_id' => $item['category']
+						);
+						Booking::create($params);
+					}
 				}
 			}
 		}
