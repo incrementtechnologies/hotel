@@ -106,11 +106,8 @@ class CartController extends APIController
                     if($result[$i]['rooms'][0]['label'] === 'MONTH'){
                         $nightsDays = $end->diffInMonths($start);
                     }
-                    if($result[$i]['rooms'][0]['refundable'] !== null && (float)$result[$i]['rooms'][0]['refundable'] > 0){
-                        $result[$i]['price_per_qty'] = $result[$i]['rooms'][0]['refundable'] * $item['checkoutQty'];
-                    }else{
-                        $result[$i]['price_per_qty'] = $result[$i]['rooms'][0]['regular'] * $item['checkoutQty'];
-                    }
+                   
+                    $result[$i]['price_per_qty'] = $result[$i]['rooms'][0]['regular'] * $item['checkoutQty'];
                     $result[$i]['price_with_number_of_days'] = $result[$i]['price_per_qty'] * $nightsDays;
                 }
             }

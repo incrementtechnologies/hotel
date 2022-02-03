@@ -46,7 +46,7 @@ class ReservationController extends APIController
 				if($item['rooms'][0]['label'] === 'MONTH'){
 					$nightsDays = $end->diffInMonths($start);
 				}
-				$cart[$i]['price_per_qty'] = ($item['rooms'][0]['refundable'] !== null && $item['rooms'][0]['refundable'] > 0 ? $item['rooms'][0]['refundable']  : $item['rooms'][0]['regular']) * $item['checkoutQty'];
+				$cart[$i]['price_per_qty'] = $item['rooms'][0]['regular'] * $item['checkoutQty'];
 				$cart[$i]['price_with_number_of_days'] = $cart[$i]['price_per_qty'] * $nightsDays;
 			}
 			$reserve['details'] = json_decode($reserve['details'], true);
