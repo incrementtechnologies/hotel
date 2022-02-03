@@ -82,6 +82,18 @@ class ReservationController extends APIController
 		}else{
 			app('Increment\Account\Http\AccountInformationController')->createByParams($customerInfo);
 		}
+		$hasPendingReservation = Reservation::leftJoin('carts as T1', 'T1.reservation_id', '=', 'reservations.id')
+			->where('reservations.account_id', '=', $data['account_id'])->where('reservations.status', '=', 'in_progress')->first();
+		if($hasPendingReservation !== null){
+			$availability = app('Increment\Hotel\Reservations\Http\ReservationController')->retrieveByPayloadPayloadValue('room_type', '=', $hasPendingReservation['category_id']);
+			if($availability !== null){
+				if($data['check_in'] != $availability['start_date'] && $data['check_out'] != $availability['end_date']){
+					$this->response['data'] = null;
+					$this->response['error'] = 'You cannot add multiple reservation with different check-in and check-out';
+					return $this->response();
+				}
+			}
+		}
 		$this->model = new Reservation();
 		$temp = Reservation::count();
 		$data['code'] = $this->generateCode($temp);
@@ -104,6 +116,7 @@ class ReservationController extends APIController
 			);
 			app('Increment\Hotel\Room\Http\CartController')->updateByParams($condition, $updates);
 		}
+		$this->response['error'] = null;
 		return $this->response();
 	}
 
@@ -367,33 +380,31 @@ class ReservationController extends APIController
 
 	public function updateReservations(Request $request){
 		$data = $request->all();
-		$reservation = Reservation::where('code', '=', $data['roomCode'])->first();
-		$res = Reservation::where('code', '=', $data['roomCode'])->update(array(
-			'status' => $data['status']
-		));
-		if(!$reservation){
-			$this->response['error'] = 'Invalid Code';
-			return $this->response();
-		}
-		
-		$condition = array(
-			array('reservation_id', '=', $reservation['id'])
-		);
-		$updates = array(
-			'status' => $data['status'],
-			'updated_at' => Carbon::now()
-		);
-		app('Increment\Hotel\Room\Http\CartController')->updateByParams($condition, $updates);
-		if(isset($data['booking'])){
-			if(sizeof($data['booking']) > 0){
-				for ($i=0; $i <= sizeof($data['booking'])-1; $i++) {
-					$item = $data['booking'][$i];
-					$params = array(
-						'reservation_id' =>  $data['reservation_id'],
-						'room_id' => $item['room_id'], 
-						'room_type_id' => $item['category']
-					);
-					Booking::create($params);
+		$reservation = Reservation::where('reservation_code', '=', $data['roomCode'])->first();
+		$res = null;
+		if($reservation !== null){
+			$res = Reservation::where('reservation_code', '=', $data['roomCode'])->update(array(
+				'status' => $data['status']
+			));
+			$condition = array(
+				array('reservation_id', '=', $reservation['id'])
+			);
+			$updates = array(
+				'status' => $data['status'],
+				'updated_at' => Carbon::now()
+			);
+			app('Increment\Hotel\Room\Http\CartController')->updateByParams($condition, $updates);
+			if(isset($data['booking'])){
+				if(sizeof($data['booking']) > 0){
+					for ($i=0; $i <= sizeof($data['booking'])-1; $i++) {
+						$item = $data['booking'][$i];
+						$params = array(
+							'reservation_id' =>  $data['reservation_id'],
+							'room_id' => $item['room_id'], 
+							'room_type_id' => $item['category']
+						);
+						Booking::create($params);
+					}
 				}
 			}
 		}
