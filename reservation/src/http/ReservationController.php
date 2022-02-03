@@ -550,15 +550,17 @@ class ReservationController extends APIController
 		Reservation::where('code', '=', $data['code'])->update(array(
 			'status' => 'for_approval'
 		));
-		$condition = array(
-			array('reservation_id', '=', $reservation['id']),
-			array('account_id', '=', $reservation['account_id'])
-		);
-		$updates = array(
-			'status' => 'for_approval',
-			'updated_at' => Carbon::now()
-		);
-		app('Increment\Hotel\Room\Http\CartController')->updateByParams($condition, $updates);
+		if($reservation !== null){
+			$condition = array(
+				array('reservation_id', '=', $reservation['id']),
+				array('account_id', '=', $reservation['account_id'])
+			);
+			$updates = array(
+				'status' => 'for_approval',
+				'updated_at' => Carbon::now()
+			);
+			app('Increment\Hotel\Room\Http\CartController')->updateByParams($condition, $updates);
+		}
 		header('Location: '.env('FRONT_URL_SUCCESS').'?code='.$data['code']);
 		exit(1);
 	}
