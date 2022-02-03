@@ -47,14 +47,12 @@ class RoomController extends APIController
     $whereArray = array(
       array('rooms.deleted_at', '=', null),
       array('T3.start_date', '!=', null),
-      array('T3.end_date', '!=', null)
+      array('T3.end_date', '!=', null),
+      array('rooms.max_capacity', '=', ((int)$data['adults'] + (int)$data['children']))
     );
     if($data['check_in'] !== null && $data['check_out'] !== null){
       array_push($whereArray, array('T3.start_date', '<=', $data['check_in']));
       array_push($whereArray, array('T3.end_date', '>=', $data['check_out']));
-    }
-    if($data['number_of_heads'] !== null && $data['number_of_heads'] > 0){
-      array_push($whereArray, array('rooms.max_capacity', '=', $data['number_of_heads']));
     }
     if($data['max'] > 0){
       array_push($whereArray, array('T1.regular', '<=', $data['max']));

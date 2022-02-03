@@ -82,6 +82,18 @@ class ReservationController extends APIController
 		}else{
 			app('Increment\Account\Http\AccountInformationController')->createByParams($customerInfo);
 		}
+		$hasPendingReservation = Reservation::leftJoin('carts as T1', 'T1.reservation_id', '=', 'reservations.id')
+			->where('reservations.account_id', '=', $data['account_id'])->where('reservations.status', '=', 'in_progress')->first();
+		if($hasPendingReservation !== null){
+			$availability = app('Increment\Hotel\Reservations\Http\ReservationController')->retrieveByPayloadPayloadValue('room_type', '=', $hasPendingReservation['category_id']);
+			if($availability !== null){
+				if($data['check_in'] != $availability['start_date'] && $data['check_out'] != $availability['end_date']){
+					$this->response['data'] = null;
+					$this->response['error'] = 'You cannot add multiple reservation with different check-in and check-out';
+					return $this->response();
+				}
+			}
+		}
 		$this->model = new Reservation();
 		$temp = Reservation::count();
 		$data['code'] = $this->generateCode($temp);
@@ -104,6 +116,7 @@ class ReservationController extends APIController
 			);
 			app('Increment\Hotel\Room\Http\CartController')->updateByParams($condition, $updates);
 		}
+		$this->response['error'] = null;
 		return $this->response();
 	}
 
