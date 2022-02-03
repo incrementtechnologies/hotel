@@ -325,8 +325,8 @@ class ReservationController extends APIController
 			$availability = app('Increment\Hotel\Room\Http\AvailabilityController')->retrieveByPayloadPayloadValue('room_type', $carts[0]['category_id']);
 		}
 		$available = array(
-			'check_in' =>  $availability['start_date'],
-			'check_out' =>  $availability['end_date']
+			'check_in' =>  $availability !== null ? $availability['start_date'] : null,
+			'check_out' =>  $availability !== null ? $availability['end_date'] : null
 		);
 		$this->response['data']['reservations'] = $result;
 		$this->response['data']['availability'] = $available;
