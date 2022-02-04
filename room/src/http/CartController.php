@@ -16,24 +16,19 @@ class CartController extends APIController
 
     public function create(Request $request){
         $data = $request->all();
-        $hasExistingCart = Cart::where('account_id', '=', $data['account_id'])
+        $emptyCart = Cart::where('account_id', '=', $data['account_id'])->get();
+        $existingCart = Cart::where('account_id', '=', $data['account_id'])
+            ->where('check_in', 'like', '%'.$data['check_in'].'%')
+            ->where('check_out', 'like', '%'.$data['check_out'].'%')
             ->where(function($query){
                 $query->where('status', '=', 'pending')
                 ->orWhere('status', '=', 'in_progress');
-            })->get();
-        if(sizeof($hasExistingCart) > 0){
-            $date1 = app('Increment\Hotel\Room\Http\AvailabilityController')->retrieveByPayloadPayloadValue('room_type', $hasExistingCart[0]['category_id']);
-            $date2 = app('Increment\Hotel\Room\Http\AvailabilityController')->retrieveByPayloadPayloadValue('room_type', $data['category_id']);
-            if($date1['start_date'] != $date2['start_date']){
-                $this->response['data'] = [];
-                $this->response['error'] = 'Cannot Add multiple room with different date';
-                return $this->response();
-            }else{
-                $res = Cart::create($data);
-                $this->response['data'] = $res;
-                $this->response['error'] = null;
-                return $this->response();
-            }
+            })->where('deleted_at', '=', null)
+            ->first();
+        if($existingCart === null && sizeof($emptyCart) > 0){
+            $this->response['data'] = [];
+            $this->response['error'] = 'Cannot Add multiple room with different date';
+            return $this->response();
         }else{
             $exist = Cart::where('account_id', '=', $data['account_id'])
                 ->where('price_id', '=', $data['price_id'])
@@ -77,7 +72,7 @@ class CartController extends APIController
             $result = Cart::where('carts.account_id', '=', $data['account_id'])
                 ->where('reservation_id', '=', $reservationId[0]['id'])
                 ->groupBy('carts.price_id')
-                ->get(['id', 'qty', 'price_id', 'reservation_id', 'category_id', DB::raw('Sum(qty) as checkoutQty')]);
+                ->get(['id', 'qty', 'price_id', 'reservation_id', 'check_in', 'check_out', 'category_id', DB::raw('Sum(qty) as checkoutQty')]);
             // dd($result);
         }else{
             $result = Cart::where('carts.account_id', '=', $data['account_id'])
@@ -86,15 +81,15 @@ class CartController extends APIController
                     ->orWhere('status', '=', 'in_progress');
                 })
                 ->groupBy('carts.price_id')
-                ->get(['id', 'qty', 'price_id', 'reservation_id', 'category_id', DB::raw('Sum(qty) as checkoutQty')]);
+                ->get(['id', 'qty', 'price_id', 'reservation_id',  'check_in', 'check_out', 'category_id', DB::raw('Sum(qty) as checkoutQty')]);
         }
         if(sizeof($result) > 0 ){
             for ($i=0; $i <= sizeof($result) -1; $i++) { 
                 $item = $result[$i];
-                $reservation =app('Increment\Hotel\Reservation\Http\ReservationController')->retrieveReservationByParams('id', $item['reservation_id'], ['code', 'check_in', 'check_out', 'reservation_code']);
+                $reservation =app('Increment\Hotel\Reservation\Http\ReservationController')->retrieveReservationByParams('id', $item['reservation_id'], ['code', 'reservation_code']);
                 if(sizeof($reservation) > 0){
-                    $start = Carbon::createFromFormat('Y-m-d H:i:s', $reservation[0]['check_in']);
-                    $end = Carbon::createFromFormat('Y-m-d H:i:s', $reservation[0]['check_out']);
+                    $start = Carbon::createFromFormat('Y-m-d H:i:s', $item['check_in']);
+                    $end = Carbon::createFromFormat('Y-m-d H:i:s', $item['check_out']);
                     $nightsDays = $end->diffInDays($start);
                     $result[$i]['date'] = $reservation;
                     $result[$i]['code'] = sizeOf($reservation) > 0 ? $reservation[0]['code'] : null;
@@ -221,11 +216,11 @@ class CartController extends APIController
         if($params['method'] === 'update'){
             $result = Cart::where($whereArray)
             ->groupBy('carts.price_id')
-            ->get(['id', 'qty', 'price_id', 'reservation_id', 'category_id', DB::raw('Sum(qty) as checkoutQty')]);
+            ->get(['id', 'qty', 'price_id', 'reservation_id', 'check_in', 'check_out', 'category_id', DB::raw('Sum(qty) as checkoutQty')]);
         }else{
             $result = Cart::where($whereArray)
             ->groupBy('carts.price_id')
-            ->get(['id', 'qty', 'price_id', 'reservation_id', 'category_id', DB::raw('Sum(qty) as checkoutQty')]);
+            ->get(['id', 'qty', 'price_id', 'reservation_id', 'check_in', 'check_out', 'category_id', DB::raw('Sum(qty) as checkoutQty')]);
         }
         
         if(sizeof($result) > 0 ){
@@ -237,5 +232,12 @@ class CartController extends APIController
             }
         }
         return $result;
+    }
+
+    public function getByDate(Request $request){
+        $data = $request->all();
+        $result = Cart::whereDate('check_in', '=', $data['check_in'])->whereDate('check_out', '=', $data['check_out'])->where('deleted_at', '=', null)->get();
+        $this->response['data'] = $result;
+        return $this->response();
     }
 }

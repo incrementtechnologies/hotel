@@ -139,9 +139,11 @@ class RoomController extends APIController
     ->where('rooms.max_capacity', '=', $data['heads'])
     ->get(['url']);
     $temp = [];
+    $finalResult = [];
     if(sizeof($result) > 0){
       for ($i=0; $i <= sizeof($result)-1; $i++) {
         $item = $result[$i];
+        // $assignedRooms = app('Increment\Hotel\Reservation\Http\ReservationController')->getAssignedRoomsQty();
         $addedToCart  = app('Increment\Hotel\Room\Http\CartController')->countById($item['price_id'], $item['category']);
         $roomStatus =  app('Increment\Hotel\Room\Http\AvailabilityController')->retrieveStatus($item['id']);
         $result[$i]['additional_info'] = json_decode($item['additional_info']);
@@ -168,9 +170,12 @@ class RoomController extends APIController
         $rooms =  app('Increment\Hotel\Room\Http\RoomPriceStatusController')->getTotalByPricesWithDetails($element['regular'], $item['category']);
         $addedToCart  = app('Increment\Hotel\Room\Http\CartController')->countById($element['price_id'], $element['category']);
         $temp[$b]['remaining_qty'] = (int)$rooms['remaining_qty'] - (int)$addedToCart;
+        if((int)$temp[$b]['remaining_qty'] > 0){
+          array_push($finalResult, $temp[$b]);
+        }
       }
     }
-    $this->response['data'] = $temp;
+    $this->response['data'] = $finalResult;
     return $this->response();
   }
 
