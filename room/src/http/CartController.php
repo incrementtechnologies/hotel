@@ -60,10 +60,7 @@ class CartController extends APIController
     public function countById($priceId, $categoryId){
         // dd($priceId, $categoryId);
         $result = Cart::where('price_id', '=', $priceId)->where('category_id', '=', $categoryId)->where('deleted_at', '=', null)->where(function($query){
-            $query->where('status', '=', 'pending')
-                ->orWhere('status', '=', 'in_progress')
-                ->orWhere('status', '=', 'for_approval')
-                ->orWhere('status', '=', 'completed');
+            $query->where('status', '=', 'confirmed');
         })->sum('qty');
         return $result;
     }
