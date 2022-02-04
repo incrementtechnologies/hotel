@@ -55,6 +55,18 @@ class AvailabilityController extends APIController
         return $this->response();
     }
 
+    public function retrieveTypeByCode(Request $request){
+        $data = $request->all();
+        $result = Availability::where('payload', '=', 'room_type')->where('payload_value', '=', $data['id'])->get();
+        // for ($i=0; $i <= sizeof($result)-1 ; $i++) { 
+        //     $item = $result[$i];
+        //     $result[$i]['start_date'] = $item['start_date'] !== null ? Carbon::createFromFormat('Y-m-d H:i:s', $item['start_date'])->copy()->tz($this->response['timezone'])->format('F d, Y') : null;
+        //     $result[$i]['end_date'] = $item['end_date'] !== null ? Carbon::createFromFormat('Y-m-d H:i:s', $item['end_date'])->copy()->tz($this->response['timezone'])->format('F d, Y') : null;
+        // }
+        $this->response['data'] = $result;
+        return $this->response();
+      } 
+
     public function retrieveById(Request $request){
         $data = $request->all();
         if(isset($data['room_code'])){
@@ -63,6 +75,11 @@ class AvailabilityController extends APIController
         }else{
             $con = $data['condition'];
             $result = Availability::where($con[0]['column'], $con[0]['clause'], $con[0]['value'])->where($con[1]['column'], $con[1]['clause'], $con[1]['value'])->get();
+        }
+        for ($i=0; $i <= sizeof($result)-1 ; $i++) { 
+            $item = $result[$i];
+            $result[$i]['start_date'] = $item['start_date'] !== null ? Carbon::createFromFormat('Y-m-d H:i:s', $item['start_date'])->copy()->tz($this->response['timezone'])->format('F d, Y') : null;
+            $result[$i]['end_date'] = $item['end_date'] !== null ? Carbon::createFromFormat('Y-m-d H:i:s', $item['end_date'])->copy()->tz($this->response['timezone'])->format('F d, Y') : null;
         }
         $this->response['data'] = $result;
         return $this->response();
