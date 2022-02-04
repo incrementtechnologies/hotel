@@ -85,7 +85,7 @@ class ReservationController extends APIController
 		$hasPendingReservation = Reservation::leftJoin('carts as T1', 'T1.reservation_id', '=', 'reservations.id')
 			->where('reservations.account_id', '=', $data['account_id'])->where('reservations.status', '=', 'in_progress')->first();
 		if($hasPendingReservation !== null){
-			$availability = app('Increment\Hotel\Reservations\Http\ReservationController')->retrieveByPayloadPayloadValue('room_type', '=', $hasPendingReservation['category_id']);
+			$availability = app('Increment\Hotel\Room\Http\AvailabilityController')->retrieveByPayloadPayloadValue('room_type', '=', $hasPendingReservation['category_id']);
 			if($availability !== null){
 				if($data['check_in'] != $availability['start_date'] && $data['check_out'] != $availability['end_date']){
 					$this->response['data'] = null;
@@ -349,12 +349,19 @@ class ReservationController extends APIController
 	}
 
 	public function countByIds($accountId, $couponId){
+		$whereArray = array(
+			array(function($query){
+				$query->where('status', '=', 'for_approval')
+				->orWhere('status', '=', 'completed')
+				->orWhere('status', '=', 'confirmed');
+			})
+		);
 		if($accountId === null && $couponId !== null){
-			return Reservation::where('coupon_id', '=', $couponId)->count();
+			return Reservation::where('coupon_id', '=', $couponId)->where($whereArray)->count();
 		}else if($accountId !== null && $couponId === null){
-			return Reservation::where('account_id', '=', $accountId)->count();
+			return Reservation::where('account_id', '=', $accountId)->where($whereArray)->count();
 		}else if($accountId !== null && $couponId !== null){
-			return Reservation::where('account_id', '=', $accountId)->where('coupon_id', '=', $couponId)->count();
+			return Reservation::where('account_id', '=', $accountId)->where('coupon_id', '=', $couponId)->where($whereArray)->count();
 		}
 	}
 
