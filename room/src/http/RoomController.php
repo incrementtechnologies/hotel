@@ -112,8 +112,7 @@ class RoomController extends APIController
           $result[$i]['remaining_qty'] = $availableRooms['remaining_qty'];
         }
       }
-
-      if($data['flag'] == 'false'){
+      if($data['flag'] === 'false'){
         $pricings = app('Increment\Hotel\Room\Http\PricingController')->retrieveLabel();
         $minMax = app('Increment\Hotel\Room\Http\PricingController')->retrieveMaxMin();
         $category = app('Increment\Common\Payload\Http\PayloadController')->retrieveAllData();
