@@ -71,7 +71,7 @@ class AvailabilityController extends APIController
         $data = $request->all();
         if(isset($data['room_code'])){
             $roomId = app('Increment\Hotel\Room\Http\RoomController')->retrieveIDByCode($data['room_code']);
-            $result = Availability::where('payload', '=', 'room_id')->where('payload_value', '=', $roomId)->get();
+            $result = Availability::where('payload', '=', 'room_id')->where('payload_value', '=', $roomId[0]['id'])->get();
         }else{
             $con = $data['condition'];
             $result = Availability::where($con[0]['column'], $con[0]['clause'], $con[0]['value'])->where($con[1]['column'], $con[1]['clause'], $con[1]['value'])->get();
@@ -103,6 +103,7 @@ class AvailabilityController extends APIController
             'payload' => $data['payload'],
             'payload_value' => $data['payload_value'],
             'limit' => $data['limit'],
+            'description' => $data['description'],
             'start_date' => $data['start_date'],
             'end_date' => $data['end_date'],
             'status' => $data['status'],
