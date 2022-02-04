@@ -152,14 +152,14 @@ class ReservationController extends APIController
 					'status' => 'in_progress',
 					'qty' => $item->checkoutQty,
 					'reservation_id' => $data['id'],
+					'check_in' => $data['check_in'],
+					'check_out' => $data['check_out'],
 					'updated_at' => Carbon::now()
 				);
 				app('Increment\Hotel\Room\Http\CartController')->updateByParams($condition, $updates);
 			}
 			$update = Reservation::where('id', '=', $data['id'])->update(array(
 				'details' => $data['details'],
-				'check_in' => $data['check_in'],
-				'check_out' => $data['check_out'],
 			));
 			$this->response['data'] = $update;
 			return $this->response();
@@ -311,7 +311,6 @@ class ReservationController extends APIController
 			array_push($whereArray, array(function($query){
 				$query->where('status', '=', 'in_progress')
 					->orWhere('status', '=', 'failed')
-					->orWhere('status', '=', 'for_approval')
 					->orWhere('status', '=', 'pending');
 				}
 			));
@@ -336,6 +335,12 @@ class ReservationController extends APIController
 		$availability = null;
 		if(sizeof($carts) > 0){
 			$availability = app('Increment\Hotel\Room\Http\AvailabilityController')->retrieveByPayloadPayloadValue('room_type', $carts[0]['category_id']);
+		}
+		if(sizeof($result) > 0){
+			$available = array(
+				'check_in' =>  $item['check_in'],
+				'check_out' =>  $item['check_out'],
+			);
 		}
 		$available = array(
 			'check_in' =>  $availability !== null ? $availability['start_date'] : null,
@@ -471,7 +476,7 @@ class ReservationController extends APIController
 				$item = $result[$i];
 				$result[$i]['details'] = json_decode($item['details']);
 				$result[$i]['check_in'] = Carbon::createFromFormat('Y-m-d H:i:s', $item['check_in'])->copy()->tz($this->response['timezone'])->format('F d, Y');
-        		$result[$i]['check_out'] = Carbon::createFromFormat('Y-m-d H:i:s', $item['check_out'])->copy()->tz($this->response['timezone'])->format('F d, Y');
+        $result[$i]['check_out'] = Carbon::createFromFormat('Y-m-d H:i:s', $item['check_out'])->copy()->tz($this->response['timezone'])->format('F d, Y');
 				$result[$i]['rooms'] = app('Increment\Hotel\Room\Http\CartController')->retrieveCartWithRoomDetails($item['id']);
 			}
 		}
@@ -684,5 +689,9 @@ class ReservationController extends APIController
 		));
 		$this->response['data'] = $res;
 		return $this->response();
+	}
+
+	public function getAssignedQtyByParams($column, $value){
+		return Booking::where($column, '=', $value)->where('deleted_at', '=', null)->count();
 	}
 }
