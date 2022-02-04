@@ -349,12 +349,19 @@ class ReservationController extends APIController
 	}
 
 	public function countByIds($accountId, $couponId){
+		$whereArray = array(
+			array(function($query){
+				$query->where('status', '=', 'for_approval')
+				->orWhere('status', '=', 'completed')
+				->orWhere('status', '=', 'confirmed');
+			})
+		);
 		if($accountId === null && $couponId !== null){
-			return Reservation::where('coupon_id', '=', $couponId)->count();
+			return Reservation::where('coupon_id', '=', $couponId)->where($whereArray)->count();
 		}else if($accountId !== null && $couponId === null){
-			return Reservation::where('account_id', '=', $accountId)->count();
+			return Reservation::where('account_id', '=', $accountId)->where($whereArray)->count();
 		}else if($accountId !== null && $couponId !== null){
-			return Reservation::where('account_id', '=', $accountId)->where('coupon_id', '=', $couponId)->count();
+			return Reservation::where('account_id', '=', $accountId)->where('coupon_id', '=', $couponId)->where($whereArray)->count();
 		}
 	}
 
