@@ -77,6 +77,22 @@ class PricingController extends APIController
 		}
 
 		public function retrieveLabel(){
-			return Pricing::groupBy('label')->get(['id', 'label']);
+			$withTax = Pricing::groupBy('label')->where('tax', '=', 1)->get(['id', 'label']);
+			$withoutTax = Pricing::groupBy('label')->where('tax', '=', 0)->get(['id', 'label']);
+			$tempArray = array();
+			if(sizeof($withTax) > 0){
+				for ($i=0; $i <= sizeof($withTax)-1; $i++) {
+					$item = $withTax[$i];
+					$item['label'] = $item['label'].' '.'with tax & fees';	
+					array_push($tempArray, $item);
+				}
+			}
+			if(sizeof($withoutTax) > 0){
+				for ($i=0; $i <= sizeof($withoutTax)-1; $i++){
+					$item = $withoutTax[$i];
+					array_push($tempArray, $item);
+				}
+			}
+			return $tempArray;
 		}
 }

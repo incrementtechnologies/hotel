@@ -46,8 +46,6 @@ class RoomController extends APIController
     $data = $request->all();
     $whereArray = array(
       array('rooms.deleted_at', '=', null),
-      array('T3.start_date', '!=', null),
-      array('T3.end_date', '!=', null),
       array('rooms.max_capacity', '=', ((int)$data['adults'] + (int)$data['children']))
     );
     if($data['check_in'] !== null && $data['check_out'] !== null){
@@ -57,6 +55,18 @@ class RoomController extends APIController
     if($data['max'] > 0){
       array_push($whereArray, array('T1.regular', '<=', $data['max']));
       array_push($whereArray, array('T1.regular', '>=', $data['min']));
+    }
+    if($data['priceType'] !== null){
+      for ($i=0; $i <= sizeof($data['priceType'])-2 ; $i++) {
+        $item = $data['priceType'][$i+1];
+        if(strpos($item, 'tax')){
+          array_push($whereArray, array('T1.label', '=', $item));
+          array_push($whereArray, array('T1.tax', '=', 1));
+        }else{
+          array_push($whereArray, array('T1.label', '=', $item));
+          array_push($whereArray, array('T1.tax', '=', 0));
+        }
+      }
     }
     $result = Room::leftJoin('pricings as T1', 'T1.room_id', '=', 'rooms.id')
       ->leftJoin('payloads as T2', 'T2.id', '=', 'rooms.category')
