@@ -103,12 +103,14 @@ class AvailabilityController extends APIController
             'payload' => $data['payload'],
             'payload_value' => $data['payload_value'],
             'limit' => $data['limit'],
-            'description' => $data['description'],
             'start_date' => $data['start_date'],
             'end_date' => $data['end_date'],
             'status' => $data['status'],
             'updated_at' => Carbon::now()
         );
+        if(isset($data['description'])){
+            $params['description'] = $data['description'];
+        }
         $result = Availability::where('id', '=', $data['id'])->update($params);
         $avail = array(
 					'status' => $data['status'] === 'available' ? 'publish' : 'pending'
