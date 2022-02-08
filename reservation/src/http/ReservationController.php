@@ -280,15 +280,6 @@ class ReservationController extends APIController
 		return $res;
 	}
 
-	public function getTotalBookings($date){
-		$bookings = Reservation::where('check_in', '<=', $date)->where('deleted_at', '=', null)->count();
-		$reservations = Reservation::where('check_in', '>', $date)->where('deleted_at', '=', null)->count();
-		return array(
-			'previous' => $bookings,
-			'upcommings' => $reservations
-		);
-	}
-
 	public function retrieveDetails(Request $request){
 		$data = $request->all();
 		$con = $data['condition'];
