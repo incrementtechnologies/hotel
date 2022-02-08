@@ -240,4 +240,14 @@ class CartController extends APIController
         $this->response['data'] = $result;
         return $this->response();
     }
+
+    public function getTotalBookings($date){
+		$bookings = Cart::where('check_in', '<=', $date)->where('deleted_at', '=', null)->count();
+		$reservations = Cart::where('check_in', '>', $date)->where('deleted_at', '=', null)->count();
+		return array(
+			'previous' => $bookings,
+			'upcommings' => $reservations
+		);
+	}
+
 }
