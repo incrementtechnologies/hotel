@@ -58,4 +58,8 @@ class RoomPriceStatusController extends APIController
         }
         return $res;
     }
+    
+    public function updateByParams($condition, $update){
+        return RoomPriceStatus::where($condition)->update($update);
+    }
 }

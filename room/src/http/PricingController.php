@@ -95,4 +95,19 @@ class PricingController extends APIController
 			}
 			return $tempArray;
 		}
+
+		public function update(Request $request){
+			$data = $request->all();
+			$result = $this->updateDB($data);
+			if($result){
+				$condition = array(
+					array('price_id', '=', $data['id'])
+				);
+				$update = array(
+					'amount' => $data['amount'],
+					'category_id' => $data['category_id']
+				);
+				$updatePriceStatus = app('Increment\Hotel\RoomPriceStatusController')->updateByParams($condition, $update);
+			}
+		}
 }
