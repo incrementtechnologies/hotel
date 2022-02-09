@@ -438,8 +438,8 @@ class ReservationController extends APIController
 		$whereArray = array(
 			array('reservations.'.$con[0]['column'], $con[0]['clause'], $con[0]['value']),
 			array('reservations.'.$con[1]['column'], $con[1]['clause'], $con[1]['value']),
-			array('reservations.'.$con[2]['column'], $con[2]['clause'], $con[2]['value']),
-			array('reservations.'.$con[3]['column'], $con[3]['clause'], $con[3]['value']),
+			array('carts.'.$con[2]['column'], $con[2]['clause'], $con[2]['value']),
+			array('carts.'.$con[3]['column'], $con[3]['clause'], $con[3]['value']),
 			array(function($query){
 				$query->where('reservations.status', '=', 'for_approval')
 					->orWhere('reservations.status', '=', 'confirmed')
