@@ -23,7 +23,7 @@ class RoomController extends APIController
       ->limit($data['limit'])
       ->offset($data['offset'])
       ->orderBy($con[0]['column'] === 'created_at' ? 'rooms.'.array_keys($data['sort'])[0] : array_keys($data['sort'])[0], array_values($data['sort'])[0])
-      ->get(['rooms.*', 'T1.regular', 'T1.refundable', 'T1.currency', 'T1.label']);
+      ->get(['rooms.*', 'T1.regular', 'T1.refundable', 'T1.currency', 'T1.label', 'T1.id as price_id']);
     $size = Room::leftJoin('pricings as T1', 'T1.room_id', '=', 'rooms.id')
       ->where($con[0]['column'] === 'created_at' ? 'rooms.'.$con[0]['column'] : $con[0]['column'], $con[0]['clause'], $con[0]['value'])
       ->where('rooms.deleted_at', '=', null)
@@ -35,6 +35,15 @@ class RoomController extends APIController
       $result[$i]['category'] = app('Increment\Common\Payload\Http\PayloadController')->retrieveByParams($item['category']);
       $result[$i]['additional_info'] = json_decode($item['additional_info']);
       $result[$i]['images'] = app('Increment\Hotel\Room\Http\ProductImageController')->getImages($item['id']);
+      $result[$i]['isUsed'] = false;
+      $inCart = app('Increment\Hotel\Room\Http\CartController')->retrieveByPriceId($item['price_id']);
+      if(sizeof($inCart) > 0){
+        $isAssigned = app('Increment\Hotel\Room\Http\ReservationController')->getAssignedQtyByParams('reservation_id', $inCart[0]['reservation_id']);
+        if($isAssigned > 0){
+          $result[$i]['isUsed'] = true;
+        }
+      }
+
     }
     $this->response['data'] = $result;
     $this->response['size'] = sizeof($size);
