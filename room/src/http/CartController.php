@@ -250,4 +250,17 @@ class CartController extends APIController
 		);
 	}
 
+    public function getByCategory($category){
+        return Cart::where('category_id', '=', $category)->where(function($query){
+            $query->where('status', '=', 'for_approval')
+            ->orWhere('status', '=', 'confirmed');
+        })->get();
+    }
+
+    public function retrieveByPriceId($priceId){
+        return Cart::where('price_id', '=', $priceId)->where(function($query){
+            $query->where('status', '=', 'for_approval')
+            ->orWhere('status', '=', 'confirmed');
+        })->where('deleted_at', '=', null)->get();
+    }
 }
