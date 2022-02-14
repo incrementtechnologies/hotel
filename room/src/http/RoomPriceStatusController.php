@@ -15,14 +15,15 @@ class RoomPriceStatusController extends APIController
     }
 
     public function insertPriceStatus($data){
-        $exist = RoomPriceStatus::where('amount', '=', $data['amount'])->where('category_id', '=', $data['category_id'])->first();
+        $exist = RoomPriceStatus::where('amount', '=', $data['amount'])->where('refundable', '=', $data['refundable'])->where('category_id', '=', $data['category_id'])->first();
         if($exist !== null){
-           RoomPriceStatus::where('amount', '=', $data['amount'])->where('category_id', '=', $data['category_id'])->update(
+           RoomPriceStatus::where('amount', '=', $data['amount'])->where('refundable', '=', $data['refundable'])->where('category_id', '=', $data['category_id'])->update(
                array(
                    'qty' => (int)$exist['qty'] + 1,
                )
            ); 
         }else{
+            $data['refundable'] = $data['refundable'] !== null ? $data['refundable'] : 0;
             RoomPriceStatus::create($data);
         }
         return $this->response['data'];
@@ -50,8 +51,9 @@ class RoomPriceStatusController extends APIController
         return RoomPriceStatus::where('amount', '=', $amount)->where('category_id', '=', $categoryId)->select(DB::raw('SUM(qty) as qty'), 'price_id', 'category_id', 'amount')->get();
     }
     
-    public function getTotalByPricesWithDetails($amount, $categoryId){
-        $res = RoomPriceStatus::where('amount', '=', $amount)->where('category_id', '=', $categoryId)->first();
+    public function getTotalByPricesWithDetails($amount, $refundable, $categoryId){
+        $refundable = $refundable > 0 ? $refundable : (double)0;
+        $res = RoomPriceStatus::where('amount', '=', $amount)->where('refundable', '=', $refundable)->where('category_id', '=', $categoryId)->first();
         if($res !== null){  
             $cart = app('Increment\Hotel\Room\Http\CartController')->getTotalReservations($res['price_id'], $res['category_id']);
             $res['remaining_qty'] = (int)$res['qty'] - $cart;

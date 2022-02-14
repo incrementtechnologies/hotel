@@ -8,5 +8,5 @@ use App\APIModel;
 class RoomPriceStatus extends APIModel
 {
     protected $table='room_price_status';
-    protected $fillable=['price_id', 'category_id', 'amount', 'qty',  'status'];
+    protected $fillable=['price_id', 'category_id', 'amount', 'refundable', 'qty',  'status'];
 }

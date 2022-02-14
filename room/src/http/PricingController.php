@@ -41,6 +41,7 @@ class PricingController extends APIController
 					'price_id' => $this->response['data'],
 					'category_id' => $data['category'],
 					'amount' => $data['regular'],
+					'refundable' => $data['refundable'],
 					'qty' => 1,
 					'status' => 'available'
 				);
