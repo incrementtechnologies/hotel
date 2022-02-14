@@ -71,6 +71,7 @@ class CartController extends APIController
             // dd($reservationId[0]['id']);
             $result = Cart::where('carts.account_id', '=', $data['account_id'])
                 ->where('reservation_id', '=', $reservationId[0]['id'])
+                ->where('deleted_at', '=', null)
                 ->groupBy('carts.price_id')
                 ->get(['id', 'qty', 'price_id', 'reservation_id', 'check_in', 'check_out', 'category_id', DB::raw('Sum(qty) as checkoutQty')]);
             // dd($result);
@@ -80,6 +81,7 @@ class CartController extends APIController
                     $query->where('status', '=', 'pending')
                     ->orWhere('status', '=', 'in_progress');
                 })
+                ->where('deleted_at', '=', null)
                 ->groupBy('carts.price_id')
                 ->get(['id', 'qty', 'price_id', 'reservation_id',  'check_in', 'check_out', 'category_id', DB::raw('Sum(qty) as checkoutQty')]);
         }
@@ -111,7 +113,7 @@ class CartController extends APIController
     public function retrieveCartWithRooms($reservation_id){
         $result = Cart::where('reservation_id', '=', $reservation_id)
             ->groupBy('carts.price_id')
-            ->get(['qty', 'reservation_id', 'price_id', 'category_id', DB::raw('Sum(qty) as checkoutQty')]);
+            ->get(['qty', 'reservation_id', 'price_id', 'check_in', 'check_out', 'category_id', DB::raw('Sum(qty) as checkoutQty')]);
         if(sizeof($result) > 0 ){
             for ($i=0; $i <= sizeof($result) -1; $i++) {
                 $temp = [];
@@ -242,8 +244,13 @@ class CartController extends APIController
     }
 
     public function getTotalBookings($date){
-		$bookings = Cart::where('check_in', '<=', $date)->where('deleted_at', '=', null)->count();
-		$reservations = Cart::where('check_in', '>', $date)->where('deleted_at', '=', null)->count();
+        $status = array(
+            array('status', '=', 'confirmed'),
+            array('status', '=', 'for_approval'),
+            array('status', '=', 'completed'),
+        );
+		$bookings = Cart::where($status)->where('check_in', '<=', $date)->where('deleted_at', '=', null)->count();
+		$reservations = Cart::where($status)->where('check_in', '>', $date)->where('deleted_at', '=', null)->count();
 		return array(
 			'previous' => $bookings,
 			'upcommings' => $reservations

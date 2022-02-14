@@ -40,8 +40,8 @@ class ReservationController extends APIController
 		if(sizeof($cart) > 0){
 			for ($i=0; $i <= sizeof($cart) -1; $i++) {
 				$item = $cart[$i];
-				$start = Carbon::createFromFormat('Y-m-d H:i:s', $reserve['check_in']);
-				$end = Carbon::createFromFormat('Y-m-d H:i:s', $reserve['check_out']);
+				$start = Carbon::createFromFormat('Y-m-d H:i:s', $item['check_in']);
+				$end = Carbon::createFromFormat('Y-m-d H:i:s', $item['check_out']);
 				$nightsDays = $end->diffInDays($start);
 				if($item['rooms'][0]['label'] === 'MONTH'){
 					$nightsDays = $end->diffInMonths($start);
@@ -52,8 +52,8 @@ class ReservationController extends APIController
 			$reserve['details'] = json_decode($reserve['details'], true);
 			$reserve['account_info'] = app('Increment\Account\Http\AccountInformationController')->getByParamsWithColumns($reserve['account_id'], ['first_name as name', 'cellular_number as contactNumber']);
 			$reserve['account_info']['email'] = app('Increment\Account\Http\AccountController')->getByParamsWithColumns($reserve['account_id'], ['email'])['email'];
-			$reserve['check_in'] = Carbon::createFromFormat('Y-m-d H:i:s', $reserve['check_in'])->copy()->tz($this->response['timezone'])->format('F j, Y');
-			$reserve['check_out'] = Carbon::createFromFormat('Y-m-d H:i:s', $reserve['check_out'])->copy()->tz($this->response['timezone'])->format('F j, Y');
+			$reserve['check_in'] = Carbon::createFromFormat('Y-m-d H:i:s', $cart[0]['check_in'])->copy()->tz($this->response['timezone'])->format('F j, Y');
+			$reserve['check_out'] = Carbon::createFromFormat('Y-m-d H:i:s', $cart[0]['check_out'])->copy()->tz($this->response['timezone'])->format('F j, Y');
 			$reserve['coupon'] = $reserve['coupon_id'] !== null ? app('App\Http\Controllers\CouponController')->retrieveById($reserve['coupon_id']) : array('code' => null);
 			$array = array(
 				'reservation' => $reserve,
@@ -141,6 +141,7 @@ class ReservationController extends APIController
 				$condition = array(
 					array('account_id', '=', $data['account_id']),
 					array('category_id', '=', $item->category),
+					array('price_id', '=', $item->price_id),
 					array('deleted_at', '=', null),
 					array(function($query){
 						$query->where('status', '=', 'in_progress')
@@ -438,8 +439,8 @@ class ReservationController extends APIController
 		$whereArray = array(
 			array('reservations.'.$con[0]['column'], $con[0]['clause'], $con[0]['value']),
 			array('reservations.'.$con[1]['column'], $con[1]['clause'], $con[1]['value']),
-			array('carts.'.$con[2]['column'], $con[2]['clause'], $con[2]['value']),
-			array('carts.'.$con[3]['column'], $con[3]['clause'], $con[3]['value']),
+			array('T1.'.$con[2]['column'], $con[2]['clause'], $con[2]['value']),
+			array('T1.'.$con[3]['column'], $con[3]['clause'], $con[3]['value']),
 			array(function($query){
 				$query->where('reservations.status', '=', 'for_approval')
 					->orWhere('reservations.status', '=', 'confirmed')
@@ -455,7 +456,7 @@ class ReservationController extends APIController
 			->groupBy('T1.reservation_id')
 			->limit($data['limit'])
 			->offset($data['offset'])
-			->get(['reservations.*', 'T2.regular', 'T2.refundable', 'T2.currency', 'T2.label']);
+			->get(['reservations.*', 'T2.regular', 'T2.refundable', 'T2.currency', 'T2.label', 'T1.check_in', 'T1.check_out']);
 		$size = Reservation::leftJoin('carts as T1', 'T1.reservation_id', '=', 'reservations.id')
 			->leftJoin('pricings as T2', 'T2.id', '=', 'T1.price_id')
 			->where($whereArray)
@@ -530,7 +531,7 @@ class ReservationController extends APIController
 		$dates = [];
 		$result = [];
 		$i=0;
-		$dateList = CarbonPeriod::create($carbon->toDateTimeString(), Carbon::yesterday()->toDateTimeString());
+		$dateList = CarbonPeriod::create($carbon->toDateTimeString(), $currDate->subDays(1)->toDateTimeString());
 		foreach ($dateList as $date) {
 			array_push($dates, $date->toDateString());
 		}
@@ -663,8 +664,12 @@ class ReservationController extends APIController
 			$item = $res[$i];
 			$res[$i]['name'] = app('Increment\Account\Http\AccountInformationController')->getByParamsWithColumns($item['account_id'], ['first_name'])['first_name'];
 			$res[$i]['details'] = json_decode($item['details']);
-			$res[$i]['check_in'] = Carbon::createFromFormat('Y-m-d H:i:s', $item['check_in'])->copy()->tz($this->response['timezone'])->format('F j, Y');
-			$res[$i]['check_out'] = Carbon::createFromFormat('Y-m-d H:i:s', $item['check_out'])->copy()->tz($this->response['timezone'])->format('F j, Y');
+
+			$cart = app('Increment\Hotel\Room\Http\CartController')->getByReservationId($item['id']);
+			if($cart !== null){
+				$res[$i]['check_in'] = Carbon::createFromFormat('Y-m-d H:i:s', $cart['check_in'])->copy()->tz($this->response['timezone'])->format('F j, Y');
+				$res[$i]['check_out'] = Carbon::createFromFormat('Y-m-d H:i:s', $cart['check_out'])->copy()->tz($this->response['timezone'])->format('F j, Y');
+			}
 			$res[$i]['room'] = app('Increment\Hotel\Room\Http\RoomController')->retrieveByIDParams($item['room_id']);
 		}
 
