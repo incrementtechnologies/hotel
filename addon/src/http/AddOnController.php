@@ -31,7 +31,7 @@ class AddOnController extends APIController
 			->orderBy(array_keys($data['sort'])[0], array_values($data['sort'])[0])
 			->get();
 		$this->response['data'] = $results;
-		$this->response['size'] = AddOn::where('deleted_at', '=', null)->count();
+		$this->response['size'] = AddOn::where($con[1]['column'], $con[1]['clause'], $con[1]['value'])->where('deleted_at', '=', null)->count();
 		return $this->response();
 	}
 
@@ -51,8 +51,16 @@ class AddOnController extends APIController
 		  return $this->response();
 		}
 		$data = $request->all();
-        $this->model = new AddOn();
-        $this->insertDB($data);
-		return $this->response();
+		$exist = AddOn::where('title', '=', $data['title'])->where('deleted_at', '=', null)->first();
+		if($exist !== null){
+			$this->response['error'] = 'Already existed add-on';
+			$this->response['data'] = null;
+			return $this->response();
+		}else{
+			$this->model = new AddOn();
+			$this->insertDB($data);
+			$this->response['error'] = null;
+			return $this->response();
+		}
 	}
 }

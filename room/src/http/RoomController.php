@@ -38,7 +38,7 @@ class RoomController extends APIController
       $result[$i]['isUsed'] = false;
       $inCart = app('Increment\Hotel\Room\Http\CartController')->retrieveByPriceId($item['price_id']);
       if(sizeof($inCart) > 0){
-        $isAssigned = app('Increment\Hotel\Room\Http\ReservationController')->getAssignedQtyByParams('reservation_id', $inCart[0]['reservation_id']);
+        $isAssigned = app('Increment\Hotel\Reservation\Http\ReservationController')->getAssignedQtyByParams('reservation_id', $inCart[0]['reservation_id']);
         if($isAssigned > 0){
           $result[$i]['isUsed'] = true;
         }
@@ -202,7 +202,7 @@ class RoomController extends APIController
     $counter = 0;
     for ($i=0; $i <sizeof($array); $i++) { 
       $item = $array[$i];
-      if((int)$item['regular'] === (int)$amount1 || (int)$item['refundable'] === (int)$amount2){
+      if((int)$item['regular'] === (int)$amount1 && (int)$item['refundable'] === (int)$amount2){
         $counter += 1;
       }
     }
