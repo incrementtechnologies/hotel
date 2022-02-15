@@ -14,6 +14,7 @@ Route::post($route.'retrieve_by_params', $controller."retrieveByParams");
 Route::post($route.'update_with_images', $controller."updateWithImages");
 Route::post($route.'update', $controller."update");
 Route::post($route.'delete', $controller."delete");
+Route::post($route.'delete_rooms', $controller."deleteRoom");
 Route::get($route.'test', $controller."test");
 
 // Pricings

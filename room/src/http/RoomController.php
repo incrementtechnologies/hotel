@@ -119,7 +119,7 @@ class RoomController extends APIController
         $roomsQty = Room::where('category', $item['category'])->count();
         $result[$i]['fullyBooked'] =  (int)($roomsQty - $addedToCart) > 0 ? false : true;
         $result[$i]['additional_info'] = json_decode($item['additional_info']);
-        $result[$i]['images'] = app('Increment\Hotel\Room\Http\ProductImageController')->getImages($item['id']);
+        $result[$i]['images'] = app('Increment\Hotel\Room\Http\ProductImageController')->retrieveImageByStatus($item['category_id'], 'room_type');;
         $result[$i]['general_features'] = json_decode($item['general_features']);
         //get available rooms
 
@@ -152,11 +152,7 @@ class RoomController extends APIController
       ->where('rooms.max_capacity', '=', $data['heads'])
       ->orderBy('rooms.id', 'desc')
       ->get(['rooms.*', 'T1.regular', 'T1.refundable', 'T1.currency', 'T1.label', 'T1.id as price_id']);
-    $images = Room::leftJoin('payloads as T1', 'T1.id', '=', 'rooms.category')
-    ->leftJoin('product_images as T2', 'T2.room_id', '=', 'rooms.id')
-    ->where('rooms.category', '=', $data['category_id'])
-    ->where('rooms.max_capacity', '=', $data['heads'])
-    ->get(['url']);
+    $images = app('Increment\Hotel\Room\Http\ProductImageController')->retrieveImageByStatus($data['category_id'], 'room_type');
     $temp = [];
     $finalResult = [];
     if(sizeof($result) > 0){
@@ -368,5 +364,54 @@ class RoomController extends APIController
 
   public function updateByParams($condition, $params){
     return Room::where($condition)->update($params);
+  }
+  
+  public function deleteRoom(Request $request){
+    $data = $request->all();
+    $con = $data['condition'];
+    $room = Room::where($con[0]['column'], $con[0]['clause'], $con[0]['value'])->first();
+    if($room !== null){
+      $roomdeleted = Room::where($con[0]['column'], $con[0]['clause'], $con[0]['value'])->update(array(
+        'deleted_at' => Carbon::now()
+      ));
+
+      $pricing = app('Increment\Hotel\Room\Http\PricingController')->retrieveByColumn('room_id', $room['id']);
+      $priceStatus = app('Increment\Hotel\Room\Http\RoomPriceStatusController')->checkIfPriceExist(array(
+        array('amount', '=', $pricing['regular']),
+        array('refundable', '=', $pricing['refundable'] !== null ? $pricing['refundable'] : (double)0),
+        array('category_id', '=', $room['category']),
+        array('deleted_at', '=', null)
+      ));
+      $condition = array(
+        array('amount', '=', $pricing['regular']),
+        array('refundable', '=', $pricing['refundable'] !== null ? $pricing['refundable'] : (double)0),
+        array('category_id', '=', $room['category']),
+      );
+      $update = null;
+      if(sizeOf($priceStatus) > 0){
+        if($priceStatus[0]['qty'] === 1){
+          $update = array(
+            'deleted_at' => Carbon::now()
+          );
+        }else{
+          $update = array(
+            'qty' => (int)$priceStatus[0]['qty'] - 1
+          );
+        }
+      }
+      app('Increment\Hotel\Room\Http\RoomPriceStatusController')->updateByParams($condition, $update);
+      app('Increment\Hotel\Room\Http\PricingController')->deleteByColumn('room_id', $room['id']);
+      app('Increment\Hotel\Room\Http\AvailabilityController')->updateByParams(
+        array(
+          array('payload_value', '=', $room['id']),
+          array('payload', '=', 'room_id')
+        ),
+        array(
+          'deleted_at' => Carbon::now()
+        )
+      );
+      $this->response['data'] = $roomdeleted;
+      return $this->response();
+    }
   }
 }

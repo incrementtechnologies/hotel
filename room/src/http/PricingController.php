@@ -122,4 +122,14 @@ class PricingController extends APIController
 			$this->response['data'] = $result === 1 ? true : false;
 			return $this->response();
 		}
+
+		public function retrieveByColumn($column, $value){
+			return Pricing::where($column, '=', $value)->first();
+		}
+
+		public function deleteByColumn($column, $value){
+			return Pricing::where($column, '=', $value)->update(array(
+				'deleted_at' => Carbon::now()
+			));
+		}
 }
