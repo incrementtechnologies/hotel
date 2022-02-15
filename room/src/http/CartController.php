@@ -38,9 +38,32 @@ class CartController extends APIController
                     ->orWhere('status', '=', 'in_progress');
                 })->first();
             if($exist !== null){
-                $res = Cart::where('id', '=', $exist['id'])->update(array(
-                    'qty' => (int)$exist['qty'] + (int)$data['qty']
-                ));
+                $hasReservations = Cart::where('id', '=', $exist['id'])->where('reservation_id', '=', null)->first();
+                $addedQty =  (int)$exist['qty'] + (int)$data['qty'];
+                $res = null;
+                if($hasReservations !== null){
+                    $canAdd = app('Increment\Hotel\Room\Http\RoomPriceStatusController')->canAdd($data['price_id'], $data['category_id'], $addedQty);
+                    if(!$canAdd){
+                        $this->response['data'] = null;
+                        $this->response['error'] = 'Qty in carts exceeds the available qty';
+                        return $this->response();
+                    }else{
+                        $res = Cart::where('id', '=', $exist['id'])->update(array(
+                            'qty' => $addedQty
+                        ));
+                    }
+                }else{
+                    $canAdd = app('Increment\Hotel\Room\Http\RoomPriceStatusController')->canAdd($data['price_id'], $data['category_id'], (int)$data['qty']);
+                    if(!$canAdd){
+                        $this->response['data'] = null;
+                        $this->response['error'] = 'Qty in carts exceeds the available qty';
+                        return $this->response();
+                    }else{
+                        $res = Cart::where('id', '=', $exist['id'])->update(array(
+                            'qty' => (int)$data['qty']
+                        ));
+                    }
+                }
                 $this->response['data'] = $res;
                 $this->response['error'] = null;
             }else{
@@ -48,6 +71,7 @@ class CartController extends APIController
                 $this->response['data'] = $res;
                 $this->response['error'] = null;
             }
+            $this->response['error'] = null;
             return $this->response();
         }
     }

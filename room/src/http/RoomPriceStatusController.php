@@ -33,6 +33,11 @@ class RoomPriceStatusController extends APIController
         return RoomPriceStatus::where($params)->get();
     }
 
+    public function canAdd($priceId, $categoryId, $qty){
+        $result = RoomPriceStatus::where('price_id', '=', $priceId)->where('category_id', '=', $categoryId)->where('qty', '>=', $qty)->get();
+        return sizeOf($result) > 0;
+    }
+
     public function updateQtyById($id, $value){
         return RoomPriceStatus::where('id', '=', $id)->update(array(
             'qty' => $value,

@@ -15,6 +15,20 @@ class AddOnController extends APIController
         $this->notRequired = array('merchant_id', 'url');
     }
 
+		public function update(Request $request){
+			$data = $request->all();
+			$exist = AddOn::where('title', '=',  $data['title'])->first();
+			if($exist !== null){
+				$this->response['data'] = null;
+				$this->response['error'] = 'Add-on is already existed';
+				return $this->response();
+			}else{
+				$this->updateDB($data);
+				$this->response['error'] = null;
+				return $this->response();
+			}
+		}
+
     public function retrieve(Request $request) {
 		$data = $request->all();
 		$con = $data['condition'];

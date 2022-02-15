@@ -74,4 +74,8 @@ class ProductImageController extends APIController
       'deleted_at' => Carbon::now()
     ));
   }
+  
+  public function retrieveImageByStatus($roomId, $status){
+    return ProductImage::where('room_id', '=', $roomId)->where('status', '=', $status)->where('deleted_at', '=', null)->get();
+  }
 }

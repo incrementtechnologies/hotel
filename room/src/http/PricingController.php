@@ -7,6 +7,8 @@ use Illuminate\Http\Request;
 use App\Http\Controllers\APIController;
 use Increment\Hotel\Room\Models\Pricing;
 use Increment\Hotel\Room\Models\Room;
+use Carbon\Carbon;
+
 class PricingController extends APIController
 {
     function __construct(){
@@ -110,5 +112,15 @@ class PricingController extends APIController
 				);
 				$updatePriceStatus = app('Increment\Hotel\RoomPriceStatusController')->updateByParams($condition, $update);
 			}
+		}
+
+		public function retrieveByColumn($column, $value){
+			return Pricing::where($column, '=', $value)->first();
+		}
+
+		public function deleteByColumn($column, $value){
+			return Pricing::where($column, '=', $value)->update(array(
+				'deleted_at' => Carbon::now()
+			));
 		}
 }
