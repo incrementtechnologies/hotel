@@ -1,6 +1,4 @@
 <?php
-
-
 namespace Increment\Hotel\Room\Http;
 
 use Illuminate\Http\Request;
@@ -8,7 +6,6 @@ use App\Http\Controllers\APIController;
 use Increment\Hotel\Room\Models\Pricing;
 use Increment\Hotel\Room\Models\Room;
 use Carbon\Carbon;
-
 class PricingController extends APIController
 {
     function __construct(){
@@ -101,17 +98,29 @@ class PricingController extends APIController
 
 		public function update(Request $request){
 			$data = $request->all();
-			$result = $this->updateDB($data);
+			$params = array(
+				'account_id' => $data['account_id'],
+				'room_id' => $data['room_id'],
+				'regular' => $data['regular'],
+				'refundable' => $data['refundable'],
+				'currency' => $data['currency'],
+				'tax' => $data['tax'],
+				'label' => $data['label'],
+				'updated_at' => Carbon::now()
+			);
+			$result = Pricing::where('id', '=', $data['id'])->update($params);
 			if($result){
 				$condition = array(
 					array('price_id', '=', $data['id'])
 				);
 				$update = array(
-					'amount' => $data['amount'],
+					'amount' => $data['regular'],
 					'category_id' => $data['category_id']
 				);
-				$updatePriceStatus = app('Increment\Hotel\RoomPriceStatusController')->updateByParams($condition, $update);
+				$updatePriceStatus = app('Increment\Hotel\Room\Http\RoomPriceStatusController')->updateByParams($condition, $update);
 			}
+			$this->response['data'] = $result === 1 ? true : false;
+			return $this->response();
 		}
 
 		public function retrieveByColumn($column, $value){
