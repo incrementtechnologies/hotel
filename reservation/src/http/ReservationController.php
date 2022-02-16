@@ -142,57 +142,80 @@ class ReservationController extends APIController
 	public function update(Request $request){
 		$data = $request->all();
 		$this->model = new Reservation();
-		$confirmed = Reservation::where('id', '=', $data['id'])->first();
-		if($confirmed['status'] === 'confirm'){
-			$this->response['data'] = null;
-			$this->response['error'] = 'Your reservation has been confirmed by the admin';
-			return $this->response();;
-		}else{
-			$data['account_info'] = json_decode($data['account_info']);
-			$accountInfo = array(
-				'first_name' => $data['account_info']->name,
-				'cellular_number' => $data['account_info']->contactNumber
-			);
-			app('Increment\Account\Http\AccountInformationController')->updateByAccountId($data['account_id'], $accountInfo);
-			$cart = json_decode($data['carts']);
-			for ($i=0; $i <= sizeof($cart)-1 ; $i++) { 
-				$item = $cart[$i];
-				$condition = array(
-					array('account_id', '=', $data['account_id']),
-					array('category_id', '=', $item->category),
-					array('price_id', '=', $item->price_id),
-					array('deleted_at', '=', null),
-					array(function($query){
-						$query->where('status', '=', 'in_progress')
-						->orWhere('status', '=', 'pending')
-						->orWhere('status', '=', 'in_progress');
-					})
-				);
-				$updates = array(
-					'status' => 'in_progress',
-					'qty' => $item->checkoutQty,
-					'reservation_id' => $data['id'],
-					'check_in' => $data['check_in'],
-					'check_out' => $data['check_out'],
-					'updated_at' => Carbon::now()
-				);
-				app('Increment\Hotel\Room\Http\CartController')->updateByParams($condition, $updates);
+		$reservation = null;
+		if(!isset($data['reservation_code'])){
+			$confirmed = Reservation::where('id', '=', $data['id'])->first();
+			if($confirmed['status'] === 'confirm'){
+				$this->response['data'] = null;
+				$this->response['error'] = 'Your reservation has been confirmed by the admin';
+				return $this->response();;
 			}
+		}else{
+			$reservation = Reservation::where('reservation_code', '=', $data['reservation_code'])->first();
+		}
+		$data['account_info'] = json_decode($data['account_info']);
+		$accountInfo = array(
+			'first_name' => $data['account_info']->name,
+			'cellular_number' => $data['account_info']->contactNumber
+		);
+		app('Increment\Account\Http\AccountInformationController')->updateByAccountId($data['account_id'], $accountInfo);
+		$cart = json_decode($data['carts']);
+		for ($i=0; $i <= sizeof($cart)-1 ; $i++) { 
+			$item = $cart[$i];
+			$condition = array();
+			if(!isset($data['reservation_code'])){
+				$condition[] = array('account_id', '=', $data['account_id']);
+				$condition[] = array('category_id', '=', $item->category);
+				$condition[] = array('price_id', '=', $item->price_id);
+				$condition[] = array('deleted_at', '=', null);
+				$condition[] = array(function($query){
+					$query->where('status', '=', 'in_progress')
+					->orWhere('status', '=', 'pending')
+					->orWhere('status', '=', 'in_progress');
+				});
+			}else{
+				$condition[] = array('reservation_id', '=', $reservation['id']);
+			}
+			$updates = array(
+				'status' => 'in_progress',
+				'qty' => $item->checkoutQty,
+				'reservation_id' => $data['id'],
+				'check_in' => $data['check_in'],
+				'check_out' => $data['check_out'],
+				'updated_at' => Carbon::now()
+			);
+			app('Increment\Hotel\Room\Http\CartController')->updateByParams($condition, $updates);
+		}
+
+		if(isset($data['reservation_code'])){
+			$update = Reservation::where('reservation_code', '=', $data['reservation_code'])->update(array(
+				'details' => $data['details'],
+			));
+		}else{
 			$update = Reservation::where('id', '=', $data['id'])->update(array(
 				'details' => $data['details'],
 			));
-			$this->response['data'] = $update;
-			return $this->response();
 		}
+		$this->response['data'] = $update;
+		return $this->response();
 	}
 
 	public function updateCoupon(Request $request){
 		$data = $request->all();
-		$reserve = Reservation::where('account_id', '=', $data['account_id'])->where('id', '=', $data['id'])->first();
+		$condition = array(
+			array('account_id', '=', $data['account_id'])
+		);
+		if(isset($data['reservation_code'])){
+			$condition[] = array('reservation_code', '=', $data['reservation_code']);
+		}else{
+			$condition[] = array('id', '=', $data['id']);
+		}
+		$reserve = Reservation::where($condition)->first();
+		
 		if($reserve !== null){
 			$details = json_decode($reserve['details']);
 			$details->payment_method = $data['payment_method'];
-			$res = Reservation::where('account_id', '=', $data['account_id'])->where('id', '=', $data['id'])->update(array(
+			$res = Reservation::where($condition)->update(array(
 				'details' => 	json_encode($details),	
 				'status' => $data['status'],
 				'total' => $data['amount']
@@ -520,7 +543,7 @@ class ReservationController extends APIController
 				Reservation::where('reservation_code', '=', $data['reservation_code'])->update(array(
 					'total' => $data['amount'],
 					'details' => json_encode($details),
-					'status' => 'in_progress'
+					'status' => $reservation['status'] === 'for_approval' ? 'for_approval' : 'in_progress'
 				));
 				$this->response['data'] = $res['data'];
 			}else{
