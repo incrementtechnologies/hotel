@@ -146,4 +146,12 @@ class AvailabilityController extends APIController
     public function retrieveByPayloadPayloadValue($payload, $payloadValue){
         return Availability::where('payload_value', '=', $payloadValue)->where('payload', '=', $payload)->first();
     }
+
+    public function checkIfAvailable($payload, $payloadValue, $startDate, $endDate){
+        return Availability::where('payload_value', '=', $payloadValue)
+            ->where('payload', '=', $payload)
+            ->where('start_date', '<=', $startDate)
+            ->where('end_date', '>=', $endDate)
+            ->first();
+    }
 }

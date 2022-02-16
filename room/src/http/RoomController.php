@@ -310,7 +310,9 @@ class RoomController extends APIController
     return Room::where('code', '=', $room_code)->get(['id']);
   }
 
-
+  public function availableRoomByCapacity($category, $capacity){
+    return Room::where('category', '=', $category)->where('max_capacity', '>=', $capacity)->get(['id']);
+  }
   public function retrieveTypeByCode(Request $request){
     $data = $request->all();
     $result = Room::where('code', '=', $data['code'])->get(['category']);
