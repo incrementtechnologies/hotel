@@ -74,9 +74,9 @@ class RoomController extends APIController
         }else{
           array_push($whereArray, array('T1.label', '=', $item));
           array_push($whereArray, array('T1.tax', '=', 0));
-        }
-      }
+           }
     }
+   }
     $result = Room::leftJoin('pricings as T1', 'T1.room_id', '=', 'rooms.id')
       ->leftJoin('payloads as T2', 'T2.id', '=', 'rooms.category')
       ->leftJoin('availabilities as T3', 'T3.payload_value', '=', 'T2.id')
@@ -97,7 +97,8 @@ class RoomController extends APIController
       ->offset($data['offset'])
       ->orderBy('T3.start_date', 'desc')
       ->get(['rooms.*', 'T1.regular', 'T1.refundable', 'T1.currency', 'T1.label', 'T2.payload_value', 'T2.id as category_id', 'T1.id as price_id', 'T2.category as general_description', 'T2.details as general_features']);
-      $size = Room::leftJoin('pricings as T1', 'T1.room_id', '=', 'rooms.id')
+      
+    $size = Room::leftJoin('pricings as T1', 'T1.room_id', '=', 'rooms.id')
       ->leftJoin('payloads as T2', 'T2.id', '=', 'rooms.category')
       ->leftJoin('availabilities as T3', 'T3.payload_value', '=', 'T2.id')
       ->where($whereArray)
@@ -113,35 +114,43 @@ class RoomController extends APIController
       ->groupBy('rooms.category')
       ->get();
     
-      for ($i=0; $i <= sizeof($result)-1 ; $i++) { 
-        $item = $result[$i];
-        $addedToCart  = app('Increment\Hotel\Room\Http\CartController')->countByCategory($item['category']);
-        $roomsQty = Room::where('category', $item['category'])->count();
-        $result[$i]['fullyBooked'] =  (int)($roomsQty - $addedToCart) > 0 ? false : true;
-        $result[$i]['additional_info'] = json_decode($item['additional_info']);
-        $result[$i]['images'] = app('Increment\Hotel\Room\Http\ProductImageController')->retrieveImageByStatus($item['category_id'], 'room_type');;
-        $result[$i]['general_features'] = json_decode($item['general_features']);
-        //get available rooms
+    $finalResult = [];
+    for ($i=0; $i <= sizeof($result)-1 ; $i++) {
+      $item = $result[$i];
+      $addedToCart  = app('Increment\Hotel\Room\Http\CartController')->countByCategory($item['category']);
+      $roomsQty = Room::where('category', $item['category'])->count();
+      $result[$i]['fullyBooked'] =  (int)($roomsQty - $addedToCart) > 0 ? false : true;
+      $result[$i]['additional_info'] = json_decode($item['additional_info']);
+      $result[$i]['images'] = app('Increment\Hotel\Room\Http\ProductImageController')->retrieveImageByStatus($item['category_id'], 'room_type');;
+      $result[$i]['general_features'] = json_decode($item['general_features']);
+      //get available rooms
 
-        $result[$i]['price'] = null;
-        $result[$i]['remaining_qty'] = null;
-        $availableRooms = app('Increment\Hotel\Room\Http\RoomPriceStatusController')->getTotalByPricesWithDetails($item['regular'], $item['refundable'], $item['category']);
-        if($availableRooms !== null && $availableRooms['remaining_qty'] > 0){
-          $result[$i]['price'] = $availableRooms['amount'];
-          $result[$i]['remaining_qty'] = $availableRooms['remaining_qty'];
+      $result[$i]['price'] = null;
+      $result[$i]['remaining_qty'] = null;
+      $availableRooms = app('Increment\Hotel\Room\Http\RoomPriceStatusController')->getTotalByPricesWithDetails($item['regular'], $item['refundable'], $item['category']);
+      if($availableRooms !== null && $availableRooms['remaining_qty'] > 0){
+        $result[$i]['price'] = $availableRooms['amount'];
+        $result[$i]['remaining_qty'] = $availableRooms['remaining_qty'];
+      }
+      
+      $categoryAvailable = app('Increment\Hotel\Room\Http\AvailabilityController')->retrieveByPayloadPayloadValue('room_type', $item['category']);
+      if($categoryAvailable !== null){
+        if($addedToCart < (int)$categoryAvailable['limit']){
+          array_push($finalResult, $result[$i]);
         }
       }
-      if($data['flag'] === 'false'){
-        $pricings = app('Increment\Hotel\Room\Http\PricingController')->retrieveLabel();
-        $minMax = app('Increment\Hotel\Room\Http\PricingController')->retrieveMaxMin();
-        $category = app('Increment\Common\Payload\Http\PayloadController')->retrieveAllData();
-        $this->response['data']['pricings'] = $pricings;
-        $this->response['data']['min_max'] = $minMax;
-        $this->response['data']['category'] = $category;
-      }
-      $this->response['data']['rooms'] = $result;
-      $this->response['size'] = sizeof($size);
-      return $this->response();
+    }
+    if($data['flag'] === 'false'){
+      $pricings = app('Increment\Hotel\Room\Http\PricingController')->retrieveLabel();
+      $minMax = app('Increment\Hotel\Room\Http\PricingController')->retrieveMaxMin();
+      $category = app('Increment\Common\Payload\Http\PayloadController')->retrieveAllData();
+      $this->response['data']['pricings'] = $pricings;
+      $this->response['data']['min_max'] = $minMax;
+      $this->response['data']['category'] = $category;
+    }
+    $this->response['data']['rooms'] = $finalResult;
+    $this->response['size'] = sizeof($size);
+    return $this->response();
   }
 
   public function retrieveUnique(Request $request){
