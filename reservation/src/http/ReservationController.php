@@ -328,6 +328,7 @@ class ReservationController extends APIController
 		}
 		// dd($whereArray);
 		$result = Reservation::where($whereArray)->get();
+		// dd($result);
 		// $rooms = [];
 		if(sizeof($result) > 0){
 			for ($i=0; $i <= sizeof($result) -1; $i++) { 
