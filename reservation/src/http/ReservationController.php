@@ -38,6 +38,7 @@ class ReservationController extends APIController
 		$reserve = Reservation::where('reservation_code', '=', $data['id'])->first();
 		$cart = app('Increment\Hotel\Room\Http\CartController')->retrieveCartWithRooms($reserve['id']);
 		if(sizeof($cart) > 0){
+			$reserve['total'] = null;
 			for ($i=0; $i <= sizeof($cart) -1; $i++) {
 				$item = $cart[$i];
 				$start = Carbon::createFromFormat('Y-m-d H:i:s', $item['check_in']);
@@ -48,8 +49,23 @@ class ReservationController extends APIController
 				}
 				$cart[$i]['price_per_qty'] = $item['rooms'][0]['regular'] * $item['checkoutQty'];
 				$cart[$i]['price_with_number_of_days'] = $cart[$i]['price_per_qty'] * $nightsDays;
+				$reserve['total'] = (double)$reserve['total'] + (double)$cart[$i]['price_with_number_of_days'];
+			}
+			if($reserve['coupon_id'] !== null){
+				$coupon = app('App\Http\Controllers\CouponController')->retrieveById($reserve['coupon_id']);
+				if($coupon['type'] === 'fixed'){
+					$reserve['total'] = (double)$reserve['total'] - (double)$coupon['amount'];
+				}else if($coupon['type'] === 'percentage'){
+					$reserve['total'] = ((double)$reserve['total'] - ((double)$coupon['amount'] / 100));
+				}
 			}
 			$reserve['details'] = json_decode($reserve['details'], true);
+			if(sizeof($reserve['details']['selectedAddOn']) > 0){
+				for ($a=0; $a <= sizeof($reserve['details']['selectedAddOn'])-1 ; $a++) {
+					$each = $reserve['details']['selectedAddOn'][$a];
+					$reserve['total'] =$reserve['total'] + $each['price'];
+				}
+			}
 			$reserve['account_info'] = app('Increment\Account\Http\AccountInformationController')->getByParamsWithColumns($reserve['account_id'], ['first_name as name', 'cellular_number as contactNumber']);
 			$reserve['account_info']['email'] = app('Increment\Account\Http\AccountController')->getByParamsWithColumns($reserve['account_id'], ['email'])['email'];
 			$reserve['check_in'] = Carbon::createFromFormat('Y-m-d H:i:s', $cart[0]['check_in'])->copy()->tz($this->response['timezone'])->format('F j, Y');
@@ -60,6 +76,9 @@ class ReservationController extends APIController
 				'cart' => $cart,
 				'customer' => $this->retrieveAccountDetails($reserve['account_id']),
 			);
+			Reservation::where('reservation_code', '=', $data['id'])->update(array(
+				'total' => $reserve['total']
+			));
 			$this->response['data'] = $array;
 		}else{
 			$this->response['data'] = [];
@@ -606,28 +625,7 @@ class ReservationController extends APIController
 					->orWhere('reservations.status', '=', 'refunded');
 			})
 		);
-		// if ($con[0]['column'] == 'email') {
-		// 	$sortBy = 'T2.'.array_keys($data['sort'])[0];
-		// 	$condition = array(
-		// 		array('T2.' . $con[0]['column'], $con[0]['clause'], $con[0]['value'])
-		// 	);
-		// } else if ($con[0]['column'] == 'payload_value') {
-		// 	$sortBy = 'T3.'.array_keys($data['sort'])[0];
-		// 	$condition = array(
-		// 		array('T3.title', $con[0]['clause'], $con[0]['value'])
-		// 	);
-		// }else if ($con[0]['column'] == 'price') {
-		// 	$sortBy = 'T5.'.array_keys($data['sort'])[0];
-		// 	$condition = array(
-		// 		array('T5.regular', $con[0]['clause'], $con[0]['value'])
-		// 	);
-		// }
-		// if(sizeof($con) > 1){
-		// 	array_push($condition, 
-		// 		array($con[1]['column'], $con[1]['clause'], $con[1]['value'])
-		// 	);
-		// }
-		
+
 		$res = Reservation::where($condition)
 				->orderBy($sortBy, array_values($data['sort'])[0])
 				->limit($data['limit'])
@@ -637,28 +635,6 @@ class ReservationController extends APIController
 		$size =  Reservation::where($condition)
 			->orderBy($sortBy, array_values($data['sort'])[0])
 			->get();
-		// $res = Reservation::leftJoin('accounts as T2', 'T2.id', '=', 'reservations.account_id')
-		// 	->leftJoin('bookings as T3', 'T3.reservation_id', 'reservations.id')
-		// 	->leftJoin('account_informations as T4', 'T4.account_id', '=', 'T2.id')
-		// 	->leftJoin('pricings as T5', 'T5.room_id', '=', 'T3.id')
-		// 	->leftJoin('carts as T6', 'T6.reservation_id', '=', 'reservations.id')
-		// 	->where($condition)
-		// 	->where('T6.deleted_at', '=', null)
-		// 	->where('reservations.deleted_at', '=', null)
-		// 	->orderBy($sortBy, array_values($data['sort'])[0])
-		// 	->limit($data['limit'])
-		// 	->offset($data['offset'])
-		// 	->get(['reservations.*', 'T2.email', 'T3.room_id', 'T5.regular', 'T4.first_name as name']);
-		// // dd($res);
-		// $size = Reservation::leftJoin('accounts as T2', 'T2.id', '=', 'reservations.account_id')
-		// ->leftJoin('bookings as T3', 'T3.reservation_id', 'reservations.id')
-		// ->leftJoin('account_informations as T4', 'T4.account_id', '=', 'T2.id')
-		// ->leftJoin('pricings as T5', 'T5.room_id', '=', 'T3.id')
-		// ->leftJoin('carts as T6', 'T6.reservation_id', '=', 'reservations.id')
-		// ->where($condition)
-		// ->where('T6.deleted_at', '=', null)
-		// ->orderBy($sortBy, array_values($data['sort'])[0])
-		// ->get();
 
 		for ($i=0; $i <= sizeof($res)-1; $i++) { 
 			$item = $res[$i];
@@ -689,5 +665,68 @@ class ReservationController extends APIController
 
 	public function getAssignedQtyByParams($column, $value){
 		return Booking::where($column, '=', $value)->where('deleted_at', '=', null)->count();
+	}
+
+	public function updateByAdmin(Request $request){
+		$data = $request->all();
+		$reservation = Reservation::where('reservation_code', '=', $data['reservation_code'])->first();
+		$errors = [];
+		$couponError = null;
+		$couponData = null;
+		if($reservation !== null){
+			for ($i=0; $i <= sizeof($data['categories'])-1 ; $i++) {
+				$item = $data['categories'][$i];
+				$dateAvailable = app('Increment\Hotel\Room\Http\AvailabilityController')->checkIfAvailable('room_type', $item['category_id'], $data['check_in'], $data['check_out']);
+				if($dateAvailable === null){
+					$category = app('Increment\Common\Payload\Http\PayloadController')->retrieveByParams($item['category_id']);
+					array_push($errors, 'Catory: '.$category['payload_value'].' is available during that date');
+				}
+				$availableRoom = app('Increment\Hotel\Room\Http\RoomController')->availableRoomByCapacity($item['category_id'], $data['heads']);
+				if(sizeof($availableRoom) <= 0){
+					array_push($errors, 'Catory: '.$category['payload_value'].' has no available rooms with this number of people');
+				}
+				if($data['coupon'] !== null){
+					$validCoupon = app('App\Http\Controllers\CouponController')->validCoupon($data['coupon'], $item['category_id'], $data['account_id']);
+					if($validCoupon['data'] !== null){
+						$couponData = $validCoupon['data'];
+						$couponError = null;
+					}else{
+						$couponData = null;
+						$couponError = $validCoupon['error'];
+					}
+				}
+			}
+			if($couponError !== null){
+				array_push($errors, $couponError);	
+			}else{
+				Reservation::where('code', '=', $data['reservation_code'])->update(array(
+					'coupon_id' => $couponData !== null ? $couponData['id'] : null,
+				));
+			}
+			if(sizeof($errors) > 0){
+				$this->response['error'] = $errors;
+				return $this->response();
+			}
+
+			$updateCart = app('Increment\Hotel\Room\Http\CartController')->updateByParams(
+				array(
+					array('reservation_id', '=', $reservation['id']),
+					array('status', '=', 'for_approval')
+				),
+				array(
+					'check_in' => $data['check_in'],
+					'check_out' => $data['check_out']
+				)
+			);
+			$details = json_decode($reservation['details']);
+			$details->additionals = $data['additional'];
+			$details->adults = $data['adults'];
+			$details->child = $data['children'];
+			$updateReservation = Reservation::where('code', '=', $data['reservation_code'])->update(array(
+				'details' => json_encode($details)
+			));
+			$this->response['data'] = $updateReservation;
+		}
+		return $this->response();
 	}
 }

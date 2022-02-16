@@ -19,5 +19,6 @@ Route::post($route.'update', $controller."update");
 Route::post($route.'update_reservation', $controller."updateReservations");
 Route::post($route.'update_with_coupon', $controller."updateCoupon");
 Route::post($route.'update_coupon', $controller."updatedCoupon");
+Route::post($route.'update_by_admin', $controller."updateByAdmin");
 Route::post($route.'delete', $controller."delete");
 Route::get($route.'test', $controller."test");
