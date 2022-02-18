@@ -387,12 +387,14 @@ class RoomController extends APIController
       ));
 
       $pricing = app('Increment\Hotel\Room\Http\PricingController')->retrieveByColumn('room_id', $room['id']);
-      $priceStatus = app('Increment\Hotel\Room\Http\RoomPriceStatusController')->checkIfPriceExist(array(
-        array('amount', '=', $pricing['regular']),
-        array('refundable', '=', $pricing['refundable'] !== null ? $pricing['refundable'] : (double)0),
-        array('category_id', '=', $room['category']),
-        array('deleted_at', '=', null)
-      ));
+      if($pricing !== null){
+        $priceStatus = app('Increment\Hotel\Room\Http\RoomPriceStatusController')->checkIfPriceExist(array(
+          array('amount', '=', $pricing['regular']),
+          array('refundable', '=', $pricing['refundable'] !== null ? $pricing['refundable'] : (double)0),
+          array('category_id', '=', $room['category']),
+          array('deleted_at', '=', null)
+        ));
+      }
       $condition = array(
         array('amount', '=', $pricing['regular']),
         array('refundable', '=', $pricing['refundable'] !== null ? $pricing['refundable'] : (double)0),

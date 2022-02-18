@@ -31,7 +31,9 @@ class PricingController extends APIController
 
 		public function create(Request $request){
 			$data = $request->all();
-			$data['regular'] += array_sum($data['addOnPrice']);
+			if(isset($data['addOnPrice'])){
+				$data['regular'] += array_sum($data['addOnPrice']);
+			}
 			$this->insertDB($data);
 			if($this->response['data']){
 				$priceId = Pricing::leftJoin('rooms as T1', 'T1.id', '=', 'pricings.room_id')->where('pricings.id', '=', $this->response['data'])->first();
