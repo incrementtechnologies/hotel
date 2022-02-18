@@ -51,19 +51,20 @@ class ReservationController extends APIController
 				$cart[$i]['price_with_number_of_days'] = $cart[$i]['price_per_qty'] * $nightsDays;
 				$reserve['total'] = (double)$reserve['total'] + (double)$cart[$i]['price_with_number_of_days'];
 			}
+			$reserve['details'] = json_decode($reserve['details'], true);
+			if(sizeof($reserve['details']['selectedAddOn']) > 0){
+				for ($a=0; $a <= sizeof($reserve['details']['selectedAddOn'])-1 ; $a++) {
+					$each = $reserve['details']['selectedAddOn'][$a];
+					$reserve['total'] =$reserve['total'] + $each['price'];
+					$reserve['subTotal'] = $reserve['total'];
+				}
+			}
 			if($reserve['coupon_id'] !== null){
 				$coupon = app('App\Http\Controllers\CouponController')->retrieveById($reserve['coupon_id']);
 				if($coupon['type'] === 'fixed'){
 					$reserve['total'] = (double)$reserve['total'] - (double)$coupon['amount'];
 				}else if($coupon['type'] === 'percentage'){
 					$reserve['total'] = ((double)$reserve['total'] - ((double)$coupon['amount'] / 100));
-				}
-			}
-			$reserve['details'] = json_decode($reserve['details'], true);
-			if(sizeof($reserve['details']['selectedAddOn']) > 0){
-				for ($a=0; $a <= sizeof($reserve['details']['selectedAddOn'])-1 ; $a++) {
-					$each = $reserve['details']['selectedAddOn'][$a];
-					$reserve['total'] =$reserve['total'] + $each['price'];
 				}
 			}
 			$reserve['account_info'] = app('Increment\Account\Http\AccountInformationController')->getByParamsWithColumns($reserve['account_id'], ['first_name as name', 'cellular_number as contactNumber']);
@@ -385,6 +386,21 @@ class ReservationController extends APIController
 		$this->response['data']['availability'] = $available;
 		$this->response['data']['carts'] = $carts;
 		$this->response['data']['account_info'] = $accountInfo;
+		return $this->response();
+	}
+
+	public function retrieveByCode(Request $request){
+		$data = $request->all();
+		$result = Reservation::where('reservation_code', '=', $data['reservation_code'])->first();
+		if($result !== null){
+			$cart = app('Increment\Hotel\Room\Http\CartController')->getByReservationId($result['id']);
+			if($cart !== null){
+				$result['check_in'] = $cart['check_in'];
+				$result['check_out'] = $cart['check_out'];
+			}
+			$result['details'] = json_decode($result['details']);
+		}
+		$this->response['data'] = $result;
 		return $this->response();
 	}
 
