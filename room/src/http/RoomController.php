@@ -348,13 +348,18 @@ class RoomController extends APIController
       $this->model = new Room();
       $data['code'] = $this->generateCode();
       $this->insertDB($data);
-      $exist = app('Increment\Hotel\Room\Http\AvailabilityController')->retrieveByPayloadPayloadValue('room', $this->response['data']);
+      $exist = app('Increment\Hotel\Room\Http\AvailabilityController')->retrieveByPayloadPayloadValue('room_id', $this->response['data']);
       if($exist === null){
+        $roomType = app('Increment\Hotel\Room\Http\AvailabilityController')->retrieveByPayloadPayloadValue('room_type', $data['category']);
         $params= array(
           'payload' => 'room_id',
           'payload_value' => $this->response['data'],
           'status' => $data['status'] === 'publish' ? 'available' : 'not_available'
         );
+        if($roomType !== null){
+          $params['start_date'] = $roomType['start_date'];
+          $params['end_date'] = $roomType['end_date'];
+        }
         $res = app('Increment\Hotel\Room\Http\AvailabilityController')->createByParams($params);
       }
     }
