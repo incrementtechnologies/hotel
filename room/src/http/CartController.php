@@ -129,19 +129,20 @@ class CartController extends APIController
                     $result[$i]['price_with_number_of_days'] = $result[$i]['price_per_qty'] * $nightsDays;
                     $reserve['total'] = (double)$reserve['total'] + (double)$result[$i]['price_with_number_of_days'];
                     
+                    $reservation[0]['details'] = json_decode($reservation[0]['details'], true);
+                    if(sizeof($reservation[0]['details']['selectedAddOn']) > 0){
+                        for ($a=0; $a <= sizeof($reservation[0]['details']['selectedAddOn'])-1 ; $a++) {
+                            $each = $reservation[0]['details']['selectedAddOn'][$a];
+                            $reserve['total'] = $reserve['total'] + $each['price'];
+                            $reserve['subTotal'] = $reserve['total'];
+                        }   
+                    }
                     if($reservation[0]['coupon_id'] !== null){
                         $coupon = app('App\Http\Controllers\CouponController')->retrieveById($reservation[0]['coupon_id']);
                         if($coupon['type'] === 'fixed'){
                             $reserve['total'] = (double)$reserve['total'] - (double)$coupon['amount'];
                         }else if($coupon['type'] === 'percentage'){
                             $reserve['total'] = ((double)$reserve['total'] - ((double)$coupon['amount'] / 100));
-                        }
-                    }
-                    $reservation[0]['details'] = json_decode($reservation[0]['details'], true);
-                    if(sizeof($reservation[0]['details']['selectedAddOn']) > 0){
-                        for ($a=0; $a <= sizeof($reservation[0]['details']['selectedAddOn'])-1 ; $a++) {
-                            $each = $reservation[0]['details']['selectedAddOn'][$a];
-                            $reserve['total'] = $reserve['total'] + $each['price'];
                         }
                     }
                 }
