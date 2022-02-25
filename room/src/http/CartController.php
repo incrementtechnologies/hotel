@@ -97,7 +97,7 @@ class CartController extends APIController
                 ->where('reservation_id', '=', $reservationId[0]['id'])
                 ->where('deleted_at', '=', null)
                 ->groupBy('carts.price_id')
-                ->get(['id', 'qty', 'price_id', 'reservation_id', 'check_in', 'check_out', 'category_id', DB::raw('Sum(qty) as checkoutQty')]);
+                ->get(['id', 'qty', 'carts.status', 'price_id', 'reservation_id', 'check_in', 'check_out', 'category_id', DB::raw('Sum(qty) as checkoutQty')]);
         }else{
             $result = Cart::where('carts.account_id', '=', $data['account_id'])
                 ->where(function($query){
@@ -106,7 +106,7 @@ class CartController extends APIController
                 })
                 ->where('deleted_at', '=', null)
                 ->groupBy('carts.price_id')
-                ->get(['id', 'qty', 'price_id', 'reservation_id',  'check_in', 'check_out', 'category_id', DB::raw('Sum(qty) as checkoutQty')]);
+                ->get(['id', 'qty', 'carts.status', 'price_id', 'reservation_id',  'check_in', 'check_out', 'category_id', DB::raw('Sum(qty) as checkoutQty')]);
         }
         $reserve = [];
         if(sizeof($result) > 0 ){
@@ -118,7 +118,7 @@ class CartController extends APIController
                     $start = Carbon::createFromFormat('Y-m-d H:i:s', $item['check_in']);
                     $end = Carbon::createFromFormat('Y-m-d H:i:s', $item['check_out']);
                     $nightsDays = $end->diffInDays($start);
-                    $result[$i]['date'] = $reservation;
+                    $result[$i]['reservation_details'] = $reservation;
                     $result[$i]['code'] = sizeOf($reservation) > 0 ? $reservation[0]['code'] : null;
                     $result[$i]['reservation_code'] = sizeOf($reservation) > 0 ? $reservation[0]['reservation_code'] : null;
                     $result[$i]['rooms'] = app('Increment\Hotel\Room\Http\RoomController')->getWithQty($item['category_id'], $item['price_id']);
@@ -254,6 +254,7 @@ class CartController extends APIController
             ));
         }
         if(isset($params['reservation_id'])){
+            $whereArray = array();
             array_push($whereArray, array(
                 'reservation_id', '=', $params['reservation_id']
             ));
