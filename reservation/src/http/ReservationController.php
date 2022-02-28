@@ -364,8 +364,10 @@ class ReservationController extends APIController
 		if(isset($data['reservation_id'])){
 			$reservation = Reservation::where('reservation_code', '=', $data['reservation_id'])->first();
 			$data['reservation_id'] = $reservation['id'];
+			$carts = app('Increment\Hotel\Room\Http\CartController')->retrieveOwn($data);
+		}else{
+			$carts = app('Increment\Hotel\Room\Http\CartController')->retrieveOwn($data);
 		}
-		$carts = app('Increment\Hotel\Room\Http\CartController')->retrieveOwn($data);
 		$accountInfo = app('Increment\Account\Http\AccountInformationController')->getByParamsWithColumns($con[0]['value'], ['first_name as name', 'cellular_number as contactNumber']);
 		$accountInfo['email'] = app('Increment\Account\Http\AccountController')->getByParamsWithColumns($con[0]['value'], ['email'])['email'];
 		$availability = null;
