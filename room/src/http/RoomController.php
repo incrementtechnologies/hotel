@@ -432,4 +432,8 @@ class RoomController extends APIController
       return $this->response();
     }
   }
+
+  public function checkIfExist($column, $clause, $value){
+    return Room::where($column, $clause, $value)->first();
+  }
 }
