@@ -222,7 +222,7 @@ class ReservationController extends APIController
 				'total' => $data['amount']
 			));
 			$condition = array(
-				array('reservation_id', '=', $data['id']),
+				array('reservation_id', '=', $reserve['id']),
 				array('account_id', '=', $data['account_id'])
 			);
 			$updates = array(
@@ -244,6 +244,7 @@ class ReservationController extends APIController
 				}
 			}
 			if($res !== null){
+				// $this->sendReceipt($reserve['id']); send email
 				$this->response['data'] = $reserve;
 			}
 		}
@@ -768,6 +769,28 @@ class ReservationController extends APIController
 				'details' => json_encode($details)
 			));
 			$this->response['data'] = $updateReservation;
+		}
+		return $this->response();
+	}
+
+	public function sendReceipt($reservation_id){
+		$reserve = Reservation::where('id', '=', $reservation_id)->first();
+		if($reserve !== null){
+			$account = $this->retrieveNameOnly($reserve['account_id']);
+			$detail = json_decode($reserve['details']);
+			$cart = app('Increment\Hotel\Room\Http\CartController')->countReservationId($reservation_id);
+
+			$params = array(
+				"code" => $reserve['code'],
+				'reservee' => $account,
+				'date' => sizeof($cart) > 0 !== null ? $cart[0]['check_in']. ' - '.$cart[0]['check_out'] : null,
+				'number_of_heads' => $detail->heads,
+				'number_of_rooms' => $cart[0]['totalRooms'],
+				'total' => $reserve['total']
+			);
+
+			$email = app('App\Http\Controllers')->receipt($reserve['account_id'], $params);
+			$this->response['data'] = $email;
 		}
 		return $this->response();
 	}

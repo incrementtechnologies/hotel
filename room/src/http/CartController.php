@@ -84,6 +84,15 @@ class CartController extends APIController
         return $result;
     }
 
+    public function countReservationId($reservation_id){
+        // dd($priceId, $categoryId);
+        $result = Cart::where('price_id', '=', $reservation_id)->where('deleted_at', '=', null)->where(function($query){
+            $query->where('status', '=', 'confirmed');
+        })->where('status', '=', 'for_approval')->get([DB::raw('SUM(qty) as totalRooms'), 'check_in', 'check_out']);
+        
+        return $result;
+    }
+
     public function countByCategory($category){
         return Cart::where('category_id', '=', $category)->where('status', '!=', 'pending')->where('deleted_at', '=', null)->count();
     }
