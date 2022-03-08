@@ -231,8 +231,16 @@ class RoomController extends APIController
       ->get();
     for ($i=0; $i <= sizeof($result)-1 ; $i++) {
       $item = $result[$i];
+      $totalAddOns = 0;
       $result[$i]['category'] = app('Increment\Common\Payload\Http\PayloadController')->retrieveByParams($item['category']);
       $result[$i]['additional_info'] = json_decode($item['additional_info']);
+      if(sizeOf($result[$i]['additional_info']->add_ons) > 0){
+        for ($a=0; $a <= sizeOf($result[$i]['additional_info']->add_ons)-1 ; $a++) { 
+          $el = $result[$i]['additional_info']->add_ons[$a];
+          $totalAddOns = (float)$totalAddOns + $el->price;
+        }
+      }
+      $result[$i]['regular'] = (float)$result[$i]['regular'] - $totalAddOns;
       $result[$i]['images'] = app('Increment\Hotel\Room\Http\ProductImageController')->getImages($item['id']);
     }
     $this->response['data'] = $result;
