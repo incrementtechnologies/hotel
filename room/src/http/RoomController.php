@@ -97,7 +97,6 @@ class RoomController extends APIController
       ->offset($data['offset'])
       ->orderBy('T3.start_date', 'desc')
       ->get(['rooms.*', 'T1.regular', 'T1.refundable', 'T1.currency', 'T1.label', 'T2.payload_value', 'T2.id as category_id', 'T1.id as price_id', 'T2.category as general_description', 'T2.details as general_features']);
-      
     $size = Room::leftJoin('pricings as T1', 'T1.room_id', '=', 'rooms.id')
       ->leftJoin('payloads as T2', 'T2.id', '=', 'rooms.category')
       ->leftJoin('availabilities as T3', 'T3.payload_value', '=', 'T2.id')
@@ -155,10 +154,35 @@ class RoomController extends APIController
 
   public function retrieveUnique(Request $request){
     $data = $request->all();
+    $whereArray = array(
+      array('rooms.category', '=', $data['category_id']),
+      array('rooms.deleted_at', '=', null),
+      array('rooms.max_capacity', '=', ((int)$data['filter']['adults'] + (int)$data['filter']['children']))
+    );
+    if($data['filter']['check_in'] !== null && $data['filter']['check_out'] !== null){
+      array_push($whereArray, array('T3.start_date', '<=', $data['filter']['check_in']));
+      array_push($whereArray, array('T3.end_date', '>=', $data['filter']['check_out']));
+    }
+    if($data['filter']['max'] > 0){
+      array_push($whereArray, array('T1.regular', '<=', $data['filter']['max']));
+      array_push($whereArray, array('T1.regular', '>=', $data['filter']['min']));
+    }
+    if($data['filter']['priceType'] !== null){
+      for ($i=0; $i <= sizeof($data['filter']['priceType'])-2 ; $i++) {
+        $item = $data['filter']['priceType'][$i+1];
+        if(strpos($item, 'tax')){
+          array_push($whereArray, array('T1.label', '=', $item));
+          array_push($whereArray, array('T1.tax', '=', 1));
+        }else{
+          array_push($whereArray, array('T1.label', '=', $item));
+          array_push($whereArray, array('T1.tax', '=', 0));
+        }
+    }
+   }
     $result = Room::leftJoin('pricings as T1', 'T1.room_id', '=', 'rooms.id')
       ->leftJoin('payloads as T2', 'T2.id', '=', 'rooms.category')
-      ->where('rooms.category', '=', $data['category_id'])
-      ->where('rooms.max_capacity', '=', $data['heads'])
+      ->leftJoin('availabilities as T3', 'T3.payload_value', '=', 'T2.id')
+      ->where($whereArray)
       ->orderBy('rooms.id', 'desc')
       ->get(['rooms.*', 'T1.regular', 'T1.refundable', 'T1.currency', 'T1.label', 'T1.id as price_id']);
     $images = app('Increment\Hotel\Room\Http\ProductImageController')->retrieveImageByStatus($data['category_id'], 'room_type');
