@@ -22,7 +22,8 @@ class CartController extends APIController
             ->where('check_out', 'like', '%'.$data['check_out'].'%')
             ->where(function($query){
                 $query->where('status', '=', 'pending')
-                ->orWhere('status', '=', 'in_progress');
+                ->orWhere('status', '=', 'in_progress')
+                ->orWhere('status', '=', 'for_approval');
             })->where('deleted_at', '=', null)
             ->first();
         if($existingCart === null && sizeof($emptyCart) > 0){
