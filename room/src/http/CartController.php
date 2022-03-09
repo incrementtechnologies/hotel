@@ -138,7 +138,7 @@ class CartController extends APIController
                     $result[$i]['price_per_qty'] = $result[$i]['rooms'][0]['regular'] * $item['checkoutQty'];
                     $result[$i]['price_with_number_of_days'] = $result[$i]['price_per_qty'] * $nightsDays;
                     $reserve['total'] = (double)$reserve['total'] + (double)$result[$i]['price_with_number_of_days'];
-                    
+                    $reserve['subTotal'] = $reserve['total'];
                     $reservation[0]['details'] = json_decode($reservation[0]['details'], true);
                     if(sizeof($reservation[0]['details']['selectedAddOn']) > 0){
                         for ($a=0; $a <= sizeof($reservation[0]['details']['selectedAddOn'])-1 ; $a++) {
