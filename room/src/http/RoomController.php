@@ -74,7 +74,7 @@ class RoomController extends APIController
         }else{
           array_push($whereArray, array('T1.label', '=', $item));
           array_push($whereArray, array('T1.tax', '=', 0));
-           }
+        }
     }
    }
     $result = Room::leftJoin('pricings as T1', 'T1.room_id', '=', 'rooms.id')
