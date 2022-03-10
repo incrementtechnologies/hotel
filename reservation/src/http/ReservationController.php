@@ -47,7 +47,7 @@ class ReservationController extends APIController
 				if($item['rooms'][0]['label'] === 'MONTH'){
 					$nightsDays = $end->diffInMonths($start);
 				}
-				$cart[$i]['price_per_qty'] = $item['rooms'][0]['regular'] * $item['checkoutQty'];
+				$cart[$i]['price_per_qty'] = $item['rooms'][0]['tax_price'] * $item['checkoutQty'];
 				$cart[$i]['price_with_number_of_days'] = $cart[$i]['price_per_qty'] * $nightsDays;
 				$reserve['total'] = (double)$reserve['total'] + (double)$cart[$i]['price_with_number_of_days'];
 			}
@@ -72,7 +72,7 @@ class ReservationController extends APIController
 			$reserve['account_info']['email'] = app('Increment\Account\Http\AccountController')->getByParamsWithColumns($reserve['account_id'], ['email'])['email'];
 			$reserve['check_in'] = Carbon::createFromFormat('Y-m-d H:i:s', $cart[0]['check_in'])->copy()->tz($this->response['timezone'])->format('F j, Y');
 			$reserve['check_out'] = Carbon::createFromFormat('Y-m-d H:i:s', $cart[0]['check_out'])->copy()->tz($this->response['timezone'])->format('F j, Y');
-			$reserve['coupon'] = $reserve['coupon_id'] !== null ? app('App\Http\Controllers\CouponController')->retrieveById($reserve['coupon_id']) : array('code' => null);
+			$reserve['coupon'] = $reserve['coupon_id'] !== null ? app('App\Http\Controllers\CouponController')->retrieveById($reserve['coupon_id']) : null;
 			$array = array(
 				'reservation' => $reserve,
 				'cart' => $cart,

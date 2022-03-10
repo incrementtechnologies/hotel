@@ -34,6 +34,7 @@ class PricingController extends APIController
 			if(isset($data['addOnPrice'])){
 				$data['regular'] += array_sum($data['addOnPrice']);
 			}
+			$data['tax_price'] = $data['tax'] == 1 ? (float)$data['regular'] + ((ENV('TAX_PRICE')/100) * (float)$data['regular']) : (float)$data['regular'];
 			$this->insertDB($data);
 			if($this->response['data']){
 				$priceId = Pricing::leftJoin('rooms as T1', 'T1.id', '=', 'pricings.room_id')->where('pricings.id', '=', $this->response['data'])->first();
@@ -42,7 +43,7 @@ class PricingController extends APIController
 				$params = array(
 					'price_id' => $this->response['data'],
 					'category_id' => $data['category'],
-					'amount' => $data['regular'],
+					'amount' => $data['tax_price'],
 					'refundable' => $data['refundable'],
 					'qty' => 1,
 					'status' => 'available'

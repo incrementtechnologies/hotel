@@ -7,5 +7,5 @@ use App\APIModel;
 class Pricing extends APIModel
 {
     protected $table = 'pricings';
-    protected $fillable = ['account_id', 'product_id', 'minimum', 'maximum', 'price'];
+    protected $fillable = ['account_id', 'product_id', 'minimum', 'maximum', 'price', 'tax_price'];
 }
