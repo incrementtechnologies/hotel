@@ -23,7 +23,7 @@ class RoomController extends APIController
       ->limit($data['limit'])
       ->offset($data['offset'])
       ->orderBy($con[0]['column'] === 'created_at' ? 'rooms.'.array_keys($data['sort'])[0] : array_keys($data['sort'])[0], array_values($data['sort'])[0])
-      ->get(['rooms.*', 'T1.regular', 'T1.refundable', 'T1.currency', 'T1.label', 'T1.id as price_id']);
+      ->get(['rooms.*', 'T1.regular', 'T1.tax_price', 'T1.tax', 'T1.refundable', 'T1.currency', 'T1.label', 'T1.id as price_id']);
     $size = Room::leftJoin('pricings as T1', 'T1.room_id', '=', 'rooms.id')
       ->where($con[0]['column'] === 'created_at' ? 'rooms.'.$con[0]['column'] : $con[0]['column'], $con[0]['clause'], $con[0]['value'])
       ->where('rooms.deleted_at', '=', null)
