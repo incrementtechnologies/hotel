@@ -65,34 +65,47 @@ class RoomController extends APIController
       array_push($whereArray, array('T1.tax_price', '<=', $data['max']));
       array_push($whereArray, array('T1.tax_price', '>=', $data['min']));
     }
-    if($data['priceType'] !== null){
-      for ($i=0; $i <= sizeof($data['priceType'])-2 ; $i++) {
-        $item = $data['priceType'][$i+1];
-        if(strpos($item, 'tax')){
-          array_push($whereArray, array('T1.label', '=', $item));
-          array_push($whereArray, array('T1.tax', '=', 1));
-        }else{
-          array_push($whereArray, array('T1.label', '=', $item));
-          array_push($whereArray, array('T1.tax', '=', 0));
+    
+    $whereArray[] = array(function($query)use($data){
+      if($data['priceType'] !== null){
+        for ($i=0; $i <= sizeof($data['priceType'])-1; $i++) { 
+          $item = $data['priceType'][$i];
+          $subArray = array(
+            array('T1.label', '=', strpos($item['label'], 'night') ? 'per night' : 'per month')
+          );
+          if(strpos($item['label'], 'tax')){
+            $subArray[] = array('T1.tax', '=', 1);
+          }else{
+            $subArray[] = array('T1.tax', '=', 0);
+          }
+          $query->where(function($query2)use($item, $subArray){
+              $query2->where($subArray);
+          })->orWhere(function($query3)use($item, $subArray){
+            $query3->where($subArray);
+          });
         }
       }
-    }
-    if($data['type'] !== null){
-      $whereArray[] = array(function($query)use($data){
-        $query-> whereIn('T2.id', $data['type']);
-      });
-    }
-    if($data['priceType'] !== null){
-      $whereArray[] = array(function($query)use($data){
-        $query-> whereIn('T1.id', $data['priceType']);
-      });
-    }
+    });
+
+    $whereArray[] = array(function($query)use($data){
+      if($data['type'] !== null){
+        for ($i=0; $i <= sizeof($data['type'])-1 ; $i++) { 
+          $item = $data['type'][$i];
+          $query->where(function($query2)use($item){
+            $query2->where('rooms.category', '=', $item);
+          })->orWhere(function($query3)use($item){
+            $query3->where('rooms.category', '=', $item);
+          });
+        }
+      }
+    });
     $result = Room::leftJoin('pricings as T1', 'T1.room_id', '=', 'rooms.id')
       ->leftJoin('payloads as T2', 'T2.id', '=', 'rooms.category')
       ->leftJoin('availabilities as T3', 'T3.payload_value', '=', 'T2.id')
       ->where($whereArray)
       ->where('T3.payload', '=', 'room_type')
       ->where('T3.status', '=', 'available')
+      ->where('rooms.status', '=', 'publish')
       ->havingRaw("count(rooms.category) >= ?", [$data['number_of_rooms'] !== null ? $data['number_of_rooms'] : 0])
       ->groupBy('rooms.category')
       ->limit($data['limit'])
@@ -169,22 +182,31 @@ class RoomController extends APIController
       array_push($whereArray, array('T1.tax_price', '<=', $data['filter']['max']));
       array_push($whereArray, array('T1.tax_price', '>=', $data['filter']['min']));
     }
-    if($data['filter']['priceType'] !== null){
-      for ($i=0; $i <= sizeof($data['filter']['priceType'])-2 ; $i++) {
-        $item = $data['filter']['priceType'][$i+1];
-        if(strpos($item, 'tax')){
-          array_push($whereArray, array('T1.label', '=', $item));
-          array_push($whereArray, array('T1.tax', '=', 1));
-        }else{
-          array_push($whereArray, array('T1.label', '=', $item));
-          array_push($whereArray, array('T1.tax', '=', 0));
+    $whereArray[] = array(function($query)use($data){
+      if($data['filter']['priceType'] !== null){
+        for ($i=0; $i <= sizeof($data['filter']['priceType'])-1; $i++) { 
+          $item = $data['filter']['priceType'][$i];
+          $subArray = array(
+            array('T1.label', '=', strpos($item['label'], 'night') ? 'per night' : 'per month')
+          );
+          if(strpos($item['label'], 'tax')){
+            $subArray[] = array('T1.tax', '=', 1);
+          }else{
+            $subArray[] = array('T1.tax', '=', 0);
+          }
+          $query->where(function($query2)use($item, $subArray){
+              $query2->where($subArray);
+          })->orWhere(function($query3)use($item, $subArray){
+            $query3->where($subArray);
+          });
         }
-    }
-   }
+      }
+    });
     $result = Room::leftJoin('pricings as T1', 'T1.room_id', '=', 'rooms.id')
       ->leftJoin('payloads as T2', 'T2.id', '=', 'rooms.category')
       ->leftJoin('availabilities as T3', 'T3.payload_value', '=', 'T2.id')
       ->where($whereArray)
+      ->where('rooms.status', '=', 'publish')
       ->orderBy('rooms.id', 'desc')
       ->get(['rooms.*', 'T1.regular', 'T1.tax_price', 'T1.tax', 'T1.refundable', 'T1.currency', 'T1.label', 'T1.id as price_id']);
     $images = app('Increment\Hotel\Room\Http\ProductImageController')->retrieveImageByStatus($data['category_id'], 'room_type');
@@ -346,7 +368,7 @@ class RoomController extends APIController
   }
 
   public function retrieveByCategory($categoryId){
-    return Room::where('category', '=', $categoryId)->get();
+    return Room::where('category', '=', $categoryId)->where('status', '=', 'publish')->get();
   }
 
   public function retrieveIDByCode($room_code){
@@ -354,7 +376,7 @@ class RoomController extends APIController
   }
 
   public function availableRoomByCapacity($category, $capacity){
-    return Room::where('category', '=', $category)->where('max_capacity', '>=', $capacity)->get(['id']);
+    return Room::where('category', '=', $category)->where('max_capacity', '>=', $capacity)->where('status', '=', 'publish')->get(['id']);
   }
   public function retrieveTypeByCode(Request $request){
     $data = $request->all();
@@ -369,7 +391,11 @@ class RoomController extends APIController
   }
 
   public function retrieveTotalPriceById($account_id, $column, $value, $returns){
-    return Room::leftJoin('pricings as T1', 'T1.room_id', '=', 'rooms.id')->where('T1.'.$column, '=', $value)->where('T1.account_id', '=', $account_id)->get($returns);
+    return Room::leftJoin('pricings as T1', 'T1.room_id', '=', 'rooms.id')
+      ->where('T1.'.$column, '=', $value)
+      ->where('T1.account_id', '=', $account_id)
+      ->where('rooms.status', '=', 'publish')
+      ->get($returns);
   }
 
   public function create(Request $request){
