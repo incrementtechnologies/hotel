@@ -207,7 +207,7 @@ class RoomController extends APIController
       ->leftJoin('availabilities as T3', 'T3.payload_value', '=', 'T2.id')
       ->where($whereArray)
       ->where('rooms.status', '=', 'publish')
-      ->orderBy('rooms.id', 'desc')
+      ->orderBy('pricings.tax_price', 'desc')
       ->get(['rooms.*', 'T1.regular', 'T1.tax_price', 'T1.tax', 'T1.refundable', 'T1.currency', 'T1.label', 'T1.id as price_id']);
     $images = app('Increment\Hotel\Room\Http\ProductImageController')->retrieveImageByStatus($data['category_id'], 'room_type');
     $temp = [];
