@@ -55,7 +55,10 @@ class RoomController extends APIController
     $data = $request->all();
     $whereArray = array(
       array('rooms.deleted_at', '=', null),
-      array('rooms.max_capacity', '=', ((int)$data['adults'] + (int)$data['children']))
+      array('rooms.max_capacity', '=', ((int)$data['adults'] + (int)$data['children'])),
+      array('T3.payload', '=', 'room_type'),
+      array('T3.status', '=', 'available'),
+      array('rooms.status', '=', 'publish')
     );
     if($data['check_in'] !== null && $data['check_out'] !== null){
       array_push($whereArray, array('T3.start_date', '<=', $data['check_in']));
@@ -66,8 +69,8 @@ class RoomController extends APIController
       array_push($whereArray, array('T1.tax_price', '>=', $data['min']));
     }
     
-    $whereArray[] = array(function($query)use($data){
-      if($data['priceType'] !== null){
+    if($data['priceType'] !== null){
+      $whereArray[] = array(function($query)use($data){
         for ($i=0; $i <= sizeof($data['priceType'])-1; $i++) { 
           $item = $data['priceType'][$i];
           $subArray = array(
@@ -84,34 +87,27 @@ class RoomController extends APIController
             $query3->where($subArray);
           });
         }
-      }
-    });
-
-    $whereArray[] = array(function($query)use($data){
-      if($data['type'] !== null){
+      });
+    }
+    if($data['type'] !== null){
+      $whereArray[] = array(function($query)use($data){
         for ($i=0; $i <= sizeof($data['type'])-1 ; $i++) { 
           $item = $data['type'][$i];
-          $query->where(function($query2)use($item){
-            $query2->where('rooms.category', '=', $item);
-          })->orWhere(function($query3)use($item){
-            $query3->where('rooms.category', '=', $item);
-          });
+          $query->orWhere('rooms.category', '=', $item);
         }
-      }
-    });
+      });
+    }
     $result = Room::leftJoin('pricings as T1', 'T1.room_id', '=', 'rooms.id')
       ->leftJoin('payloads as T2', 'T2.id', '=', 'rooms.category')
       ->leftJoin('availabilities as T3', 'T3.payload_value', '=', 'T2.id')
       ->where($whereArray)
-      ->where('T3.payload', '=', 'room_type')
-      ->where('T3.status', '=', 'available')
-      ->where('rooms.status', '=', 'publish')
       ->havingRaw("count(rooms.category) >= ?", [$data['number_of_rooms'] !== null ? $data['number_of_rooms'] : 0])
       ->groupBy('rooms.category')
       ->limit($data['limit'])
       ->offset($data['offset'])
       ->orderBy('T3.start_date', 'desc')
       ->get(['rooms.*', 'T1.regular', 'T1.refundable', 'T1.tax_price', 'T1.tax', 'T1.currency', 'T1.label', 'T2.payload_value', 'T2.id as category_id', 'T1.id as price_id', 'T2.category as general_description', 'T2.details as general_features']);
+    // dd($result);
     $size = Room::leftJoin('pricings as T1', 'T1.room_id', '=', 'rooms.id')
       ->leftJoin('payloads as T2', 'T2.id', '=', 'rooms.category')
       ->leftJoin('availabilities as T3', 'T3.payload_value', '=', 'T2.id')
