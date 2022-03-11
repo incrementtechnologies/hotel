@@ -182,8 +182,8 @@ class RoomController extends APIController
       array_push($whereArray, array('T1.tax_price', '<=', $data['filter']['max']));
       array_push($whereArray, array('T1.tax_price', '>=', $data['filter']['min']));
     }
-    $whereArray[] = array(function($query)use($data){
-      if($data['filter']['priceType'] !== null){
+    if($data['filter']['priceType'] !== null){
+      $whereArray[] = array(function($query)use($data){
         for ($i=0; $i <= sizeof($data['filter']['priceType'])-1; $i++) { 
           $item = $data['filter']['priceType'][$i];
           $subArray = array(
@@ -200,14 +200,14 @@ class RoomController extends APIController
             $query3->where($subArray);
           });
         }
-      }
-    });
+      });
+    }
     $result = Room::leftJoin('pricings as T1', 'T1.room_id', '=', 'rooms.id')
       ->leftJoin('payloads as T2', 'T2.id', '=', 'rooms.category')
       ->leftJoin('availabilities as T3', 'T3.payload_value', '=', 'T2.id')
       ->where($whereArray)
       ->where('rooms.status', '=', 'publish')
-      ->orderBy('pricings.tax_price', 'desc')
+      ->orderBy('T1.tax_price', 'desc')
       ->get(['rooms.*', 'T1.regular', 'T1.tax_price', 'T1.tax', 'T1.refundable', 'T1.currency', 'T1.label', 'T1.id as price_id']);
     $images = app('Increment\Hotel\Room\Http\ProductImageController')->retrieveImageByStatus($data['category_id'], 'room_type');
     $temp = [];
