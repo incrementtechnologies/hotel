@@ -221,17 +221,17 @@ class RoomController extends APIController
         $result[$i]['additional_info'] = json_decode($item['additional_info']);
         $result[$i]['images'] = $images;
         $result[$i]['isAvailable'] = $roomStatus['status'] === 'available' && $item['status'] === 'publish' ? true : false;
-        if(sizeof($temp) <= 0){
+        // if(sizeof($temp) <= 0){
           array_push($temp, $result[$i]);
-        }else{
-          for ($a=0; $a <= sizeof($temp)-1; $a++) { 
-            $each = $temp[$a];
-            $unique = $this->getUnique($temp, $item['tax_price'], $item['refundable']);
-            if($unique === false){
-              array_push($temp, $result[$i]);
-            }
-          }
-        }
+        // }else{
+        //   for ($a=0; $a <= sizeof($temp)-1; $a++) { 
+        //     $each = $temp[$a];
+        //     $unique = $this->getUnique($temp, $item['tax_price'], $item['refundable']);
+        //     if($unique === false){
+        //       array_push($temp, $result[$i]);
+        //     }
+        //   }
+        // }
       }
     }
     if(sizeof($temp) > 0){
