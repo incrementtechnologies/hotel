@@ -137,7 +137,7 @@ class RoomController extends APIController
 
       $result[$i]['price'] = null;
       $result[$i]['remaining_qty'] = null;
-      $availableRooms = app('Increment\Hotel\Room\Http\RoomPriceStatusController')->getTotalByPricesWithDetails($item['tax_price'], $item['refundable'], $item['category']);
+      $availableRooms = app('Increment\Hotel\Room\Http\RoomPriceStatusController')->getTotalByPricesWithDetails(null, null, $item['category']);
       if($availableRooms !== null && $availableRooms['remaining_qty'] > 0){
         $result[$i]['price'] = $availableRooms['amount'];
         $result[$i]['remaining_qty'] = $availableRooms['remaining_qty'];

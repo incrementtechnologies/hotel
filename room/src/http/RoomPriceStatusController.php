@@ -58,7 +58,12 @@ class RoomPriceStatusController extends APIController
     
     public function getTotalByPricesWithDetails($amount, $refundable, $categoryId){
         $refundable = $refundable > 0 ? $refundable : (double)0;
-        $res = RoomPriceStatus::where('amount', '=', $amount)->where('refundable', '=', $refundable)->where('category_id', '=', $categoryId)->orderBy('amount', 'asc')->first();
+        $res = null;
+        if($amount !== null && $refundable !== null){
+            $res = RoomPriceStatus::where('amount', '=', $amount)->where('refundable', '=', $refundable)->where('category_id', '=', $categoryId)->orderBy('amount', 'asc')->first();
+        }else{
+            $res = RoomPriceStatus::where('category_id', '=', $categoryId)->orderBy('amount', 'asc')->first();
+        }
         if($res !== null){  
             $cart = app('Increment\Hotel\Room\Http\CartController')->getTotalReservations($res['price_id'], $res['category_id']);
             $res['remaining_qty'] = (int)$res['qty'] - $cart;
