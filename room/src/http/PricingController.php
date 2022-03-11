@@ -31,9 +31,9 @@ class PricingController extends APIController
 
 		public function create(Request $request){
 			$data = $request->all();
-			if(isset($data['addOnPrice'])){
-				$data['regular'] += array_sum($data['addOnPrice']);
-			}
+			// if(isset($data['addOnPrice'])){
+			// 	$data['regular'] += array_sum($data['addOnPrice']);
+			// }
 			$data['tax_price'] = $data['tax'] == 1 ? (float)$data['regular'] + ((ENV('TAX_PRICE')/100) * (float)$data['regular']) : (float)$data['regular'];
 			$this->insertDB($data);
 			if($this->response['data']){
