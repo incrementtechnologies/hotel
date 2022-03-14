@@ -144,7 +144,8 @@ class RoomController extends APIController
       }
       
       $categoryAvailable = app('Increment\Hotel\Room\Http\AvailabilityController')->retrieveByPayloadPayloadValue('room_type', $item['category']);
-      if($categoryAvailable !== null){
+      $hasRoom = Room::where('category', '=', $item['category_id'])->get();
+      if($categoryAvailable !== null && sizeof($hasRoom) > 0){
         if($addedToCart < (int)$categoryAvailable['limit']){
           array_push($finalResult, $result[$i]);
         }
@@ -237,7 +238,7 @@ class RoomController extends APIController
         $element = $temp[$b];
         $rooms =  app('Increment\Hotel\Room\Http\RoomPriceStatusController')->getTotalByPricesWithDetails($element['regular'], $element['refundable'], $item['category']);
         $addedToCart  = app('Increment\Hotel\Room\Http\CartController')->countById($element['price_id'], $element['category']);
-        $temp[$b]['remaining_qty'] = (int)$rooms['remaining_qty'];
+        $temp[$b]['remaining_qty'] = $rooms!== null ? (int)$rooms['remaining_qty'] : 0;
         if((int)$temp[$b]['remaining_qty'] > 0){
           array_push($finalResult, $temp[$b]);
         }
