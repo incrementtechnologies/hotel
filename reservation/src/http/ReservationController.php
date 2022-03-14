@@ -49,7 +49,7 @@ class ReservationController extends APIController
 				}
 				$cart[$i]['price_per_qty'] = $item['rooms'][0]['tax_price'] * $item['checkoutQty'];
 				$cart[$i]['price_with_number_of_days'] = $cart[$i]['price_per_qty'] * $nightsDays;
-				$reserve['total'] = (double)$reserve['total'] + (double)$cart[$i]['price_with_number_of_days'];
+				$reserve['total'] = number_format((float)((double)$reserve['total'] + (double)$cart[$i]['price_with_number_of_days']), 2, '.', '');
 			}
 			$reserve['subTotal'] = $reserve['total'];
 			$reserve['details'] = json_decode($reserve['details'], true);
@@ -57,15 +57,15 @@ class ReservationController extends APIController
 				for ($a=0; $a <= sizeof($reserve['details']['selectedAddOn'])-1 ; $a++) {
 					$each = $reserve['details']['selectedAddOn'][$a];
 					$reserve['total'] =$reserve['total'] + $each['price'];
-					$reserve['subTotal'] = $reserve['total'];
+					$reserve['subTotal'] = number_format((float)$reserve['total'], 2, '.', '');
 				}
 			}
 			if($reserve['coupon_id'] !== null){
 				$coupon = app('App\Http\Controllers\CouponController')->retrieveById($reserve['coupon_id']);
 				if($coupon['type'] === 'fixed'){
-					$reserve['total'] = (double)$reserve['total'] - (double)$coupon['amount'];
+					$reserve['total'] = number_format((float)((double)$reserve['total'] - (double)$coupon['amount']), 2, '.', '');
 				}else if($coupon['type'] === 'percentage'){
-					$reserve['total'] = ((double)$reserve['total'] - ((double)$coupon['amount'] / 100));
+					$reserve['total'] = number_format((float)((double)$reserve['total'] - ((double)$coupon['amount'] / 100)), 2, '.', '');
 				}
 			}
 			$reserve['account_info'] = app('Increment\Account\Http\AccountInformationController')->getByParamsWithColumns($reserve['account_id'], ['first_name as name', 'cellular_number as contactNumber']);
@@ -231,19 +231,17 @@ class ReservationController extends APIController
 				'updated_at' => Carbon::now()
 			);
 			$updateCart = app('Increment\Hotel\Room\Http\CartController')->updateByParams($condition, $updates);
-			if($updateCart){
-				$cart = app('Increment\Hotel\Room\Http\CartController')->getByReservationId($reserve['id']);
-				$priceStatusParams = array(
-					'price_id' => $cart['price_id'],
-					'category_id' => $cart['category_id']
-				);
-				$existingPriceStatus = app('Increment\Hotel\Room\Http\RoomPriceStatusController')->checkIfPriceExist($priceStatusParams);
-				if(sizeof($existingPriceStatus) > 0){
-					$roomPriceUpdate = app('Increment\Hotel\Room\Http\RoomPriceStatusController')->updateQtyByPriceId($cart['price_id'], $cart['category_id'], ((int)$existingPriceStatus[0]['qty'] + $cart['qty']));
-				}else{
-					$roomPriceUpdate = app('Increment\Hotel\Room\Http\RoomPriceStatusController')->updateQtyByPriceId($cart['price_id'], $cart['category_id'], 1);
-				}
-			}
+			// if($updateCart){
+			// 	$cart = app('Increment\Hotel\Room\Http\CartController')->getByReservationId($reserve['id']);
+			// 	$priceStatusParams = array(
+			// 		'price_id' => $cart['price_id'],
+			// 		'category_id' => $cart['category_id']
+			// 	);
+			// 	$existingPriceStatus = app('Increment\Hotel\Room\Http\RoomPriceStatusController')->checkIfPriceExist($priceStatusParams);
+			// 	if(sizeof($existingPriceStatus) > 0){
+			// 		$roomPriceUpdate = app('Increment\Hotel\Room\Http\RoomPriceStatusController')->updateQtyByPriceId($cart['price_id'], $cart['category_id'], ((int)$existingPriceStatus[0]['qty'] - $cart['qty']));
+			// 	}
+			// }
 			if($res !== null){
 				// $this->sendReceipt($reserve['id']); send email
 				$this->response['data'] = $reserve;
@@ -571,16 +569,14 @@ class ReservationController extends APIController
 				$this->response['data'] = $res['error'];
 			}
 			$cart = app('Increment\Hotel\Room\Http\CartController')->getByReservationId($reservation['id']);
-			$priceStatusParams = array(
-				'price_id' => $cart['price_id'],
-				'category_id' => $cart['category_id']
-			);
-			$existingPriceStatus = app('Increment\Hotel\Room\Http\RoomPriceStatusController')->checkIfPriceExist($priceStatusParams);
-			if(sizeof($existingPriceStatus) > 0){
-				$roomPriceUpdate = app('Increment\Hotel\Room\Http\RoomPriceStatusController')->updateQtyByPriceId($cart['price_id'], $cart['category_id'], ((int)$existingPriceStatus[0]['qty'] + 1));
-			}else{
-				$roomPriceUpdate = app('Increment\Hotel\Room\Http\RoomPriceStatusController')->updateQtyByPriceId($cart['price_id'], $cart['category_id'], 1);
-			}
+			// $priceStatusParams = array(
+			// 	'price_id' => $cart['price_id'],
+			// 	'category_id' => $cart['category_id']
+			// );
+			// $existingPriceStatus = app('Increment\Hotel\Room\Http\RoomPriceStatusController')->checkIfPriceExist($priceStatusParams);
+			// if(sizeof($existingPriceStatus) > 0){
+			// 	$roomPriceUpdate = app('Increment\Hotel\Room\Http\RoomPriceStatusController')->updateQtyByPriceId($cart['price_id'], $cart['category_id'], ((int)$existingPriceStatus[0]['qty'] - cart['qty']));
+			// }
 		}
 		return $this->response();
 	}

@@ -236,7 +236,8 @@ class CartController extends APIController
 
     public function getTotalReservations($priceId, $categoryId){
         return Cart::where('price_id', '=', $priceId)->where('category_id', '=', $categoryId)->where(function($query){
-            $query->where('status', '=', 'confirmed');
+            $query->where('status', '=', 'confirmed')
+            ->orWhere('status', '=', 'for_approval');
         })->sum('qty');
     }
 
