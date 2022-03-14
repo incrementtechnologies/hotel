@@ -16,17 +16,16 @@ class CartController extends APIController
 
     public function create(Request $request){
         $data = $request->all();
-        $emptyCart = Cart::where('account_id', '=', $data['account_id'])->get();
+        $emptyCart = Cart::where('account_id', '=', $data['account_id'])->where('deleted_at', '=', null)->get();
         $existingCart = Cart::where('account_id', '=', $data['account_id'])
-            ->where('check_in', 'like', '%'.$data['check_in'].'%')
-            ->where('check_out', 'like', '%'.$data['check_out'].'%')
+            ->where('check_in', 'not like', '%'.$data['check_in'].'%')
+            ->where('check_out', 'not like', '%'.$data['check_out'].'%')
             ->where(function($query){
                 $query->where('status', '=', 'pending')
-                ->orWhere('status', '=', 'in_progress')
-                ->orWhere('status', '=', 'for_approval');
+                ->orWhere('status', '=', 'in_progress');
             })->where('deleted_at', '=', null)
             ->first();
-        if($existingCart === null && sizeof($emptyCart) > 0){
+        if($existingCart !== null &&  sizeof($emptyCart) > 0){
             $this->response['data'] = [];
             $this->response['error'] = 'Cannot Add multiple room with different date';
             return $this->response();
