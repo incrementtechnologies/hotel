@@ -236,7 +236,7 @@ class RoomController extends APIController
       $temp = array_values($temp);
       for ($b=0; $b <= sizeof($temp)-1; $b++) { 
         $element = $temp[$b];
-        $rooms =  app('Increment\Hotel\Room\Http\RoomPriceStatusController')->getTotalByPricesWithDetails($element['regular'], $element['refundable'], $item['category']);
+        $rooms =  app('Increment\Hotel\Room\Http\RoomPriceStatusController')->getTotalByPricesWithDetails($element['tax_price'], $element['refundable'], $item['category']);
         $addedToCart  = app('Increment\Hotel\Room\Http\CartController')->countById($element['price_id'], $element['category']);
         $temp[$b]['remaining_qty'] = $rooms!== null ? (int)$rooms['remaining_qty'] : 0;
         if((int)$temp[$b]['remaining_qty'] > 0){
