@@ -145,7 +145,9 @@ class RoomController extends APIController
       
       $categoryAvailable = app('Increment\Hotel\Room\Http\AvailabilityController')->retrieveByPayloadPayloadValue('room_type', $item['category']);
       $hasRoom = Room::where('category', '=', $item['category_id'])->get();
-      if($categoryAvailable !== null && sizeof($hasRoom) > 0){
+      $data['category_id'] = $item['category'];
+      $hasRooms = $this->hasRoom($data);
+      if($categoryAvailable !== null && sizeof($hasRoom) > 0 && sizeof($hasRooms) > 0){
         if($addedToCart < (int)$categoryAvailable['limit']){
           array_push($finalResult, $result[$i]);
         }
@@ -246,6 +248,77 @@ class RoomController extends APIController
     }
     $this->response['data'] = $finalResult;
     return $this->response();
+  }
+
+  public function hasRoom($data){
+    $whereArray = array(
+      array('rooms.category', '=', $data['category_id']),
+      array('rooms.deleted_at', '=', null),
+      array('rooms.max_capacity', '=', ((int)$data['adults'] + (int)$data['children']))
+    );
+    if($data['check_in'] !== null && $data['check_out'] !== null){
+      array_push($whereArray, array('T3.start_date', '<=', $data['check_in']));
+      array_push($whereArray, array('T3.end_date', '>=', $data['check_out']));
+    }
+    if($data['max'] > 0){
+      array_push($whereArray, array('T1.tax_price', '<=', $data['max']));
+      array_push($whereArray, array('T1.tax_price', '>=', $data['min']));
+    }
+    if($data['priceType'] !== null){
+      $whereArray[] = array(function($query)use($data){
+        for ($i=0; $i <= sizeof($data['priceType'])-1; $i++) { 
+          $item = $data['priceType'][$i];
+          $subArray = array(
+            array('T1.label', '=', strpos($item['label'], 'night') ? 'per night' : 'per month')
+          );
+          if(strpos($item['label'], 'tax')){
+            $subArray[] = array('T1.tax', '=', 1);
+          }else{
+            $subArray[] = array('T1.tax', '=', 0);
+          }
+          $query->where(function($query2)use($item, $subArray){
+              $query2->where($subArray);
+          })->orWhere(function($query3)use($item, $subArray){
+            $query3->where($subArray);
+          });
+        }
+      });
+    }
+    $result = Room::leftJoin('pricings as T1', 'T1.room_id', '=', 'rooms.id')
+      ->leftJoin('payloads as T2', 'T2.id', '=', 'rooms.category')
+      ->leftJoin('availabilities as T3', 'T3.payload_value', '=', 'T2.id')
+      ->where($whereArray)
+      ->where('rooms.status', '=', 'publish')
+      ->orderBy('T1.tax_price', 'desc')
+      ->get(['rooms.*', 'T1.regular', 'T1.tax_price', 'T1.tax', 'T1.refundable', 'T1.currency', 'T1.label', 'T1.id as price_id']);
+    $images = app('Increment\Hotel\Room\Http\ProductImageController')->retrieveImageByStatus($data['category_id'], 'room_type');
+    $temp = [];
+    $finalResult = [];
+    if(sizeof($result) > 0){
+      for ($i=0; $i <= sizeof($result)-1; $i++) {
+        $item = $result[$i];
+        $addedToCart  = app('Increment\Hotel\Room\Http\CartController')->countById($item['price_id'], $item['category']);
+        $roomStatus =  app('Increment\Hotel\Room\Http\AvailabilityController')->retrieveStatus($item['id']);
+        $result[$i]['additional_info'] = json_decode($item['additional_info']);
+        $result[$i]['images'] = $images;
+        $result[$i]['isAvailable'] = $roomStatus['status'] === 'available' && $item['status'] === 'publish' ? true : false;
+        array_push($temp, $result[$i]);
+      }
+    }
+    if(sizeof($temp) > 0){
+      $temp = array_unique((array)$temp);
+      $temp = array_values($temp);
+      for ($b=0; $b <= sizeof($temp)-1; $b++) { 
+        $element = $temp[$b];
+        $rooms =  app('Increment\Hotel\Room\Http\RoomPriceStatusController')->getTotalByPricesWithDetails($element['tax_price'], $element['refundable'], $item['category']);
+        $addedToCart  = app('Increment\Hotel\Room\Http\CartController')->countById($element['price_id'], $element['category']);
+        $temp[$b]['remaining_qty'] = $rooms!== null ? (int)$rooms['remaining_qty'] : 0;
+        if((int)$temp[$b]['remaining_qty'] > 0){
+          array_push($finalResult, $temp[$b]);
+        }
+      }
+    }
+    return $finalResult;
   }
 
   public function getUnique($array, $amount1, $amount2){
