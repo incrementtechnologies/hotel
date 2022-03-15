@@ -243,6 +243,7 @@ class ReservationController extends APIController
 			// 	}
 			// }
 			if($res !== null){
+				$this->sendReceiptById($reserve['id']);
 				// $this->sendReceipt($reserve['id']); send email
 				$this->response['data'] = $reserve;
 			}
@@ -797,5 +798,25 @@ class ReservationController extends APIController
 			$this->response['data'] = $email;
 		}
 		return $this->response();
+	}
+
+	public function sendReceiptById($id){
+		$result = Reservation::where('id', '=', $id)->first();
+		if($result !== null){
+			//Recipt email
+			$cart = app('Increment\Hotel\Room\Http\CartController')->getByReservationId($result['id']);
+			$reserveDetails = json_decode($result['details']);
+			$receiptParams = array(
+				'reservee' => $this->retrieveNameOnly($result['account_id']),
+				'code' => $result['code'],
+				'date' => $cart !== null ? $cart['check_in'].' - '.$cart['check_out'] : 'N/A',
+				'status' => $result['status'],
+				'number_of_heads' => $reserveDetails->heads,
+				'merchant' => env('APP_NAME'),
+				'number_of_rooms' => $reserveDetails->totalRoom,
+				'total' => $result['total']
+			);
+			$receipt = app('App\Http\Controllers\EmailController')->receipt($result['account_id'], $receiptParams);
+		}
 	}
 }
