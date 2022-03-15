@@ -654,9 +654,8 @@ class ReservationController extends APIController
 	{
 		$data = $request->all();
 		$con = $data['condition'];
-		$sortBy = 'reservations.'.array_keys($data['sort'])[0];
+		$sortBy = null;
 		$condition = array(
-			array('reservations.' . $con[0]['column'], $con[0]['clause'], $con[0]['value']),
 			array(function($query){
 				$query->where('reservations.status', '=', 'for_approval')
 					->orWhere('reservations.status', '=', 'confirmed')
@@ -666,13 +665,21 @@ class ReservationController extends APIController
 			})
 		);
 
-		$res = Reservation::where($condition)
+		if($con[0]['column'] == 'check_in' || $con[0]['column'] == 'check_out'){
+			$sortBy = 'carts.'.array_keys($data['sort'])[0];
+			$condition[] = array('carts.' . $con[0]['column'], $con[0]['clause'], $con[0]['value']);
+		}else{
+			$sortBy = 'reservations.'.array_keys($data['sort'])[0];
+			$condition[] = array('reservations.' . $con[0]['column'], $con[0]['clause'], $con[0]['value']);
+		}
+
+		$res = Reservation::leftJoin('carts', 'carts.reservation_id', '=', 'reservations.id')->where($condition)
 				->orderBy($sortBy, array_values($data['sort'])[0])
 				->limit($data['limit'])
 				->offset($data['offset'])
 				->get();
 
-		$size =  Reservation::where($condition)
+		$size =  Reservation::leftJoin('carts', 'carts.reservation_id', '=', 'reservations.id')->where($condition)
 			->orderBy($sortBy, array_values($data['sort'])[0])
 			->get();
 
