@@ -71,11 +71,11 @@ class PricingController extends APIController
     }
 
 		public function retrieveMaxMin(){
-			$min = Pricing::where('deleted_at', '=', null)->orderBy('regular', 'asc')->first();
-			$max = Pricing::where('deleted_at', '=', null)->orderBy('regular', 'desc')->first();
+			$min = Pricing::where('deleted_at', '=', null)->orderBy('tax_price', 'asc')->first();
+			$max = Pricing::where('deleted_at', '=', null)->orderBy('tax_price', 'desc')->first();
 			return array(
-				'min' => $min !== null ? (int)$min['regular'] : 0,
-				'max' => $max !== null ? (int)$max['regular'] : 0
+				'min' => $min !== null ? (int)$min['tax_price'] : 0,
+				'max' => $max !== null ? (int)$max['tax_price'] : 0
 			);
 		}
 
