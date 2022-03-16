@@ -67,6 +67,11 @@ class CartController extends APIController
                 $this->response['data'] = $res;
                 $this->response['error'] = null;
             }else{
+                if(isset($data['reservation_code'])){
+                    $reservation = app('Increment\Hotel\Reservation\Http\ReservationController')->retrieveReservationByParams('reservation_code', $data['reservation_code'], ['id', 'status']);
+                    $data['reservation_id'] = $reservation[0]['id'];
+                    $data['status'] = $reservation[0]['status'];
+                }
                 $res = Cart::create($data);
                 $this->response['data'] = $res;
                 $this->response['error'] = null;
@@ -119,11 +124,11 @@ class CartController extends APIController
         }
         $reserve = [];
         if(sizeof($result) > 0 ){
+            $reserve['total'] = null;
             for ($i=0; $i <= sizeof($result) -1; $i++) { 
                 $item = $result[$i];
                 $reservation =app('Increment\Hotel\Reservation\Http\ReservationController')->retrieveReservationByParams('id', $item['reservation_id'], ['code', 'reservation_code', 'details', 'coupon_id']);
                 if(sizeof($reservation) > 0){
-                    $reserve['total'] = null;
                     $start = Carbon::createFromFormat('Y-m-d H:i:s', $item['check_in']);
                     $end = Carbon::createFromFormat('Y-m-d H:i:s', $item['check_out']);
                     $nightsDays = $end->diffInDays($start);
@@ -143,19 +148,19 @@ class CartController extends APIController
                     if(sizeof($reservation[0]['details']['selectedAddOn']) > 0){
                         for ($a=0; $a <= sizeof($reservation[0]['details']['selectedAddOn'])-1 ; $a++) {
                             $each = $reservation[0]['details']['selectedAddOn'][$a];
-                            $reserve['total'] = $reserve['total'] + $each['price'];
+                            $reserve['total'] = (float)$reserve['total'] + (float)$each['price'];
                             $reserve['subTotal'] = $reserve['total'];
                         }   
                     }
-                    if($reservation[0]['coupon_id'] !== null){
-                        $coupon = app('App\Http\Controllers\CouponController')->retrieveById($reservation[0]['coupon_id']);
-                        $result[$i]['coupon'] = $coupon;
-                        if($coupon['type'] === 'fixed'){
-                            $reserve['total'] = (double)$reserve['total'] - (double)$coupon['amount'];
-                        }else if($coupon['type'] === 'percentage'){
-                            $reserve['total'] = ((double)$reserve['total'] - ((double)$coupon['amount'] / 100));
-                        }
-                    }
+                }
+            }
+            if($reservation[0]['coupon_id'] !== null){
+                $coupon = app('App\Http\Controllers\CouponController')->retrieveById($reservation[0]['coupon_id']);
+                $result[$i]['coupon'] = $coupon;
+                if($coupon['type'] === 'fixed'){
+                    $reserve['total'] = number_format((float)((double)$reserve['total'] - (double)$coupon['amount']), 2, '.', '');
+                }else if($coupon['type'] === 'percentage'){
+                    $reserve['total'] = number_format((float)((double)$reserve['total'] - ((double)$coupon['amount'] / 100)), 2, '.', '');
                 }
             }
         }

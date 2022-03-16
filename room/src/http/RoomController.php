@@ -221,7 +221,9 @@ class RoomController extends APIController
         $result[$i]['images'] = $images;
         $result[$i]['isAvailable'] = $roomStatus !== null && $roomStatus['status'] === 'available' && $item['status'] === 'publish' ? true : false;
         // if(sizeof($temp) <= 0){
+        if($result[$i]['isAvailable'] === true){
           array_push($temp, $result[$i]);
+        }
         // }else{
         //   for ($a=0; $a <= sizeof($temp)-1; $a++) { 
         //     $each = $temp[$a];
@@ -301,8 +303,10 @@ class RoomController extends APIController
         $roomStatus =  app('Increment\Hotel\Room\Http\AvailabilityController')->retrieveStatus($item['id']);
         $result[$i]['additional_info'] = json_decode($item['additional_info']);
         $result[$i]['images'] = $images;
-        $result[$i]['isAvailable'] = $roomStatus['status'] === 'available' && $item['status'] === 'publish' ? true : false;
-        array_push($temp, $result[$i]);
+        $result[$i]['isAvailable'] = $roomStatus !== null && $roomStatus['status'] === 'available' && $item['status'] === 'publish' ? true : false;
+        if($result[$i]['isAvailable'] === true){
+          array_push($temp, $result[$i]);
+        }
       }
     }
     if(sizeof($temp) > 0){
@@ -424,7 +428,7 @@ class RoomController extends APIController
         $result[$i]['additional_info'] = json_decode($item['additional_info']);
         $rooms =  app('Increment\Hotel\Room\Http\RoomPriceStatusController')->getTotalByPricesWithDetails($item['regular'], $item['refundable'], $item['category']);
         $addedToCart  = app('Increment\Hotel\Room\Http\CartController')->countById($item['price_id'], $item['category']);
-        $result[$i]['remaining_qty'] = (int)$rooms['remaining_qty'] - (int)$addedToCart;
+        $result[$i]['remaining_qty'] = $rooms !== null ? (int)$rooms['remaining_qty'] - (int)$addedToCart : 0;
       }
     }
     return $result;

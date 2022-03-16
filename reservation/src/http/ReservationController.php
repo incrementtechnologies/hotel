@@ -39,6 +39,7 @@ class ReservationController extends APIController
 		$cart = app('Increment\Hotel\Room\Http\CartController')->retrieveCartWithRooms($reserve['id']);
 		if(sizeof($cart) > 0){
 			$reserve['total'] = null;
+			$reserve['details'] = json_decode($reserve['details'], true);
 			for ($i=0; $i <= sizeof($cart) -1; $i++) {
 				$item = $cart[$i];
 				$start = Carbon::createFromFormat('Y-m-d H:i:s', $item['check_in']);
@@ -50,14 +51,13 @@ class ReservationController extends APIController
 				$cart[$i]['price_per_qty'] = $item['rooms'][0]['tax_price'] * $item['checkoutQty'];
 				$cart[$i]['price_with_number_of_days'] = $cart[$i]['price_per_qty'] * $nightsDays;
 				$reserve['total'] = number_format((float)((double)$reserve['total'] + (double)$cart[$i]['price_with_number_of_days']), 2, '.', '');
-			}
-			$reserve['subTotal'] = $reserve['total'];
-			$reserve['details'] = json_decode($reserve['details'], true);
-			if(sizeof($reserve['details']['selectedAddOn']) > 0){
-				for ($a=0; $a <= sizeof($reserve['details']['selectedAddOn'])-1 ; $a++) {
-					$each = $reserve['details']['selectedAddOn'][$a];
-					$reserve['total'] =$reserve['total'] + $each['price'];
-					$reserve['subTotal'] = number_format((float)$reserve['total'], 2, '.', '');
+				$reserve['subTotal'] = $reserve['total'];
+				if(sizeof($reserve['details']['selectedAddOn']) > 0){
+					for ($a=0; $a <= sizeof($reserve['details']['selectedAddOn'])-1 ; $a++) {
+						$each = $reserve['details']['selectedAddOn'][$a];
+						$reserve['total'] = number_format(($reserve['total'] + $each['price']), 2, '.', '');
+						$reserve['subTotal'] = number_format((float)$reserve['total'], 2, '.', '');
+					}
 				}
 			}
 			if($reserve['coupon_id'] !== null){
