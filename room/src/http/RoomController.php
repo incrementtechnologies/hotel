@@ -221,8 +221,19 @@ class RoomController extends APIController
         $result[$i]['images'] = $images;
         $result[$i]['isAvailable'] = $roomStatus !== null && $roomStatus['status'] === 'available' && $item['status'] === 'publish' ? true : false;
         // if(sizeof($temp) <= 0){
-        if($result[$i]['isAvailable'] === true){
-          array_push($temp, $result[$i]);
+        if(sizeof($temp) <= 0){
+          if($result[$i]['isAvailable'] === true){
+            array_push($temp, $result[$i]);
+          }
+        }else{
+          $unique = array_filter($temp, function($el)use($item){
+            return (int)$item['tax_price'] === (int)$el['tax_price'] && (int)$item['refundable'] === (int)$el['refundable'];
+          });
+          if(sizeof($unique) <= 0){
+            if($result[$i]['isAvailable'] === true){
+              array_push($temp, $result[$i]);
+            }
+          }
         }
         // }else{
         //   for ($a=0; $a <= sizeof($temp)-1; $a++) { 
