@@ -65,8 +65,14 @@ class RoomController extends APIController
       array_push($whereArray, array('T3.end_date', '>=', $data['check_out']));
     }
     if($data['max'] > 0){
-      array_push($whereArray, array('T1.tax_price', '<=', $data['max']));
-      array_push($whereArray, array('T1.tax_price', '>=', $data['min']));
+      array_push($whereArray, array(function($query)use($data){
+        $query->where('T1.tax_price', '<=', $data['max'])
+        ->orWhere('T1.tax_price', 'like', '%'.$data['max'].'%');
+      }));
+      array_push($whereArray, array(function($query)use($data){
+        $query->where('T1.tax_price', '>=', $data['min'])
+        ->orWhere('T1.tax_price', 'like', '%'.$data['min'].'%');
+      }));
     }
     
     if($data['priceType'] !== null){
