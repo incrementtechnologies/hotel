@@ -23,7 +23,6 @@ class RoomPriceStatusController extends APIController
                )
            ); 
         }else{
-            $data['refundable'] = $data['refundable'] !== null ? $data['refundable'] : 0;
             RoomPriceStatus::create($data);
         }
         return $this->response['data'];

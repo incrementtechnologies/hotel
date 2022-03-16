@@ -237,7 +237,7 @@ class CartController extends APIController
         return Cart::where('price_id', '=', $priceId)->where('category_id', '=', $categoryId)->where(function($query){
             $query->where('status', '=', 'confirmed')
             ->orWhere('status', '=', 'for_approval');
-        })->sum('qty');
+        })->where('deleted_at', '=', null)->sum('qty');
     }
 
     public function retrieveOwn($params){

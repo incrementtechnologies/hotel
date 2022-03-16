@@ -44,7 +44,7 @@ class PricingController extends APIController
 					'price_id' => $this->response['data'],
 					'category_id' => $data['category'],
 					'amount' => $data['tax_price'],
-					'refundable' => $data['refundable'],
+					'refundable' => $data['refundable'] !== null ? (float)$data['refundable'] : (float)0,
 					'qty' => 1,
 					'status' => 'available'
 				);
