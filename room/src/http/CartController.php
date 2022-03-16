@@ -123,6 +123,7 @@ class CartController extends APIController
                 ->get(['id', 'qty', 'carts.status', 'price_id', 'reservation_id',  'check_in', 'check_out', 'category_id', DB::raw('Sum(qty) as checkoutQty')]);
         }
         $reserve = [];
+        $reservation = [];
         if(sizeof($result) > 0 ){
             $reserve['total'] = null;
             for ($i=0; $i <= sizeof($result) -1; $i++) { 
@@ -154,13 +155,15 @@ class CartController extends APIController
                     }
                 }
             }
-            if($reservation[0]['coupon_id'] !== null){
-                $coupon = app('App\Http\Controllers\CouponController')->retrieveById($reservation[0]['coupon_id']);
-                $result[$i]['coupon'] = $coupon;
-                if($coupon['type'] === 'fixed'){
-                    $reserve['total'] = number_format((float)((double)$reserve['total'] - (double)$coupon['amount']), 2, '.', '');
-                }else if($coupon['type'] === 'percentage'){
-                    $reserve['total'] = number_format((float)((double)$reserve['total'] - ((double)$coupon['amount'] / 100)), 2, '.', '');
+            if(sizeof($reservation) > 0){
+                if($reservation[0]['coupon_id'] !== null){
+                    $coupon = app('App\Http\Controllers\CouponController')->retrieveById($reservation[0]['coupon_id']);
+                    $result[$i]['coupon'] = $coupon;
+                    if($coupon['type'] === 'fixed'){
+                        $reserve['total'] = number_format((float)((double)$reserve['total'] - (double)$coupon['amount']), 2, '.', '');
+                    }else if($coupon['type'] === 'percentage'){
+                        $reserve['total'] = number_format((float)((double)$reserve['total'] - ((double)$coupon['amount'] / 100)), 2, '.', '');
+                    }
                 }
             }
         }
