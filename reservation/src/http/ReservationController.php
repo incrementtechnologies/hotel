@@ -801,22 +801,27 @@ class ReservationController extends APIController
 	}
 
 	public function sendReceiptById($id){
-		$result = Reservation::where('id', '=', $id)->first();
-		if($result !== null){
-			//Recipt email
-			$cart = app('Increment\Hotel\Room\Http\CartController')->getByReservationId($result['id']);
-			$reserveDetails = json_decode($result['details']);
-			$receiptParams = array(
-				'reservee' => $this->retrieveNameOnly($result['account_id']),
-				'code' => $result['code'],
-				'date' => $cart !== null ? $cart['check_in'].' - '.$cart['check_out'] : 'N/A',
-				'status' => $result['status'],
-				'number_of_heads' => $reserveDetails->heads,
-				'merchant' => env('APP_NAME'),
-				'number_of_rooms' => $reserveDetails->totalRoom,
-				'total' => $result['total']
-			);
-			$receipt = app('App\Http\Controllers\EmailController')->receipt($result['account_id'], $receiptParams);
+		try{
+			$result = Reservation::where('id', '=', $id)->first();
+			if($result !== null){
+				//Recipt email
+				$cart = app('Increment\Hotel\Room\Http\CartController')->getByReservationId($result['id']);
+				$reserveDetails = json_decode($result['details']);
+				$receiptParams = array(
+					'reservee' => $this->retrieveNameOnly($result['account_id']),
+					'code' => $result['code'],
+					'date' => $cart !== null ? Carbon::parse($cart['check_in'])->format('Y-m-d').' - '.Carbon::parse($cart['check_out'])->format('Y-m-d') : 'N/A',
+					'status' => $result['status'],
+					'number_of_heads' => $reserveDetails->heads,
+					'merchant' => env('APP_NAME'),
+					'number_of_rooms' => $reserveDetails->totalRoom,
+					'payment_method' => $reserveDetails->payment_method,
+					'total' => $result['total']
+				);
+				return app('App\Http\Controllers\EmailController')->receipt($result['account_id'], $receiptParams);
+			}
+		}catch(\Throwable $th){
+			return $th;
 		}
 	}
 }
