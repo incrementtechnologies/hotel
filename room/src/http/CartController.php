@@ -124,12 +124,15 @@ class CartController extends APIController
         }
         $reserve = [];
         $reservation = [];
+        $coupon = null;
         if(sizeof($result) > 0 ){
             $reserve['total'] = null;
             for ($i=0; $i <= sizeof($result) -1; $i++) { 
                 $item = $result[$i];
                 $reservation =app('Increment\Hotel\Reservation\Http\ReservationController')->retrieveReservationByParams('id', $item['reservation_id'], ['code', 'reservation_code', 'details', 'coupon_id']);
                 if(sizeof($reservation) > 0){
+                    $coupon = app('App\Http\Controllers\CouponController')->retrieveById($reservation[0]['coupon_id']);
+                    $result[$i]['coupon'] = $coupon;
                     $start = Carbon::createFromFormat('Y-m-d H:i:s', $item['check_in']);
                     $end = Carbon::createFromFormat('Y-m-d H:i:s', $item['check_out']);
                     $nightsDays = $end->diffInDays($start);
@@ -145,7 +148,6 @@ class CartController extends APIController
                     $reserve['total'] = (double)$reserve['total'] + (double)$result[$i]['price_with_number_of_days'];
                     $reserve['subTotal'] = $reserve['total'];
                     $reservation[0]['details'] = json_decode($reservation[0]['details'], true);
-                    $result[$i]['coupon'] = null;
                     if(sizeof($reservation[0]['details']['selectedAddOn']) > 0){
                         for ($a=0; $a <= sizeof($reservation[0]['details']['selectedAddOn'])-1 ; $a++) {
                             $each = $reservation[0]['details']['selectedAddOn'][$a];
@@ -157,8 +159,6 @@ class CartController extends APIController
             }
             if(sizeof($reservation) > 0){
                 if($reservation[0]['coupon_id'] !== null){
-                    $coupon = app('App\Http\Controllers\CouponController')->retrieveById($reservation[0]['coupon_id']);
-                    $result[$i]['coupon'] = $coupon;
                     if($coupon['type'] === 'fixed'){
                         $reserve['total'] = number_format((float)((double)$reserve['total'] - (double)$coupon['amount']), 2, '.', '');
                     }else if($coupon['type'] === 'percentage'){
