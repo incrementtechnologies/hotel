@@ -441,6 +441,7 @@ class RoomController extends APIController
     if(sizeof($result) > 0){  
       for ($i=0; $i <= sizeof($result)-1 ; $i++) { 
         $item = $result[$i];
+        $result[$i]['tax_price'] = number_format($item['tax_price'], 2, '.', '');
         $result[$i]['images'] = app('Increment\Hotel\Room\Http\ProductImageController')->getImages($item['id']);
         $result[$i]['additional_info'] = json_decode($item['additional_info']);
         $rooms =  app('Increment\Hotel\Room\Http\RoomPriceStatusController')->getTotalByPricesWithDetails($item['regular'], $item['refundable'], $item['category']);
