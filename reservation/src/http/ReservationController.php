@@ -243,7 +243,7 @@ class ReservationController extends APIController
 			// 	}
 			// }
 			if($res !== null){
-				// $this->sendReceiptById($reserve['id']);
+				$this->sendReceiptById($reserve['id']);
 				// $this->sendReceipt($reserve['id']); send email
 				$this->response['data'] = $reserve;
 			}

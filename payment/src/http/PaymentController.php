@@ -122,7 +122,9 @@ class PaymentController extends APIController
 			);
 			app('Increment\Hotel\Reservation\Http\ReservationController')->updateReservationCart($params);
 			//======End=========
-	
+			
+			//send email
+			app('Increment\Hotel\Reservation\Http\ReservationController')->sendReceiptById($data['id']);
 
 			$result = Payment::where('details', 'like', '%'.$transaction_id.'%')->update(array(
 				'status' => strtolower($checkout['paymentStatus'])
