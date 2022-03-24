@@ -182,7 +182,7 @@ class CartController extends APIController
                 $item = $result[$i];
                 $rooms = app('Increment\Hotel\Room\Http\RoomController')->getWithQty($item['category_id'], $item['price_id']);
                 $result[$i]['rooms'] = $rooms;
-                $result[$i]['specificRooms'] = app('Increment\Hotel\Room\Http\RoomController')->retrieveByCategory($item['category_id']);
+                $result[$i]['specificRooms'] = app('Increment\Hotel\Room\Http\RoomController')->retrieveByFilter($item['price_id'], $item['category_id']);
                 if(sizeOf($rooms) > 0){
                     $booking = app('Increment\Hotel\Reservation\Http\ReservationController')->retrieveBookingsByParams('room_id',  $result[$i]['rooms'][0]['id']);
                     if(sizeof($booking) > 0){

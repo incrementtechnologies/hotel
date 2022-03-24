@@ -484,6 +484,21 @@ class RoomController extends APIController
     return Room::where('id', '=', $id)->get();
   }
 
+  public function retrieveByFilter($priceId, $categoryId){
+    $pricings = app('Increment\Hotel\Room\Http\PricingController')->retrieveByColumn('id', $priceId);
+    if($pricings !== null){
+      $result = Room::leftJoin('pricings as T1', 'T1.room_id', '=', 'rooms.id')
+        ->where('T1.tax_price', '=', $pricings['tax_price'])
+        ->where('T1.tax', '=', $pricings['tax'])
+        ->where('T1.refundable', '=', $pricings['refundable'])
+        ->where('T1.label', '=', $pricings['label'])->get();
+      
+      return $result;
+    }else{
+      return null;
+    }
+  }
+
   public function retrieveTotalPriceById($account_id, $column, $value, $returns){
     return Room::leftJoin('pricings as T1', 'T1.room_id', '=', 'rooms.id')
       ->where('T1.'.$column, '=', $value)

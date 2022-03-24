@@ -678,9 +678,11 @@ class ReservationController extends APIController
 				->orderBy($sortBy, array_values($data['sort'])[0])
 				->limit($data['limit'])
 				->offset($data['offset'])
+				->groupBy('carts.reservation_id')
 				->get();
 
 		$size =  Reservation::leftJoin('carts', 'carts.reservation_id', '=', 'reservations.id')->where($condition)
+			->groupBy('carts.reservation_id')
 			->orderBy($sortBy, array_values($data['sort'])[0])
 			->get();
 
