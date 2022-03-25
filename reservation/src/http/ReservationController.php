@@ -767,8 +767,8 @@ class ReservationController extends APIController
 			);
 			$details = json_decode($reservation['details']);
 			$details->additionals = $data['additional'];
-			$details->adults = $data['adults'];
-			$details->child = $data['children'];
+			$details->adults = isset($data['adults']) ? $data['adults'] : $details->adults;
+			$details->child = isset($data['children']) ? $data['children'] : $details->children;
 			$updateReservation = Reservation::where('code', '=', $data['reservation_code'])->update(array(
 				'details' => json_encode($details)
 			));
