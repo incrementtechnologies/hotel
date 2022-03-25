@@ -454,6 +454,32 @@ class RoomController extends APIController
     return $result;
   }
 
+  public function getRoomDetails($categoryId, $priceId){
+    $pricings = DB::table('pricings')->where('pricings.id', '=', $priceId)->first();
+    $result = [];
+    if($pricings){
+      $result = Room::leftJoin('pricings as T1', 'T1.room_id', '=', 'rooms.id')
+        ->leftJoin('payloads as T2', 'T2.id', '=', 'rooms.category')
+        ->where('rooms.category', '=', $categoryId)
+        ->where('T1.tax_price', '=', $pricings->tax_price)
+        ->where('T1.label', '=', $pricings->label)
+        ->get(['rooms.*', 'T1.regular', 'T1.tax', 'T1.tax_price', 'T1.refundable', 'T1.currency', 'T1.label', 'T1.id as price_id', 'T2.payload_value']);
+    }
+    
+    if(sizeof($result) > 0){  
+      for ($i=0; $i <= sizeof($result)-1 ; $i++) { 
+        $item = $result[$i];
+        $result[$i]['tax_price'] = number_format($item['tax_price'], 2, '.', '');
+        $result[$i]['images'] = app('Increment\Hotel\Room\Http\ProductImageController')->getImages($item['id']);
+        $result[$i]['additional_info'] = json_decode($item['additional_info']);
+        $rooms =  app('Increment\Hotel\Room\Http\RoomPriceStatusController')->getTotalByPricesWithDetails($item['regular'], $item['refundable'], $item['category']);
+        $addedToCart  = app('Increment\Hotel\Room\Http\CartController')->countById($item['price_id'], $item['category']);
+        $result[$i]['remaining_qty'] = $rooms !== null ? (int)$rooms['remaining_qty'] - (int)$addedToCart : 0;
+      }
+    }
+    return $result;
+  }
+
   public function retrieveByParams(Request $request){
     $data = $request->all();
     $result = Room::where('category', '=', $data['category_id'])->where('status', '=', 'publish')->get();

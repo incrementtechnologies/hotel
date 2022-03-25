@@ -697,6 +697,7 @@ class ReservationController extends APIController
 				$res[$i]['check_out'] = Carbon::createFromFormat('Y-m-d H:i:s', $cart['check_out'])->copy()->tz($this->response['timezone'])->format('F j, Y');
 			}
 			$res[$i]['room'] = app('Increment\Hotel\Room\Http\RoomController')->retrieveByIDParams($item['room_id']);
+			$res[$i]['total'] = number_format($item['total'], 2, '.', '');
 		}
 
 		$this->response['size'] = sizeOf($size);

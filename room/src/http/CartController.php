@@ -35,10 +35,11 @@ class CartController extends APIController
                 ->where('category_id', '=', $data['category_id'])
                 ->where(function($query){
                     $query->where('status', '=', 'pending')
-                    ->orWhere('status', '=', 'in_progress');
+                    ->orWhere('status', '=', 'in_progress')
+                    ->orWhere('status', '=', 'for_approval');
                 })->first();
             if($exist !== null){
-                $hasReservations = Cart::where('id', '=', $exist['id'])->where('reservation_id', '=', null)->first();
+                $hasReservations = Cart::where('id', '=', $exist['id'])->first();
                 $addedQty =  (int)$exist['qty'] + (int)$data['qty'];
                 $res = null;
                 if($hasReservations !== null){
@@ -210,12 +211,24 @@ class CartController extends APIController
     public function retrieveCartWithRoomDetails($reservation_id){
         $result = Cart::where('reservation_id', '=', $reservation_id)
             ->groupBy('carts.price_id')
-            ->get(['qty', 'price_id', 'category_id', DB::raw('Sum(qty) as checkoutQty')]);
-        if(sizeof($result) > 0 ){
-            for ($i=0; $i <= sizeof($result) -1; $i++) {
-                $item = $result[$i];
-                $result[$i]['rooms'] = app('Increment\Hotel\Room\Http\RoomController')->getWithQty($item['category_id'], $item['price_id']);
+            ->select('qty', 'price_id', 'category_id', DB::raw('Sum(qty) as checkoutQty'))->first();
+        if($result !== null){
+            $refundable = 0;
+            $nonRefundable = 0;
+            $roomDetails = app('Increment\Hotel\Room\Http\RoomController')->getRoomDetails($result['category_id'], $result['price_id']);
+            if(sizeof($roomDetails) > 0){
+                for ($i=0; $i <= sizeof($roomDetails)-1 ; $i++) { 
+                  $item = $roomDetails[$i];
+                  if($item['refundable'] !== null){
+                      $refundable ++;
+                  }else{
+                      $nonRefundable ++;
+                  }
+                }
             }
+            $result['refundable'] = $refundable;
+            $result['non_refundable'] = $nonRefundable;
+            $result['rooms'] = $roomDetails;
         }
         return $result;
     }
