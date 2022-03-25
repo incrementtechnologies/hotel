@@ -690,12 +690,8 @@ class ReservationController extends APIController
 			$item = $res[$i];
 			$res[$i]['name'] = app('Increment\Account\Http\AccountInformationController')->getByParamsWithColumns($item['account_id'], ['first_name'])['first_name'];
 			$res[$i]['details'] = json_decode($item['details']);
-
-			$cart = app('Increment\Hotel\Room\Http\CartController')->getByReservationId($item['id']);
-			if($cart !== null){
-				$res[$i]['check_in'] = Carbon::createFromFormat('Y-m-d H:i:s', $cart['check_in'])->copy()->tz($this->response['timezone'])->format('F j, Y');
-				$res[$i]['check_out'] = Carbon::createFromFormat('Y-m-d H:i:s', $cart['check_out'])->copy()->tz($this->response['timezone'])->format('F j, Y');
-			}
+			$res[$i]['check_in'] = Carbon::createFromFormat('Y-m-d H:i:s', $item['check_in'])->copy()->tz($this->response['timezone'])->format('F j, Y');
+			$res[$i]['check_out'] = Carbon::createFromFormat('Y-m-d H:i:s', $item['check_out'])->copy()->tz($this->response['timezone'])->format('F j, Y');
 			$res[$i]['room'] = app('Increment\Hotel\Room\Http\RoomController')->retrieveByIDParams($item['room_id']);
 			$res[$i]['total'] = number_format($item['total'], 2, '.', '');
 		}
