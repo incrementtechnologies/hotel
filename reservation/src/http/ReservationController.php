@@ -720,6 +720,7 @@ class ReservationController extends APIController
 		$errors = [];
 		$couponError = null;
 		$couponData = null;
+		$category = null;
 		if($reservation !== null){
 			for ($i=0; $i <= sizeof($data['categories'])-1 ; $i++) {
 				$item = $data['categories'][$i];
