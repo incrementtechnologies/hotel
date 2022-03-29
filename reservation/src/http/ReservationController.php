@@ -475,6 +475,9 @@ class ReservationController extends APIController
 				}
 			}
 		}
+		if($data['status'] === 'completed'){
+			app('App\Http\Controllers\EmailController')->sendThankYou($reservation['account_id']);
+		}
 		$this->response['data'] = $res;
 		return $this->response();
 	}
