@@ -663,7 +663,8 @@ class ReservationController extends APIController
 					->orWhere('reservations.status', '=', 'completed')
 					->orWhere('reservations.status', '=', 'cancelled')
 					->orWhere('reservations.status', '=', 'refunded');
-			})
+			}),
+			array('carts.deleted_at', '=', null)
 		);
 
 		if($con[0]['column'] == 'check_in' || $con[0]['column'] == 'check_out'){
