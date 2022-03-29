@@ -145,17 +145,20 @@ class CartController extends APIController
                         $nightsDays = $end->diffInMonths($start);
                     }
                     $result[$i]['price_per_qty'] = $result[$i]['rooms'][0]['tax_price'] * $item['checkoutQty'];
-                    $result[$i]['price_with_number_of_days'] = $result[$i]['price_per_qty'] * $nightsDays;
+                    $result[$i]['price_with_number_of_days'] = number_format(($result[$i]['price_per_qty'] * $nightsDays), '2', '.', '');
                     $reserve['total'] = (double)$reserve['total'] + (double)$result[$i]['price_with_number_of_days'];
                     $reserve['subTotal'] = $reserve['total'];
-                    $reservation[0]['details'] = json_decode($reservation[0]['details'], true);
-                    if(sizeof($reservation[0]['details']['selectedAddOn']) > 0){
-                        for ($a=0; $a <= sizeof($reservation[0]['details']['selectedAddOn'])-1 ; $a++) {
-                            $each = $reservation[0]['details']['selectedAddOn'][$a];
+
+                    $details = json_decode($reservation[0]['details'], true);
+                    if(sizeof($details['selectedAddOn']) > 0){
+                        for ($a=0; $a <= sizeof($details['selectedAddOn'])-1 ; $a++) {
+                            $each = $details['selectedAddOn'][$a];
                             $reserve['total'] = (float)$reserve['total'] + (float)$each['price'];
                             $reserve['subTotal'] = $reserve['total'];
+                            $details['selectedAddOn'][$a]['price'] = number_format($each['price'], 2, '.', '');
                         }   
                     }
+                    $reservation[0]['details'] = $details;
                 }
             }
             if(sizeof($reservation) > 0){
@@ -165,6 +168,9 @@ class CartController extends APIController
                     }else if($coupon['type'] === 'percentage'){
                         $reserve['total'] = number_format((float)((double)$reserve['total'] - ((double)$coupon['amount'] / 100)), 2, '.', '');
                     }
+                }else{
+                    $reserve['total'] = number_format($reserve['total'], 2, '.', '');
+                    $reserve['subTotal'] = number_format($reserve['subTotal'], 2, '.', '');
                 }
             }
         }
@@ -280,7 +286,6 @@ class CartController extends APIController
             array_push($whereArray, array(
                 function($query){
                     $query->where('status', '=', 'pending')
-					->orWhere('status', '=', 'cancelled')
                     ->orWhere('status', '=', 'in_progress');
                 }
             ));
