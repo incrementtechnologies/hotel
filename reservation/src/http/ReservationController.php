@@ -39,6 +39,7 @@ class ReservationController extends APIController
 		$cart = app('Increment\Hotel\Room\Http\CartController')->retrieveCartWithRooms($reserve['id']);
 		if(sizeof($cart) > 0){
 			$reserve['total'] = null;
+			$reserve['status'] = str_replace('_', ' ', $reserve['status']);
 			$reserve['details'] = json_decode($reserve['details'], true);
 			for ($i=0; $i <= sizeof($cart) -1; $i++) {
 				$item = $cart[$i];
