@@ -455,7 +455,7 @@ class RoomController extends APIController
     return $result;
   }
 
-  public function getRoomDetails($categoryId, $priceId){
+  public function getRoomDetails($categoryId, $priceId, $limit){
     $pricings = DB::table('pricings')->where('pricings.id', '=', $priceId)->first();
     $result = [];
     if($pricings){
@@ -464,6 +464,7 @@ class RoomController extends APIController
         ->where('rooms.category', '=', $categoryId)
         ->where('T1.tax_price', '=', $pricings->tax_price)
         ->where('T1.label', '=', $pricings->label)
+        ->limit($limit)
         ->get(['rooms.*', 'T1.regular', 'T1.tax', 'T1.tax_price', 'T1.refundable', 'T1.currency', 'T1.label', 'T1.id as price_id', 'T2.payload_value']);
     }
     

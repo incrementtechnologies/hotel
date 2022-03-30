@@ -221,7 +221,7 @@ class CartController extends APIController
         if($result !== null){
             $refundable = 0;
             $nonRefundable = 0;
-            $roomDetails = app('Increment\Hotel\Room\Http\RoomController')->getRoomDetails($result['category_id'], $result['price_id']);
+            $roomDetails = app('Increment\Hotel\Room\Http\RoomController')->getRoomDetails($result['category_id'], $result['price_id'], $result['qty']);
             if(sizeof($roomDetails) > 0){
                 for ($i=0; $i <= sizeof($roomDetails)-1 ; $i++) { 
                   $item = $roomDetails[$i];
