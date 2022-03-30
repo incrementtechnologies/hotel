@@ -111,13 +111,14 @@ class PricingController extends APIController
 				'label' => $data['label'],
 				'updated_at' => Carbon::now()
 			);
+			$params['tax_price'] = $data['tax'] == 1 ? (float)$data['regular'] + ((ENV('TAX_PRICE')/100) * (float)$data['regular']) : (float)$data['regular'];
 			$result = Pricing::where('id', '=', $data['id'])->update($params);
 			if($result){
 				$condition = array(
 					array('price_id', '=', $data['id'])
 				);
 				$update = array(
-					'amount' => $data['regular'],
+					'amount' => $params['tax_price'],
 					'category_id' => $data['category_id']
 				);
 				$updatePriceStatus = app('Increment\Hotel\Room\Http\RoomPriceStatusController')->updateByParams($condition, $update);
