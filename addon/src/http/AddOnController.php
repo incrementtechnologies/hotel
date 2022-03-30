@@ -51,10 +51,15 @@ class AddOnController extends APIController
 
     public function retrieveAll(Request $request) {
 		$data = $request->all();
-		$results = DB::table('add_ons')
-			->where('deleted_at', '=', null)
+		$results = AddOn::where('deleted_at', '=', null)
 			->where('type', '=', $data['type'])
 			->get();
+		if(sizeof($results) > 0){
+			for ($i=0; $i <= sizeof($results)-1; $i++) { 
+				$item = $results[$i];
+				$results[$i]['price'] = number_format($item['price'], 2, '.', '');
+			}
+		}
 		$this->response['data'] = $results;
 		$this->response['size'] = AddOn::where('deleted_at', '=', null)->count();
 		return $this->response();

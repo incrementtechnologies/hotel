@@ -732,11 +732,11 @@ class ReservationController extends APIController
 				$dateAvailable = app('Increment\Hotel\Room\Http\AvailabilityController')->checkIfAvailable('room_type', $item['category_id'], $data['check_in'], $data['check_out']);
 				$category = app('Increment\Common\Payload\Http\PayloadController')->retrieveByParams($item['category_id']);
 				if($dateAvailable === null){
-					array_push($errors, $category['payload_value'].'category is not available during that date');
+					array_push($errors, $category['payload_value'].' category is not available during that date');
 				}
 				$availableRoom = app('Increment\Hotel\Room\Http\RoomController')->availableRoomByCapacity($item['category_id'], $data['heads']);
 				if(sizeof($availableRoom) <= 0){
-					array_push($errors, $category['payload_value'].'category has no available rooms with that number of people');
+					array_push($errors, $category['payload_value'].' category has no available rooms with that number of people');
 				}
 				if($data['coupon'] !== null){
 					$validCoupon = app('App\Http\Controllers\CouponController')->validCoupon($data['coupon'], $item['category_id'], $data['account_id']);
@@ -775,8 +775,9 @@ class ReservationController extends APIController
 			$details->additionals = $data['additional'];
 			$details->adults = isset($data['adults']) ? $data['adults'] : $details->adults;
 			$details->child = isset($data['children']) ? $data['children'] : $details->child;
-			$updateReservation = Reservation::where('code', '=', $data['reservation_code'])->update(array(
-				'details' => json_encode($details)
+			$updateReservation = Reservation::where('reservation_code', '=', $data['reservation_code'])->update(array(
+				'details' => json_encode($details),
+				'updated_at' => Carbon::now()
 			));
 			$this->response['data'] = $updateReservation;
 		}
