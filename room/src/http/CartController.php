@@ -230,12 +230,11 @@ class CartController extends APIController
 
     public function retrieveCartWithRoomDetails($reservation_id){
         $result = Cart::where('reservation_id', '=', $reservation_id)
-            ->groupBy('carts.price_id')
             ->select('qty', 'price_id', 'category_id', DB::raw('Sum(qty) as checkoutQty'))->first();
         if($result !== null){
             $refundable = 0;
             $nonRefundable = 0;
-            $roomDetails = app('Increment\Hotel\Room\Http\RoomController')->getRoomDetails($result['category_id'], $result['price_id'], $result['qty']);
+            $roomDetails = app('Increment\Hotel\Room\Http\RoomController')->getRoomDetails($result['category_id'], $result['price_id'], $result['checkoutQty']);
             if(sizeof($roomDetails) > 0){
                 for ($i=0; $i <= sizeof($roomDetails)-1 ; $i++) { 
                   $item = $roomDetails[$i];
