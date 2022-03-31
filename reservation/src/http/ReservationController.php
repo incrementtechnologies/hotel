@@ -757,6 +757,7 @@ class ReservationController extends APIController
 				));
 			}
 			if(sizeof($errors) > 0){
+				$errors = array_unique($errors);
 				$this->response['error'] = $errors;
 				return $this->response();
 			}
