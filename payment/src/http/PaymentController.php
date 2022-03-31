@@ -93,7 +93,7 @@ class PaymentController extends APIController
 					'payload' => $data['payload'],
 					'payload_value' => $data['payload_value'],
 					'details' => json_encode($exec),
-					'status' => 'pending',
+					'status' => 'paid',
 				);
 				Payment::create($parameter);
 				return array(
@@ -118,7 +118,7 @@ class PaymentController extends APIController
 			$params = array(
 				'id' => $data['id'],
 				'payment_method'=> 'credit',
-				'status' => strtolower($checkout['paymentStatus']) === 'payment_success' ? 'for_approval' : 'failed'
+				'status' => strtolower($checkout['paymentStatus']) === 'payment_success' ? 'for_approval' : 'for_approval'
 			);
 			app('Increment\Hotel\Reservation\Http\ReservationController')->updateReservationCart($params);
 			//======End=========
