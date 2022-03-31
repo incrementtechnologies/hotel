@@ -17,6 +17,19 @@ class CartController extends APIController
     public function create(Request $request){
         $data = $request->all();
         $emptyCart = Cart::where('account_id', '=', $data['account_id'])->where('deleted_at', '=', null)->get();
+        if(isset($data['reservation_code'])){
+            $getReservation = app('Increment\Hotel\Reservation\Http\ReservationController')->retrieveReservationByParams('reservation_code', $data['reservation_code'], ['id']);
+            if(sizeof($getReservation) > 0){
+                $existingCart = Cart::where('reservation_id', '=', $getReservation[0]['id'])
+                    ->where('check_in', 'like', '%'.$data['check_in'].'%')
+                    ->where('check_out', 'ike', '%'.$data['check_out'].'%')->get();
+                if(sizeof($existingCart) <= 0){
+                    $this->response['data'] = [];
+                    $this->response['error'] = 'Cannot Add multiple room with different date';
+                    return $this->response();
+                }
+            }
+        }
         $existingCart = Cart::where('account_id', '=', $data['account_id'])
             ->where('check_in', 'not like', '%'.$data['check_in'].'%')
             ->where('check_out', 'not like', '%'.$data['check_out'].'%')
