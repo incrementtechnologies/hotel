@@ -22,7 +22,7 @@ class CartController extends APIController
             if(sizeof($getReservation) > 0){
                 $existingCart = Cart::where('reservation_id', '=', $getReservation[0]['id'])
                     ->where('check_in', 'like', '%'.$data['check_in'].'%')
-                    ->where('check_out', 'ike', '%'.$data['check_out'].'%')->get();
+                    ->where('check_out', 'like', '%'.$data['check_out'].'%')->get();
                 if(sizeof($existingCart) <= 0){
                     $this->response['data'] = [];
                     $this->response['error'] = 'Cannot Add multiple room with different date';
