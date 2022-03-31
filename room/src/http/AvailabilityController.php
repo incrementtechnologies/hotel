@@ -112,7 +112,7 @@ class AvailabilityController extends APIController
             $params['description'] = $data['description'];
         }
         if($data['payload'] === 'room_type'){
-            $used = app('Increment\Hote\Room\Http\CartController')->getByCategory($data['payload_value']);
+            $used = app('Increment\Hotel\Room\Http\CartController')->getByCategory($data['payload_value']);
             if(sizeof($used) > 0){
                 $this->response['data'] = null;
                 $this->response['error'] = 'This category is currently used';
