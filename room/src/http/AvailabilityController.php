@@ -111,6 +111,14 @@ class AvailabilityController extends APIController
         if(isset($data['description'])){
             $params['description'] = $data['description'];
         }
+        if($data['payload'] === 'room_type'){
+            $used = app('Increment\Hote\Room\Http\CartController')->getByCategory($data['payload_value']);
+            if(sizeof($used) > 0){
+                $this->response['data'] = null;
+                $this->response['error'] = 'This category is currently used';
+                return $this->response();
+            }
+        }
         $result = Availability::where('id', '=', $data['id'])->update($params);
         $avail = array(
 					'status' => $data['status'] === 'available' ? 'publish' : 'pending'
@@ -121,6 +129,7 @@ class AvailabilityController extends APIController
 				);
         $res = app('Increment\Hotel\Room\Http\RoomController')->updateByParams($con, $avail);
         $this->response['data'] = $result;
+        $this->response['eror'] = null;
         return $this->response();
     }
 
