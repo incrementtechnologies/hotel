@@ -447,7 +447,7 @@ class RoomController extends APIController
         $result[$i]['tax_price'] = number_format($item['tax_price'], 2, '.', '');
         $result[$i]['images'] = app('Increment\Hotel\Room\Http\ProductImageController')->retrieveImageByStatus($item['category'], 'product');
         $result[$i]['additional_info'] = json_decode($item['additional_info']);
-        $rooms =  app('Increment\Hotel\Room\Http\RoomPriceStatusController')->getTotalByPricesWithDetails($item['regular'], $item['refundable'], $item['category']);
+        $rooms =  app('Increment\Hotel\Room\Http\RoomPriceStatusController')->getTotalByPricesWithDetails($item['tax_price'], $item['refundable'], $item['category']);
         $addedToCart  = app('Increment\Hotel\Room\Http\CartController')->countById($item['price_id'], $item['category']);
         $result[$i]['remaining_qty'] = $rooms !== null ? (int)$rooms['remaining_qty'] : 0;
         $result[$i]['total_room_qty'] = (int)$rooms['qty'];
