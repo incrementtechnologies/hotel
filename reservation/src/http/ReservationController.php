@@ -499,6 +499,17 @@ class ReservationController extends APIController
 		return $result;
 	}
 
+	public function retrieveSaleByDate($start, $end){
+		$status = array(
+            array(function($query){
+                $query->where('status', '=', 'confirmed')
+                ->orWhere('status', '=', 'for_approval')
+                ->orWhere('status', '=', 'completed');
+            })
+        );
+		return Reservation::where($status)->where('deleted_at', '=', null)->sum('total');
+	}
+
 	public function retrieveMyBookings(Request $request){
 		$data = $request->all();
 		$con = $data['condition'];

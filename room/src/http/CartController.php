@@ -339,16 +339,25 @@ class CartController extends APIController
 
     public function getTotalBookings($date){
         $status = array(
-            array('status', '=', 'confirmed'),
-            array('status', '=', 'for_approval'),
-            array('status', '=', 'completed'),
+            array(function($query){
+                $query->where('status', '=', 'confirmed')
+                ->orWhere('status', '=', 'for_approval')
+                ->orWhere('status', '=', 'completed');
+            })
         );
-		$bookings = Cart::where($status)->where('check_in', '<=', $date)->where('deleted_at', '=', null)->count();
-		$reservations = Cart::where($status)->where('check_in', '>', $date)->where('deleted_at', '=', null)->count();
-		return array(
-			'previous' => $bookings,
-			'upcommings' => $reservations
-		);
+        if($date !== null){
+            $bookings = Cart::where($status)->where('check_in', '<=', $date)->where('deleted_at', '=', null)->count();
+            $reservations = Cart::where($status)->where('check_in', '>', $date)->where('deleted_at', '=', null)->count();
+            return array(
+                'previous' => $bookings,
+                'upcommings' => $reservations
+            );
+        }else{
+            $bookings = Cart::where($status)->where('deleted_at', '=', null)->count();
+            return array(
+                'total' => $bookings
+            );
+        }
 	}
 
     public function getByCategory($category){
@@ -363,5 +372,25 @@ class CartController extends APIController
             $query->where('status', '=', 'for_approval')
             ->orWhere('status', '=', 'confirmed');
         })->where('deleted_at', '=', null)->get();
+    }
+
+    public function getMaxMinDates(){
+        $max = Cart::orderBy('check_in', 'asc')->first();
+        $min = Cart::orderBy('check_in', 'desc')->first();
+
+        return array(
+            'max' => $max['check_in'],
+            'min' => $min['check_in']
+        );
+    }
+    public function getTotalBookingsPerMonth($start, $end){
+        $status = array(
+            array(function($query){
+                $query->where('status', '=', 'confirmed')
+                ->orWhere('status', '=', 'for_approval')
+                ->orWhere('status', '=', 'completed');
+            })
+        );
+        return Cart::where($status)->whereBetween('check_in', [$start, $end])->count();
     }
 }

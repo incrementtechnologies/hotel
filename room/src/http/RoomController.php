@@ -118,16 +118,9 @@ class RoomController extends APIController
       ->leftJoin('payloads as T2', 'T2.id', '=', 'rooms.category')
       ->leftJoin('availabilities as T3', 'T3.payload_value', '=', 'T2.id')
       ->where($whereArray)
-      ->where(function($query)use($data){
-        if($data['type'] !== null){
-          $query->whereIn('T2.id',  $data['type']);
-        }
-        if($data['priceType'] !== null){
-          $query->whereIn('T1.id',  $data['priceType']);
-        }
-      })
-      ->havingRaw("count(rooms.category) > ?", [$data['number_of_rooms'] !== null ? $data['number_of_rooms'] : 0])
+      ->havingRaw("count(rooms.category) >= ?", [$data['number_of_rooms'] !== null ? $data['number_of_rooms'] : 0])
       ->groupBy('rooms.category')
+      ->orderBy('T3.start_date', 'desc')
       ->get();
     
     $finalResult = [];
