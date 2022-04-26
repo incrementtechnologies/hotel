@@ -130,7 +130,7 @@ class RoomController extends APIController
       $roomsQty = Room::where('category', $item['category'])->count();
       $result[$i]['fullyBooked'] =  (int)($roomsQty - $addedToCart) > 0 ? false : true;
       $result[$i]['additional_info'] = json_decode($item['additional_info']);
-      $result[$i]['images'] = app('Increment\Hotel\Room\Http\ProductImageController')->retrieveImageByStatus($item['category_id'], 'product');
+      $result[$i]['images'] = app('Increment\Hotel\Room\Http\ProductImageController')->retrieveImageByStatus($item['category_id'], 'room_type');
       $result[$i]['general_features'] = json_decode($item['general_features']);
       $result[$i]['tax_price'] = number_format($item['tax_price'], 2, '.', '');
       //get available rooms
