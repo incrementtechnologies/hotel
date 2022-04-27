@@ -55,7 +55,8 @@ class RoomController extends APIController
     $data = $request->all();
     $whereArray = array(
       array('rooms.deleted_at', '=', null),
-      array('rooms.max_capacity', '=', ((int)$data['adults'] + (int)$data['children'])),
+      array('rooms.max_capacity', '>=', ((int)$data['adults'] + (int)$data['children'])),
+      array('rooms.max_capacity', '>', 0),
       array('T3.payload', '=', 'room_type'),
       array('T3.status', '=', 'available'),
       array('rooms.status', '=', 'publish')
@@ -171,7 +172,8 @@ class RoomController extends APIController
     $whereArray = array(
       array('rooms.category', '=', $data['category_id']),
       array('rooms.deleted_at', '=', null),
-      array('rooms.max_capacity', '=', ((int)$data['filter']['adults'] + (int)$data['filter']['children']))
+      array('rooms.max_capacity', '>=', ((int)$data['filter']['adults'] + (int)$data['filter']['children'])),
+      array('rooms.max_capacity', '>', 0),
     );
     if($data['filter']['check_in'] !== null && $data['filter']['check_out'] !== null){
       array_push($whereArray, array('T3.start_date', '<=', $data['filter']['check_in']));
@@ -269,7 +271,8 @@ class RoomController extends APIController
     $whereArray = array(
       array('rooms.category', '=', $data['category_id']),
       array('rooms.deleted_at', '=', null),
-      array('rooms.max_capacity', '=', ((int)$data['adults'] + (int)$data['children']))
+      array('rooms.max_capacity', '>=', ((int)$data['adults'] + (int)$data['children'])),
+      array('rooms.max_capacity', '>', 0),
     );
     if($data['check_in'] !== null && $data['check_out'] !== null){
       array_push($whereArray, array('T3.start_date', '<=', $data['check_in']));
