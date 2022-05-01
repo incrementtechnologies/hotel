@@ -93,6 +93,13 @@ class ReservationController extends APIController
 	{
 		$data = $request->all();
 		$data['account_info'] = json_decode($data['account_info']);
+
+		// if($this->validateBeforeCreate($data) == false){
+		// 	$this->response['data'] = null;
+		// 	$this->response['error'] = 'Apologies, the maximum amount of reservations that we can cater today is already reached';
+		// 	return $this->response();
+		// }
+
 		$existAccount = app('Increment\Account\Http\AccountInformationController')->getByParamsWithColumns($data['account_id'], ['first_name']);
 		$customerInfo = array(
 			'account_id' => $data['account_id'],
@@ -140,6 +147,23 @@ class ReservationController extends APIController
 		}
 		$this->response['error'] = null;
 		return $this->response();
+	}
+
+	public function validateBeforeCreate($data){
+		$isValid = true;
+		$startOfDay = Carbon::now()->startOfDay();
+		$endOfDay = Carbon::now()->endOfDay();
+		$totalReservations = Reservation::where(function($query){
+			$query->where('status', '=', 'for_approval');
+		})->whereBetween('created_at', [$startOfDay, $endOfDay])->count();
+		$parameter = array(
+			array('payload', '=', 'reservations')
+		);
+		$reservationCanCater = app('Increment\Common\Payload\Http\PayloadController')->retrieveByParameter($parameter);
+		if((int)$totalReservations >= (int)$reservationCanCater['payload_value']){
+			$isValid = false;
+		}
+		return $isValid; 
 	}
 
 	public function update(Request $request){
@@ -232,17 +256,6 @@ class ReservationController extends APIController
 				'updated_at' => Carbon::now()
 			);
 			$updateCart = app('Increment\Hotel\Room\Http\CartController')->updateByParams($condition, $updates);
-			// if($updateCart){
-			// 	$cart = app('Increment\Hotel\Room\Http\CartController')->getByReservationId($reserve['id']);
-			// 	$priceStatusParams = array(
-			// 		'price_id' => $cart['price_id'],
-			// 		'category_id' => $cart['category_id']
-			// 	);
-			// 	$existingPriceStatus = app('Increment\Hotel\Room\Http\RoomPriceStatusController')->checkIfPriceExist($priceStatusParams);
-			// 	if(sizeof($existingPriceStatus) > 0){
-			// 		$roomPriceUpdate = app('Increment\Hotel\Room\Http\RoomPriceStatusController')->updateQtyByPriceId($cart['price_id'], $cart['category_id'], ((int)$existingPriceStatus[0]['qty'] - $cart['qty']));
-			// 	}
-			// }
 			if($res !== null){
 				$this->sendReceiptById($reserve['id']);
 				// $this->sendReceipt($reserve['id']); send email
