@@ -119,6 +119,7 @@ class PricingController extends APIController
 				);
 				$update = array(
 					'amount' => $params['tax_price'],
+					'refundable' => $data['refundable'] !== null ? (float)$data['refundable'] : (float)0,
 					'category_id' => $data['category_id']
 				);
 				$updatePriceStatus = app('Increment\Hotel\Room\Http\RoomPriceStatusController')->updateByParams($condition, $update);
