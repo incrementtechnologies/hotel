@@ -114,7 +114,6 @@ class RoomController extends APIController
       ->offset($data['offset'])
       ->orderBy('T3.start_date', 'desc')
       ->get(['rooms.*', 'T1.regular', 'T1.refundable', 'T1.tax_price', 'T1.tax', 'T1.currency', 'T1.label', 'T2.payload_value', 'T2.id as category_id', 'T1.id as price_id', 'T2.category as general_description', 'T2.details as general_features']);
-    // dd($result);
     $size = Room::leftJoin('pricings as T1', 'T1.room_id', '=', 'rooms.id')
       ->leftJoin('payloads as T2', 'T2.id', '=', 'rooms.category')
       ->leftJoin('availabilities as T3', 'T3.payload_value', '=', 'T2.id')
@@ -430,14 +429,14 @@ class RoomController extends APIController
   }
 
   public function getWithQty($categoryId, $priceId){
-    $result = Room::leftJoin('pricings as T1', 'T1.room_id', '=', 'rooms.id')
+    $result = DB::table('rooms')->leftJoin('pricings as T1', 'T1.room_id', '=', 'rooms.id')
       ->leftJoin('payloads as T2', 'T2.id', '=', 'rooms.category')
       ->where('T1.id', '=', $priceId)
       ->where('rooms.category', '=', $categoryId)
-      ->groupBy('T1.regular')
+      ->groupBy('T1.tax_price')
       ->get(['rooms.*', 'T1.regular', 'T1.tax', 'T1.tax_price', 'T1.refundable', 'T1.currency', 'T1.label', DB::raw('COUNT("T1.tax_price") as room_qty'), 'T1.id as price_id', 'T2.payload_value']);
-    
-    if(sizeof($result) > 0){  
+    $result = json_decode(json_encode($result), true);
+    if(sizeof($result) > 0){
       for ($i=0; $i <= sizeof($result)-1 ; $i++) { 
         $item = $result[$i];
         $result[$i]['tax_price'] = number_format($item['tax_price'], 2, '.', '');
@@ -446,7 +445,7 @@ class RoomController extends APIController
         $rooms =  app('Increment\Hotel\Room\Http\RoomPriceStatusController')->getTotalByPricesWithDetails($item['tax_price'], $item['refundable'], $item['category']);
         $addedToCart  = app('Increment\Hotel\Room\Http\CartController')->countById($item['price_id'], $item['category']);
         $result[$i]['remaining_qty'] = $rooms !== null ? (int)$rooms['remaining_qty'] : 0;
-        $result[$i]['total_room_qty'] = (int)$rooms['qty'];
+        $result[$i]['total_room_qty'] = $rooms !== null ? (int)$rooms['qty'] : 0;
         $result[$i]['added_to_cart'] = (int)$addedToCart;
       }
     }

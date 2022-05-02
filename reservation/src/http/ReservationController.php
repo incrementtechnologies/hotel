@@ -124,8 +124,8 @@ class ReservationController extends APIController
 			}
 		}
 		$this->model = new Reservation();
-		$temp = Reservation::count();
-		$data['code'] = $this->generateCode($temp);
+		$temp = Reservation::get();
+		$data['code'] = $this->generateCode(sizeof($temp));
 		$data['reservation_code'] = $this->generateReservationCode();
 		$this->insertDB($data);
 		if($this->response['data']){
