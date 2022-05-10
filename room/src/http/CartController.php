@@ -385,8 +385,8 @@ class CartController extends APIController
         $min = Cart::orderBy('check_in', 'desc')->first();
 
         return array(
-            'max' => $max['check_in'],
-            'min' => $min['check_in']
+            'max' => $max !== null ? $max['check_in'] : null,
+            'min' => $max !== null ? $min['check_in'] : null
         );
     }
     public function getTotalBookingsPerMonth($start, $end){
