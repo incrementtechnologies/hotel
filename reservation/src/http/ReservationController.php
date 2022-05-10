@@ -94,6 +94,8 @@ class ReservationController extends APIController
 	{
 		$data = $request->all();
 		$data['account_info'] = json_decode($data['account_info']);
+		$createdAccountId = null;
+		$finalResult = [];
 		// if($this->validateBeforeCreate($data) == false){
 		// 	$this->response['data'] = null;
 		// 	$this->response['error'] = 'Apologies, the maximum amount of reservations that we can cater today is already reached';
@@ -102,6 +104,7 @@ class ReservationController extends APIController
 		$existEmail = app('Increment\Account\Http\AccountController')->retrieveByEmail($data['account_info']->email);
 		if($existEmail !== null){
 			$data['account_id'] = $existEmail['id'];
+			$createdAccountId = $data['account_id'];
 		}else{
 			$tempAccount = array(
 				'password' => $this->generateTempPassword(),
@@ -111,7 +114,8 @@ class ReservationController extends APIController
 				'status' => 'NOT_VERIFIED',
 				'referral_code' => null
 			);
-			app('Increment\Account\Http\AccountController')->createAccount($tempAccount);
+			$acc = app('Increment\Account\Http\AccountController')->createAccount($tempAccount);
+			$createdAccountId = $acc;
 			$createdAccount = app('Increment\Account\Http\AccountController')->retrieveByEmail($data['account_info']->email);
 			if($createdAccount !== null){
 				$data['account_id'] = $createdAccount['id'];
@@ -124,8 +128,8 @@ class ReservationController extends APIController
 		$data['code'] = $this->generateCode(sizeof($temp));
 		$data['reservation_code'] = $this->generateReservationCode();
 		$this->insertDB($data);
-
 		if($this->response['data']){
+			$finalResult['reservation_id'] = $this->response['data'];
 			$condition = array(
 				array('account_id', '=', $data['account_id']),
 				array('reservation_id', '=', null),
@@ -143,6 +147,8 @@ class ReservationController extends APIController
 			app('Increment\Hotel\Room\Http\CartController')->updateByParams($condition, $updates);
 		}
 		$this->response['error'] = null;
+		$finalResult['account_id'] = $createdAccountId;
+		$this->response['data'] = $finalResult;
 		return $this->response();
 	}
 
