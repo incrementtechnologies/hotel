@@ -10,6 +10,7 @@ use Increment\Hotel\Reservation\Models\Booking;
 use Carbon\Carbon;
 use Carbon\CarbonPeriod;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Cache;
 
 class ReservationController extends APIController
 {
@@ -93,13 +94,59 @@ class ReservationController extends APIController
 	{
 		$data = $request->all();
 		$data['account_info'] = json_decode($data['account_info']);
-
 		// if($this->validateBeforeCreate($data) == false){
 		// 	$this->response['data'] = null;
 		// 	$this->response['error'] = 'Apologies, the maximum amount of reservations that we can cater today is already reached';
 		// 	return $this->response();
 		// }
+		$existEmail = app('Increment\Account\Http\AccountController')->retrieveByEmail($data['account_info']->email);
+		if($existEmail !== null){
+			$data['account_id'] = $existEmail['id'];
+		}else{
+			$tempAccount = array(
+				'password' => $this->generateTempPassword(),
+				'username' => $data['account_info']->email,
+				'email' => $data['account_info']->email,
+				'account_type' => 'USER',
+				'status' => 'NOT_VERIFIED',
+				'referral_code' => null
+			);
+			app('Increment\Account\Http\AccountController')->createAccount($tempAccount);
+			$createdAccount = app('Increment\Account\Http\AccountController')->retrieveByEmail($data['account_info']->email);
+			if($createdAccount !== null){
+				$data['account_id'] = $createdAccount['id'];
+			}
+			app('App\Http\Controllers\EmailController')->sendTempPassword($data['account_id'], $tempAccount['password']);
+		}
+		$this->insertIntoAccountInformation($data);
+		$this->model = new Reservation();
+		$temp = Reservation::get();
+		$data['code'] = $this->generateCode(sizeof($temp));
+		$data['reservation_code'] = $this->generateReservationCode();
+		$this->insertDB($data);
 
+		if($this->response['data']){
+			$condition = array(
+				array('account_id', '=', $data['account_id']),
+				array('reservation_id', '=', null),
+				array('deleted_at', '=', null),
+				array(function($query){
+					$query->where('status', '=', 'pending')
+					->orWhere('status', '=', 'in_progress');
+				})
+			);
+			$updates = array(
+				'status' => 'in_progress',
+				'reservation_id' => $this->response['data'],
+				'updated_at' => Carbon::now()
+			);
+			app('Increment\Hotel\Room\Http\CartController')->updateByParams($condition, $updates);
+		}
+		$this->response['error'] = null;
+		return $this->response();
+	}
+
+	public function insertIntoAccountInformation($data){
 		$existAccount = app('Increment\Account\Http\AccountInformationController')->getByParamsWithColumns($data['account_id'], ['first_name']);
 		$customerInfo = array(
 			'account_id' => $data['account_id'],
@@ -123,30 +170,12 @@ class ReservationController extends APIController
 				}
 			}
 		}
-		$this->model = new Reservation();
-		$temp = Reservation::get();
-		$data['code'] = $this->generateCode(sizeof($temp));
-		$data['reservation_code'] = $this->generateReservationCode();
-		$this->insertDB($data);
-		if($this->response['data']){
-			$condition = array(
-				array('account_id', '=', $data['account_id']),
-				array('reservation_id', '=', null),
-				array('deleted_at', '=', null),
-				array(function($query){
-					$query->where('status', '=', 'pending')
-					->orWhere('status', '=', 'in_progress');
-				})
-			);
-			$updates = array(
-				'status' => 'in_progress',
-				'reservation_id' => $this->response['data'],
-				'updated_at' => Carbon::now()
-			);
-			app('Increment\Hotel\Room\Http\CartController')->updateByParams($condition, $updates);
-		}
-		$this->response['error'] = null;
-		return $this->response();
+	}
+
+	public function generateTempPassword(){
+		$char = '1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
+		$code = substr(str_shuffle($char), 0, 8);
+		return $code;
 	}
 
 	public function validateBeforeCreate($data){
