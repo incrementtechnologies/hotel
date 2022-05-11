@@ -193,6 +193,11 @@ class CartController extends APIController
                     $reserve['subTotal'] = number_format($reserve['subTotal'], 2, '.', '');
                 }
             }
+            $otherDetails = [
+                'customer_details' => app('Increment\Account\Http\AccountController')->retrieveAccountInfo($data['account_id']),
+                'reservation_detail' => app('Increment\Hotel\Reservation\Http\ReservationController')->retrieveReservationByParams('id', $result[0]['reservation_id'], ['details']),
+            ];
+            $this->response['data']['other_details'] = $otherDetails;
         }
         $this->response['data']['result'] = $result;
         $this->response['data']['total'] = $reserve;
