@@ -112,7 +112,7 @@ class RoomController extends APIController
       ->groupBy('rooms.category')
       ->limit($data['limit'])
       ->offset($data['offset'])
-      ->orderBy('T3.start_date', 'desc')
+      ->orderBy('T1.tax_price', 'asc')
       ->get(['rooms.*', 'T1.regular', 'T1.refundable', 'T1.tax_price', 'T1.tax', 'T1.currency', 'T1.label', 'T2.payload_value', 'T2.id as category_id', 'T1.id as price_id', 'T2.category as general_description', 'T2.details as general_features']);
       $size = Room::leftJoin('pricings as T1', 'T1.room_id', '=', 'rooms.id')
       ->leftJoin('payloads as T2', 'T2.id', '=', 'rooms.category')
@@ -120,7 +120,7 @@ class RoomController extends APIController
       ->where($whereArray)
       ->havingRaw("count(rooms.category) >= ?", [$data['number_of_rooms'] !== null ? $data['number_of_rooms'] : 0])
       ->groupBy('rooms.category')
-      ->orderBy('T3.start_date', 'desc')
+      ->orderBy('T1.tax_price', 'asc')
       ->get();
     
     $finalResult = [];
