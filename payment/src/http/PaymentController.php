@@ -23,7 +23,7 @@ class PaymentController extends APIController
 			PayMayaSDK::getInstance()->initCheckout(
 				env('PAYMAYA_PK'),
 				env('PAYMAYA_SK'),
-				'SANDBOX'
+				env('PAYMAYA_PLATFORM')
 			);
 			$this->clearWebhooks();
 			$successWebhook = new Webhook();
