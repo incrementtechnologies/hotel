@@ -609,7 +609,6 @@ class ReservationController extends APIController
 			$accountEmail = app('Increment\Account\Http\AccountController')->getByParamsWithColumns($data['account_id'], ['email']);
 			$accountInformation = app('Increment\Account\Http\AccountInformationController')->getByParamsWithColumns($data['account_id'], ['cellular_number', 'first_name']);
 			$details = json_decode($reservation['details']);
-			$details->payment_method = $data['payment_method'];
 			$params = array(
 				"account_id" => $data['account_id'],
 				"amount" => $data['amount'],
@@ -622,6 +621,7 @@ class ReservationController extends APIController
 				"payload_value" => $reservation['id']
 			);
 			$res = app('Increment\Hotel\Payment\Http\PaymentController')->checkout($params);
+			$this->response['data'] = $res;
 			if($res['data'] !== null){
 				Reservation::where('reservation_code', '=', $data['reservation_code'])->update(array(
 					'total' => $data['amount'],
@@ -632,7 +632,7 @@ class ReservationController extends APIController
 			}else{
 				$this->response['data'] = $res['error'];
 			}
-			$cart = app('Increment\Hotel\Room\Http\CartController')->getByReservationId($reservation['id']);
+			// $cart = app('Increment\Hotel\Room\Http\CartController')->getByReservationId($reservation['id']);
 			// $priceStatusParams = array(
 			// 	'price_id' => $cart['price_id'],
 			// 	'category_id' => $cart['category_id']
