@@ -105,7 +105,7 @@ class PaymentController extends APIController
 
 		public function callback(Request $request){
 			$data = $request->all();
-			$temp = Payment::where('payload_value', '=', $data['id'])->orderBy('created_at', '=', 'desc')->first();
+			$temp = Payment::where('payload_value', '=', $data['code'])->orderBy('created_at', '=', 'desc')->first();
 			$checkout = json_decode($temp['details']);
 			$transaction_id = $checkout->checkoutId;
 			if (! $transaction_id) {
@@ -116,7 +116,7 @@ class PaymentController extends APIController
 			$checkout = $itemCheckout->retrieve();
 			//update reservation
 			$params = array(
-				'id' => $data['id'],
+				'code' => $data['code'],
 				'payment_method'=> 'credit',
 				'status' => strtolower($checkout['paymentStatus']) === 'payment_success' ? 'for_approval' : 'in_progress'
 			);

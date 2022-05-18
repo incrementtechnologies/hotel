@@ -305,7 +305,7 @@ class ReservationController extends APIController
 	}
 
 	public function updateReservationCart($data){
-		$reserve = Reservation::where('id', '=', $data['id'])->first();
+		$reserve = Reservation::where('reservation_code', '=', $data['code'])->first();
 		if($reserve !== null){
 			$details = json_decode($reserve['details']);
 			$details->payment_method = $data['payment_method'];
@@ -314,7 +314,7 @@ class ReservationController extends APIController
 				'status' => $data['status']
 			));
 			$condition = array(
-				array('reservation_id', '=', $data['id'])
+				array('reservation_id', '=', $reserve['id'])
 			);
 			$updates = array(
 				'status' => $data['status'],
@@ -689,9 +689,12 @@ class ReservationController extends APIController
 	
 	public function successCallback(Request $request){
 		$data = $request->all();
-		$reservation = Reservation::where('code', '=', $data['code'])->first();
-		Reservation::where('code', '=', $data['code'])->update(array(
-			'status' => 'for_approval'
+		$reservation = Reservation::where('reservation_code', '=', $data['code'])->first();
+		$details = json_decode($reservation['details']);
+		$details->payment_method = 'credit';
+		Reservation::where('reservation_code', '=', $data['code'])->update(array(
+			'status' => 'for_approval',
+			'details' => json_encode($details)
 		));
 		if($reservation !== null){
 			$condition = array(
