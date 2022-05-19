@@ -110,9 +110,9 @@ class RoomController extends APIController
       ->where($whereArray)
       ->havingRaw("count(rooms.category) >= ?", [$data['number_of_rooms'] !== null ? $data['number_of_rooms'] : 0])
       ->groupBy('rooms.category')
+      ->orderBy('T1.tax_price', 'asc')
       ->limit($data['limit'])
       ->offset($data['offset'])
-      ->orderBy('T1.tax_price', 'asc')
       ->get(['rooms.*', 'T1.regular', 'T1.refundable', 'T1.tax_price', 'T1.tax', 'T1.currency', 'T1.label', 'T2.payload_value', 'T2.id as category_id', 'T1.id as price_id', 'T2.category as general_description', 'T2.details as general_features']);
       $size = Room::leftJoin('pricings as T1', 'T1.room_id', '=', 'rooms.id')
       ->leftJoin('payloads as T2', 'T2.id', '=', 'rooms.category')
@@ -122,17 +122,25 @@ class RoomController extends APIController
       ->groupBy('rooms.category')
       ->orderBy('T1.tax_price', 'asc')
       ->get();
-    
     $finalResult = [];
     for ($i=0; $i <= sizeof($result)-1 ; $i++) {
       $item = $result[$i];
       $addedToCart  = app('Increment\Hotel\Room\Http\CartController')->countByCategory($item['category']);
       $roomsQty = Room::where('category', $item['category'])->count();
+      $roomPriceWithSameCategory  = Room::leftJoin('pricings as T1', 'T1.room_id', '=', 'rooms.id')->where('rooms.category', '=', $item['category'])->orderBy('tax_price', 'asc')->select('*', 'T1.id as price_id')->first();
+      if($roomPriceWithSameCategory !== null){
+        $result[$i]['tax_price'] = number_format($roomPriceWithSameCategory['tax_price'], 2, '.', '');
+        $result[$i]['refundable'] = $roomPriceWithSameCategory['refundable'];
+        $result[$i]['regular'] = $roomPriceWithSameCategory['regular'];
+        $result[$i]['tax'] = $roomPriceWithSameCategory['tax'];
+        $result[$i]['label'] = $roomPriceWithSameCategory['label'];
+        $result[$i]['price_id'] = $roomPriceWithSameCategory['price_id'];
+      }
       $result[$i]['fullyBooked'] =  (int)($roomsQty - $addedToCart) > 0 ? false : true;
       $result[$i]['additional_info'] = json_decode($item['additional_info']);
       $result[$i]['images'] = app('Increment\Hotel\Room\Http\ProductImageController')->retrieveImageByStatus($item['category_id'], 'room_type');
       $result[$i]['general_features'] = json_decode($item['general_features']);
-      $result[$i]['tax_price'] = number_format($item['tax_price'], 2, '.', '');
+      
       //get available rooms
 
       $result[$i]['price'] = null;
