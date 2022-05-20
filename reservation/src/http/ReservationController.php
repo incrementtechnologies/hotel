@@ -128,6 +128,7 @@ class ReservationController extends APIController
 		$data['code'] = $this->generateCode(sizeof($temp));
 		$data['reservation_code'] = $this->generateReservationCode();
 		$this->insertDB($data);
+		app('App\Http\Controllers\EmailController')->newReservation($data['account_id']);
 		if($this->response['data']){
 			$finalResult['reservation_id'] = $this->response['data'];
 			$condition = array(
