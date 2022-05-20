@@ -128,7 +128,6 @@ class ReservationController extends APIController
 		$data['code'] = $this->generateCode(sizeof($temp));
 		$data['reservation_code'] = $this->generateReservationCode();
 		$this->insertDB($data);
-		app('App\Http\Controllers\EmailController')->newReservation($data['account_id']);
 		if($this->response['data']){
 			$finalResult['reservation_id'] = $this->response['data'];
 			$condition = array(
@@ -297,6 +296,8 @@ class ReservationController extends APIController
 				// $this->sendReceipt($reserve['id']); send email
 				$this->response['data'] = $reserve;
 			}
+			app('App\Http\Controllers\EmailController')->newReservation($data['account_id']);
+			
 		}
 		return $this->response();
 	}
@@ -719,6 +720,8 @@ class ReservationController extends APIController
 			);
 			app('Increment\Hotel\Room\Http\CartController')->updateByParams($condition, $updates);
 		}
+		$this->sendReceiptById($reservation['id']);
+		app('App\Http\Controllers\EmailController')->newReservation($reservation['account_id']);
 		header('Location: '.env('FRONT_URL_SUCCESS').'?code='.$data['code']);
 		exit(1);
 	}
