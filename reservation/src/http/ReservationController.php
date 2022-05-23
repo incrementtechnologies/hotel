@@ -892,7 +892,7 @@ class ReservationController extends APIController
 				$cart = app('Increment\Hotel\Room\Http\CartController')->getByReservationId($result['id']);
 				$reserveDetails = json_decode($result['details']);
 				$receiptParams = array(
-					'reservee' => $this->retrieveNameOnly($result['account_id']),
+					'reservee' => $this->retrieveName($result['account_id']),
 					'code' => $result['code'],
 					'date' => $cart !== null ? Carbon::parse($cart['check_in'])->format('Y-m-d').' - '.Carbon::parse($cart['check_out'])->format('Y-m-d') : 'N/A',
 					'status' => $result['status'],
