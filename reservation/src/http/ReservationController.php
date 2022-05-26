@@ -500,6 +500,31 @@ class ReservationController extends APIController
 		$reservation = Reservation::where('reservation_code', '=', $data['roomCode'])->first();
 		$res = null;
 		if($reservation !== null){
+			if($data['status'] === 'completed'){
+				app('App\Http\Controllers\EmailController')->sendThankYou($params);
+			}else{
+				$reservations = $this->getReservationDetails($reservation['id']);
+				if($reservations !== null){
+					$emailParams = [];
+					$start = Carbon::createFromFormat('Y-m-d H:i:s', $reservations['check_in']);
+					$end = Carbon::createFromFormat('Y-m-d H:i:s', $reservations['check_out']);
+					$nightsDays = $end->diffInDays($start);
+					$emailParams['name'] = $this->retrieveName($reservations['account_id']);
+					$emailParams['check_in'] = Carbon::createFromFormat('Y-m-d H:i:s', $reservations['check_in'])->copy()->tz($this->response['timezone'])->format('F d, Y');
+					$emailParams['check_out'] = Carbon::createFromFormat('Y-m-d H:i:s', $reservations['check_out'])->copy()->tz($this->response['timezone'])->format('F d, Y');
+					$emailParams['nights'] = $nightsDays;
+					$emailParams['adults'] = $reservations['details']->heads;
+					$emailParams['children'] = $reservations['details']->child;
+					$emailParams['room_types'] = $reservations['room_types'];
+					$emailParams['total'] = $reservations['total'];
+					$emailParams['add_ons'] = $reservations['add_ons'];
+					$emailParams['account_id'] = $reservations['account_id'];
+					$emailParams['code'] = $reservation['code'];
+					$emailParams['status'] = $data['status'];
+					$emailParams['booking_status'] = $reservations['booking_status'];
+				}
+				app('App\Http\Controllers\EmailController')->sendUpdate($emailParams);
+			}
 			$res = Reservation::where('reservation_code', '=', $data['roomCode'])->update(array(
 				'status' => $data['status']
 			));
@@ -533,11 +558,6 @@ class ReservationController extends APIController
 				'code' => $reservation['code'],
 				'status' => $data['status']
 			);
-			if($data['status'] === 'completed'){
-				app('App\Http\Controllers\EmailController')->sendThankYou($params);
-			}else{
-				app('App\Http\Controllers\EmailController')->sendUpdate($params);
-			}
 		}
 		$this->response['data'] = $res;
 		return $this->response();
@@ -907,5 +927,42 @@ class ReservationController extends APIController
 		}catch(\Throwable $th){
 			return $th;
 		}
+	}
+
+	public function getReservationDetails($id){
+		$roomTypes = '';
+		$addOns = '';
+		$temp = Reservation::leftJoin('carts as T1', 'T1.reservation_id', '=', 'reservations.id')
+			->leftJoin('payloads as T2', 'T2.id', '=', 'T1.category_id')
+			->where('reservations.id', '=', $id)
+			->where('T1.status', '=', 'for_approval')->get(['reservations.*', 'T1.*', 'T2.payload_value']);
+		$result = [];
+		if(sizeof($temp) > 0){
+			for ($i=0; $i <= sizeof($temp)-1 ; $i++) { 
+				$item = $temp[$i];
+				$roomTypes .= $item['qty'].' ' . $item['payload_value'] . ($i < (sizeOf($temp)-1) ? ', ' : '');
+				$result['check_in'] = $item['check_in'];
+				$result['check_out'] = $item['check_out'];
+				$result['details'] = json_decode($item['details']);
+				$result['account_id'] = $item['account_id'];
+				$result['total'] = $item['total'];
+				if($result['details']->payment_method == 'checkIn'){
+					$result['booking_status'] = 'Payment upon check-in';
+				}else if($result['details']->payment_method == 'bank'){
+					$result['booking_status'] = 'Bank Payment';
+				}else{
+					$result['booking_status'] = 'Paid';
+				}
+				if(sizeOf($result['details']->selectedAddOn)){
+					for ($a=0; $a <= sizeOf($result['details']->selectedAddOn)-1 ; $a++) { 
+						$each = $result['details']->selectedAddOn[$a];
+						$addOns .= $each['title'] . ($a < (sizeof($result['details']->selectedAddOn) - 1) ? ', ' : '');
+					}
+				}
+			}
+			$result['room_types'] = $roomTypes;
+			$result['add_ons'] = $addOns;
+		}
+		return $result;
 	}
 }
