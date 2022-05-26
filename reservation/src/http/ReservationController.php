@@ -119,8 +119,9 @@ class ReservationController extends APIController
 			$createdAccount = app('Increment\Account\Http\AccountController')->retrieveByEmail($data['account_info']->email);
 			if($createdAccount !== null){
 				$data['account_id'] = $createdAccount['id'];
+				$finalResult['username'] = $tempAccount['username'];
+				$finalResult['password'] = $tempAccount['password'];
 			}
-			app('App\Http\Controllers\EmailController')->sendTempPassword($data['account_info']->email, $tempAccount['password']);
 		}
 		$this->insertIntoAccountInformation($data);
 		$this->model = new Reservation();
