@@ -102,9 +102,11 @@ class ReservationController extends APIController
 		// 	return $this->response();
 		// }
 		$existEmail = app('Increment\Account\Http\AccountController')->retrieveByEmail($data['account_info']->email);
+		// dd($existEmail);
 		if($existEmail !== null){
 			$data['account_id'] = $existEmail['id'];
 			$createdAccountId = $data['account_id'];
+			$finalResult['message'] = 'Your email is already existed. Please login';
 		}else{
 			$tempAccount = array(
 				'password' => $this->generateTempPassword(),
