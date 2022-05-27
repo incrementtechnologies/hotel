@@ -70,7 +70,7 @@ class ReservationController extends APIController
 					$reserve['total'] = number_format((float)((double)$reserve['total'] - ((double)$coupon['amount'] / 100)), 2, '.', '');
 				}
 			}
-			$reserve['account_info'] = app('Increment\Account\Http\AccountInformationController')->getByParamsWithColumns($reserve['account_id'], ['first_name as name', 'cellular_number as contactNumber']);
+			$reserve['account_info'] = app('Increment\Account\Http\AccountInformationController')->getByParamsWithColumns($reserve['account_id'], ['first_name as name', 'cellular_number as contactNumber', 'number_code']);
 			$reserve['account_info']['email'] = app('Increment\Account\Http\AccountController')->getByParamsWithColumns($reserve['account_id'], ['email'])['email'];
 			$reserve['check_in'] = Carbon::createFromFormat('Y-m-d H:i:s', $cart[0]['check_in'])->copy()->tz($this->response['timezone'])->format('F j, Y');
 			$reserve['check_out'] = Carbon::createFromFormat('Y-m-d H:i:s', $cart[0]['check_out'])->copy()->tz($this->response['timezone'])->format('F j, Y');
@@ -160,7 +160,8 @@ class ReservationController extends APIController
 		$customerInfo = array(
 			'account_id' => $data['account_id'],
 			'first_name' => $data['account_info']->name,
-			'cellular_number' => $data['account_info']->contactNumber
+			'cellular_number' => $data['account_info']->contactNumber,
+			'number_code' => $data['account_info']->numberCode,
 		);
 		if($existAccount != null){
 			app('Increment\Account\Http\AccountInformationController')->updateByAccountId($data['account_id'], $customerInfo);
@@ -423,7 +424,7 @@ class ReservationController extends APIController
 		}else{
 			$carts = app('Increment\Hotel\Room\Http\CartController')->retrieveOwn($data);
 		}
-		$accountInfo = app('Increment\Account\Http\AccountInformationController')->getByParamsWithColumns($con[0]['value'], ['first_name as name', 'cellular_number as contactNumber']);
+		$accountInfo = app('Increment\Account\Http\AccountInformationController')->getByParamsWithColumns($con[0]['value'], ['first_name as name', 'cellular_number as contactNumber', 'number_code']);
 		$accountInfo['email'] = app('Increment\Account\Http\AccountController')->getByParamsWithColumns($con[0]['value'], ['email'])['email'];
 		$availability = null;
 		if(sizeof($carts) > 0){
