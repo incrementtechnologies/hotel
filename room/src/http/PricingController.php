@@ -111,7 +111,11 @@ class PricingController extends APIController
 				'label' => $data['label'],
 				'updated_at' => Carbon::now()
 			);
-			$params['tax_price'] = $data['tax'] == 1 ? (float)$data['regular'] + ((ENV('TAX_PRICE')/100) * (float)$data['regular']) : (float)$data['regular'];
+			if((int)$data['refundable'] > 0){
+				$params['tax_price'] = $data['tax'] == 1 ? (float)$data['refundable'] + ((ENV('TAX_PRICE')/100) * (float)$data['refundable']) : (float)$data['refundable'];
+			}else{
+				$params['tax_price'] = $data['tax'] == 1 ? (float)$data['regular'] + ((ENV('TAX_PRICE')/100) * (float)$data['regular']) : (float)$data['regular'];
+			}
 			$result = Pricing::where('id', '=', $data['id'])->update($params);
 			if($result){
 				$condition = array(
