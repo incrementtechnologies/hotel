@@ -124,6 +124,7 @@ class ReservationController extends APIController
 				$finalResult['username'] = $tempAccount['username'];
 				$finalResult['password'] = $tempAccount['password'];
 			}
+			app('App\Http\Controller\EmailController')->sendTempPassword($data['account_info']->email, $tempAccount['password']);
 		}
 		$this->insertIntoAccountInformation($data);
 		$this->model = new Reservation();
