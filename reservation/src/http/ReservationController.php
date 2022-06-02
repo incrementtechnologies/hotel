@@ -508,7 +508,7 @@ class ReservationController extends APIController
 		$res = null;
 		if($reservation !== null){
 			if($data['status'] === 'completed'){
-				app('App\Http\Controllers\EmailController')->sendThankYou($params);
+				app('App\Http\Controllers\EmailController')->sendThankYou($reservation['account_id']);
 			}else{
 				$reservations = $this->getReservationDetails($reservation['id']);
 				if($reservations !== null){
