@@ -124,7 +124,7 @@ class ReservationController extends APIController
 				$finalResult['username'] = $tempAccount['username'];
 				$finalResult['password'] = $tempAccount['password'];
 			}
-			app('App\Http\Controller\EmailController')->sendTempPassword($data['account_info']->email, $tempAccount['password']);
+			app('App\Http\Controllers\EmailController')->sendTempPassword($data['account_info']->email, $tempAccount['password']);
 		}
 		$this->insertIntoAccountInformation($data);
 		$this->model = new Reservation();
@@ -299,7 +299,11 @@ class ReservationController extends APIController
 			);
 			$updateCart = app('Increment\Hotel\Room\Http\CartController')->updateByParams($condition, $updates);
 			if($res !== null){
-				$this->sendReceiptById($reserve['id']);
+				if($data['payment_method'] === 'bank'){
+					app('App\Http\Controllers\EmailController')->sendBankDetails($reserve);
+				}else{
+					$this->sendReceiptById($reserve['id']);
+				}
 				// $this->sendReceipt($reserve['id']); send email
 				$this->response['data'] = $reserve;
 			}
