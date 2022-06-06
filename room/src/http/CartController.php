@@ -120,7 +120,12 @@ class CartController extends APIController
     }
 
     public function countByCategory($category){
-        return Cart::where('category_id', '=', $category)->where('status', '!=', 'pending')->where('deleted_at', '=', null)->count();
+        $result = Cart::where('category_id', '=', $category)->where(function($query){
+            $query->where('status', '=', 'comfirmed')
+            ->orWhere('status', '=', 'for_approval');
+        })->where('deleted_at', '=', null)->count();
+        
+        return $result;
     }
     
     public function retrieveByParams(Request $request){
