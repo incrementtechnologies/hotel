@@ -55,7 +55,10 @@ class RoomController extends APIController
     $data = $request->all();
     $whereArray = array(
       array('rooms.deleted_at', '=', null),
-      array('rooms.max_capacity', '>=', ((int)$data['adults'] + (int)$data['children'])),
+      array(function($query)use($data){
+        $query->where('rooms.max_capacity', '>=', ((int)$data['adults'] + (int)$data['children']))
+        ->orWhere('rooms.max_capacity', '<=', ((int)$data['adults'] + (int)$data['children']));
+      }),
       array('rooms.max_capacity', '>', 0),
       array('T3.payload', '=', 'room_type'),
       array('T3.status', '=', 'available'),
