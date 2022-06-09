@@ -120,14 +120,14 @@ class PricingController extends APIController
 		);
 		if((int)$data['refundable'] > 0){
 			if(isset($data['addOnPrice'])){
-				$data['refundable'] = (float)$data['regular'] + array_sum($data['addOnPrice']);
+				$params['refundable'] = (float)$data['refundable'] + array_sum($data['addOnPrice']);
 			}
-			$params['tax_price'] = $data['tax'] == 1 ? (float)$data['refundable'] + ((ENV('TAX_PRICE')/100) * (float)$data['refundable']) : (float)$data['refundable'];
+			$params['tax_price'] = $data['tax'] == 1 ? (float)$params['refundable'] + ((ENV('TAX_PRICE')/100) * (float)$params['refundable']) : (float)$params['refundable'];
 		}else{
 			if(isset($data['addOnPrice'])){
-				$data['regular'] = (float)$data['regular'] + array_sum($data['addOnPrice']);
+				$params['regular'] = (float)$params['regular'] + array_sum($data['addOnPrice']);
 			}
-			$params['tax_price'] = $data['tax'] == 1 ? (float)$data['regular'] + ((ENV('TAX_PRICE')/100) * (float)$data['regular']) : (float)$data['regular'];
+			$params['tax_price'] = $data['tax'] == 1 ? (float)$params['regular'] + ((ENV('TAX_PRICE')/100) * (float)$params['regular']) : (float)$params['regular'];
 		}
 		$result = Pricing::where('id', '=', $data['id'])->update($params);
 		if($result){

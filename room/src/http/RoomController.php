@@ -389,7 +389,11 @@ class RoomController extends APIController
           $totalAddOns = (float)$totalAddOns + $el->price;
         }
       }
-      $result[$i]['regular'] = (float)$result[$i]['regular'] - $totalAddOns;
+      if($item['refundable'] != null && (int)$item['refundable'] > 0){
+        $result[$i]['refundable'] = (float)$item['refundable'] - $totalAddOns;
+      }else{
+        $result[$i]['regular'] = (float)$item['regular'] - $totalAddOns;
+      }
       $result[$i]['images'] = app('Increment\Hotel\Room\Http\ProductImageController')->getImages($item['id']);
     }
     $this->response['data'] = $result;
