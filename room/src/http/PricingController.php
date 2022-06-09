@@ -31,12 +31,15 @@ class PricingController extends APIController
 
 	public function create(Request $request){
 		$data = $request->all();
-		// if(isset($data['addOnPrice'])){
-		// 	$data['regular'] += array_sum($data['addOnPrice']);
-		// }
 		if((int)$data['refundable'] > 0){
+			if(isset($data['addOnPrice'])){
+				$data['refundable'] = (float)$data['regular'] + array_sum($data['addOnPrice']);
+			}
 			$data['tax_price'] = $data['tax'] == 1 ? (float)$data['refundable'] + ((ENV('TAX_PRICE')/100) * (float)$data['refundable']) : (float)$data['refundable'];
 		}else{
+			if(isset($data['addOnPrice'])){
+				$data['regular'] = (float)$data['regular'] + array_sum($data['addOnPrice']);
+			}
 			$data['tax_price'] = $data['tax'] == 1 ? (float)$data['regular'] + ((ENV('TAX_PRICE')/100) * (float)$data['regular']) : (float)$data['regular'];
 		}
 		$this->insertDB($data);
@@ -116,8 +119,14 @@ class PricingController extends APIController
 			'updated_at' => Carbon::now()
 		);
 		if((int)$data['refundable'] > 0){
+			if(isset($data['addOnPrice'])){
+				$data['refundable'] = (float)$data['regular'] + array_sum($data['addOnPrice']);
+			}
 			$params['tax_price'] = $data['tax'] == 1 ? (float)$data['refundable'] + ((ENV('TAX_PRICE')/100) * (float)$data['refundable']) : (float)$data['refundable'];
 		}else{
+			if(isset($data['addOnPrice'])){
+				$data['regular'] = (float)$data['regular'] + array_sum($data['addOnPrice']);
+			}
 			$params['tax_price'] = $data['tax'] == 1 ? (float)$data['regular'] + ((ENV('TAX_PRICE')/100) * (float)$data['regular']) : (float)$data['regular'];
 		}
 		$result = Pricing::where('id', '=', $data['id'])->update($params);
