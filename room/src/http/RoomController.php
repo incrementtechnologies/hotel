@@ -115,6 +115,7 @@ class RoomController extends APIController
       ->groupBy('rooms.category')
       ->orderBy('T1.tax_price', 'asc')
       ->get(['rooms.*', 'T1.regular', 'T1.refundable', 'T1.tax_price', 'T1.tax', 'T1.currency', 'T1.label', 'T2.payload_value', 'T2.id as category_id', 'T1.id as price_id', 'T2.category as general_description', 'T2.details as general_features']);
+    // return $result;
       $size = Room::leftJoin('pricings as T1', 'T1.room_id', '=', 'rooms.id')
       ->leftJoin('payloads as T2', 'T2.id', '=', 'rooms.category')
       ->leftJoin('availabilities as T3', 'T3.payload_value', '=', 'T2.id')
@@ -128,15 +129,7 @@ class RoomController extends APIController
       $item = $result[$i];
       $addedToCart  = app('Increment\Hotel\Room\Http\CartController')->countByCategory($item['category']);
       $roomsQty = Room::where('category', $item['category'])->count();
-      $roomPriceWithSameCategory  = Room::leftJoin('pricings as T1', 'T1.room_id', '=', 'rooms.id')->where('rooms.category', '=', $item['category'])->orderBy('tax_price', 'asc')->select('*', 'T1.id as price_id')->first();
-      if($roomPriceWithSameCategory !== null){
-        $result[$i]['tax_price'] = number_format($roomPriceWithSameCategory['tax_price'], 2, '.', '');
-        $result[$i]['refundable'] = $roomPriceWithSameCategory['refundable'];
-        $result[$i]['regular'] = $roomPriceWithSameCategory['regular'];
-        $result[$i]['tax'] = $roomPriceWithSameCategory['tax'];
-        $result[$i]['label'] = $roomPriceWithSameCategory['label'];
-        $result[$i]['price_id'] = $roomPriceWithSameCategory['price_id'];
-      }
+
       $result[$i]['fullyBooked'] =  (int)($roomsQty - $addedToCart) > 0 ? false : true;
       $result[$i]['additional_info'] = json_decode($item['additional_info']);
       $result[$i]['images'] = app('Increment\Hotel\Room\Http\ProductImageController')->retrieveImageByStatus($item['category_id'], 'room_type');
@@ -150,6 +143,23 @@ class RoomController extends APIController
       if($availableRooms !== null && $availableRooms['remaining_qty'] > 0){
         $result[$i]['price'] = number_format($availableRooms['amount'], 2, '.', '');
         $result[$i]['remaining_qty'] = $availableRooms['remaining_qty'];
+      }
+
+      $roomPriceWithSameCategory  = Room::leftJoin('pricings as T1', 'T1.room_id', '=', 'rooms.id')->where('rooms.category', '=', $item['category'])->orderBy('tax_price', 'desc')->select('*', 'T1.id as price_id')->get();
+      if(sizeof($roomPriceWithSameCategory) > 0){
+        for ($a=0; $a <= sizeof($roomPriceWithSameCategory)-1 ; $a++) { 
+          $el = $roomPriceWithSameCategory[$a];
+          $rooms =  app('Increment\Hotel\Room\Http\RoomPriceStatusController')->getTotalByPricesWithDetails($el['tax_price'], $el['refundable'], $item['category']);
+          $result[$i]['remaining_qty'] = $rooms !== null ? (int)$rooms['remaining_qty'] : 0;
+          if((int)$result[$i]['remaining_qty'] > 0){
+            $result[$i]['tax_price'] = number_format($el['tax_price'], 2, '.', '');
+            $result[$i]['refundable'] = $el['refundable'];
+            $result[$i]['regular'] = $el['regular'];
+            $result[$i]['tax'] = $el['tax'];
+            $result[$i]['label'] = $el['label'];
+            $result[$i]['price_id'] = $el['price_id'];
+          }
+        }
       }
       
       $categoryAvailable = app('Increment\Hotel\Room\Http\AvailabilityController')->retrieveByPayloadPayloadValue('room_type', $item['category']);
@@ -181,12 +191,14 @@ class RoomController extends APIController
     $whereArray = array(
       array('rooms.category', '=', $data['category_id']),
       array('rooms.deleted_at', '=', null),
+      array('rooms.status', '=', 'publish'),
+      array('T3.status', '=', 'available'),
+      array('T3.payload', '=', 'room_type'),
+      array('rooms.max_capacity', '>', 0),
       array(function($query)use($data){
         $query->where('rooms.max_capacity', '>=', ((int)$data['filter']['adults'] + (int)$data['filter']['children']))
         ->orWhere('rooms.max_capacity', '<=', ((int)$data['filter']['adults'] + (int)$data['filter']['children']));
-      }),
-      // array('rooms.max_capacity', '>=', ((int)$data['filter']['adults'] + (int)$data['filter']['children'])),
-      array('rooms.max_capacity', '>', 0),
+      })
     );
     if($data['filter']['check_in'] !== null && $data['filter']['check_out'] !== null){
       array_push($whereArray, array('T3.start_date', '<=', $data['filter']['check_in']));
@@ -220,7 +232,6 @@ class RoomController extends APIController
       ->leftJoin('payloads as T2', 'T2.id', '=', 'rooms.category')
       ->leftJoin('availabilities as T3', 'T3.payload_value', '=', 'T2.id')
       ->where($whereArray)
-      ->where('rooms.status', '=', 'publish')
       ->orderBy('T1.tax_price', 'asc')
       ->get(['rooms.*', 'T1.regular', 'T1.tax_price', 'T1.tax', 'T1.refundable', 'T1.currency', 'T1.label', 'T1.id as price_id']);
     $images = app('Increment\Hotel\Room\Http\ProductImageController')->retrieveImageByStatus($data['category_id'], 'room_type');

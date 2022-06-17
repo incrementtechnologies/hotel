@@ -170,16 +170,21 @@ class ReservationController extends APIController
 			app('Increment\Account\Http\AccountInformationController')->createByParams($customerInfo);
 		}
 		$hasPendingReservation = Reservation::leftJoin('carts as T1', 'T1.reservation_id', '=', 'reservations.id')
-			->where('reservations.account_id', '=', $data['account_id'])->where('reservations.status', '=', 'in_progress')->first();
+			->where('reservations.account_id', '=', $data['account_id'])->where('reservations.status', '=', 'in_progress')->where('carts.deleted_at', '=', null)->first();
 		if($hasPendingReservation !== null){
-			$availability = app('Increment\Hotel\Room\Http\AvailabilityController')->retrieveByPayloadPayloadValue('room_type', '=', $hasPendingReservation['category_id']);
-			if($availability !== null){
-				if($data['check_in'] != $availability['start_date'] && $data['check_out'] != $availability['end_date']){
-					$this->response['data'] = null;
-					$this->response['error'] = 'You cannot add multiple reservation with different check-in and check-out';
-					return $this->response();
-				}
+			if($hasPendingReservation['check_in'] != $data['check_in'] && $hasPendingReservation['check_out'] != $data['check_out']){
+				$this->response['data'] = null;
+				$this->response['error'] = 'You cannot add multiple reservation with different check-in and check-out';
+				return $this->response();
 			}
+			// $availability = app('Increment\Hotel\Room\Http\AvailabilityController')->retrieveByPayloadPayloadValue('room_type', '=', $hasPendingReservation['category_id']);
+			// if($availability !== null){
+			// 	if($data['check_in'] != $availability['start_date'] && $data['check_out'] != $availability['end_date']){
+			// 		$this->response['data'] = null;
+			// 		$this->response['error'] = 'You cannot add multiple reservation with different check-in and check-out';
+			// 		return $this->response();
+			// 	}
+			// }
 		}
 	}
 
