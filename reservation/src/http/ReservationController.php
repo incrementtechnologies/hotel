@@ -170,7 +170,7 @@ class ReservationController extends APIController
 			app('Increment\Account\Http\AccountInformationController')->createByParams($customerInfo);
 		}
 		$hasPendingReservation = Reservation::leftJoin('carts as T1', 'T1.reservation_id', '=', 'reservations.id')
-			->where('reservations.account_id', '=', $data['account_id'])->where('reservations.status', '=', 'in_progress')->where('carts.deleted_at', '=', null)->first();
+			->where('reservations.account_id', '=', $data['account_id'])->where('reservations.status', '=', 'in_progress')->where('T1.deleted_at', '=', null)->first();
 		if($hasPendingReservation !== null){
 			if($hasPendingReservation['check_in'] != $data['check_in'] && $hasPendingReservation['check_out'] != $data['check_out']){
 				$this->response['data'] = null;
