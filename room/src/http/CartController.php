@@ -22,7 +22,7 @@ class CartController extends APIController
 				$data['account_id'] = $createdAccount['id'];
 			}
         }
-        $emptyCart = Cart::where('account_id', '=', $data['account_id'])->where('deleted_at', '=', null)->get();
+        $emptyCart = Cart::where('account_id', '=', $data['account_id'])->where('status', '!=', 'completed')->where('deleted_at', '=', null)->get();
         if(isset($data['reservation_code'])){
             $getReservation = app('Increment\Hotel\Reservation\Http\ReservationController')->retrieveReservationByParams('reservation_code', $data['reservation_code'], ['id']);
             if(sizeof($getReservation) > 0){
