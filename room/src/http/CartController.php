@@ -37,14 +37,14 @@ class CartController extends APIController
             }
         }
         $existingCart = Cart::where('account_id', '=', $data['account_id'])
-            ->where('check_in', 'not like', '%'.$data['check_in'].'%')
-            ->where('check_out', 'not like', '%'.$data['check_out'].'%')
+            ->where('check_in', '!=', $data['check_in'])
+            ->where('check_out', '!=', $data['check_out'])
             ->where(function($query){
                 $query->where('status', '=', 'pending')
                 ->orWhere('status', '=', 'in_progress');
             })->where('deleted_at', '=', null)
             ->first();
-        if($existingCart !== null &&  sizeof($emptyCart) > 0){
+        if($existingCart != null && sizeof($emptyCart) > 0){
             $this->response['data'] = [];
             $this->response['error'] = 'Cannot Add multiple room with different date';
             return $this->response();
