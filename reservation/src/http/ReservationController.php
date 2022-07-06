@@ -106,7 +106,7 @@ class ReservationController extends APIController
 		if($existEmail !== null){
 			$data['account_id'] = $existEmail['id'];
 			$createdAccountId = $data['account_id'];
-			$this->response['error'] = 'Your email is already existed. Please login';
+			$this->response['error'] = 'Your email is already existed. Please login before proceeding to checkout';
 			$this->response['data'] = null;
 			return $this->response();
 		}else{
