@@ -914,7 +914,7 @@ class ReservationController extends APIController
 			$params = array(
 				"code" => $reserve['code'],
 				'reservee' => $account,
-				'date' => sizeof($cart) > 0 !== null ? $cart[0]['check_in']. ' - '.$cart[0]['check_out'] : null,
+				'date' => sizeof($cart) > 0 !== null ? $cart[0]['check_in']. 'PM - '.$cart[0]['check_out'].' NN' : null,
 				'number_of_heads' => $detail->heads,
 				'number_of_rooms' => $cart[0]['totalRooms'],
 				'total' => $reserve['total']
@@ -936,7 +936,7 @@ class ReservationController extends APIController
 				$receiptParams = array(
 					'reservee' => $this->retrieveName($result['account_id']),
 					'code' => $result['code'],
-					'date' => $cart !== null ? Carbon::parse($cart['check_in'])->format('Y-m-d').' - '.Carbon::parse($cart['check_out'])->format('Y-m-d') : 'N/A',
+					'date' => $cart !== null ? $cart['check_in'].'PM - '.$cart['check_out'].' NN' : 'N/A',
 					'status' => $result['status'],
 					'number_of_heads' => $reserveDetails->heads,
 					'merchant' => env('APP_NAME'),
