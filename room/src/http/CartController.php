@@ -191,7 +191,7 @@ class CartController extends APIController
                     if($coupon['type'] === 'fixed'){
                         $reserve['total'] = number_format((float)((double)$reserve['total'] - (double)$coupon['amount']), 2, '.', '');
                     }else if($coupon['type'] === 'percentage'){
-                        $reserve['total'] = number_format((float)((double)$reserve['total'] - ((double)$coupon['amount'] / 100)), 2, '.', '');
+                        $reserve['total'] = number_format((float)((double)$reserve['total'] - ((double)$reserve['total'] * ((double)$coupon['amount'] / 100))), 2, '.', '');
                     }
                 }else{
                     $reserve['total'] = number_format($reserve['total'], 2, '.', '');
