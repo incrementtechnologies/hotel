@@ -715,7 +715,7 @@ class ReservationController extends APIController
 		}
 		foreach ($dates as $key) {
 			$reservations = Reservation::where('created_at', 'like', '%'.$key.'%')->count();
-			$sales = Reservation::where('created_at', 'like', '%'.$key.'%')->sum('total');
+			$sales = Reservation::where('created_at', 'like', '%'.$key.'%')->where('status', '=', 'completed')->sum('total');
 			array_push($result, array(
 				'date' => $key,
 				'total_reservations' => $reservations,
