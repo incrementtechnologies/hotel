@@ -294,6 +294,7 @@ class ReservationController extends APIController
 		
 		if($reserve !== null){
 			$details = json_decode($reserve['details']);
+			$details->allow_email_updates = $data['allow_email_updates'];
 			$details->payment_method = $data['payment_method'];
 			$res = Reservation::where($condition)->update(array(
 				'details' => 	json_encode($details),	
@@ -332,6 +333,7 @@ class ReservationController extends APIController
 		$reserve = Reservation::where('reservation_code', '=', $data['code'])->first();
 		if($reserve !== null){
 			$details = json_decode($reserve['details']);
+			$details->allow_email_updates = $data['allow_email_updates'];
 			$details->payment_method = $data['payment_method'];
 			$res = Reservation::where('id', '=', $data['id'])->update(array(
 				'details' => 	json_encode($details),	
@@ -664,6 +666,7 @@ class ReservationController extends APIController
 			$accountEmail = app('Increment\Account\Http\AccountController')->getByParamsWithColumns($data['account_id'], ['email']);
 			$accountInformation = app('Increment\Account\Http\AccountInformationController')->getByParamsWithColumns($data['account_id'], ['cellular_number', 'first_name']);
 			$details = json_decode($reservation['details']);
+			$details->allow_email_updates = $data['allow_email_updates'];
 			$params = array(
 				"account_id" => $data['account_id'],
 				"amount" => $data['amount'],
