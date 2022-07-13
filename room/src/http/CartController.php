@@ -31,7 +31,7 @@ class CartController extends APIController
                     ->where('check_out', 'like', '%'.$data['check_out'].'%')->get();
                 if(sizeof($existingCart) <= 0){
                     $this->response['data'] = [];
-                    $this->response['error'] = 'Cannot Add multiple room with different date';
+                    $this->response['error'] = 'You had previously added rooms with this email with different dates in your cart. Kindly remove or checkout these rooms to proceed';
                     return $this->response();
                 }
             }
