@@ -56,8 +56,8 @@ class RoomController extends APIController
     $whereArray = array(
       array('rooms.deleted_at', '=', null),
       array(function($query)use($data){
-        $query->where('rooms.max_capacity', '>=', ((int)$data['adults'] + (int)$data['children']))
-        ->orWhere('rooms.max_capacity', '<=', ((int)$data['adults'] + (int)$data['children']));
+        $query->where('rooms.max_capacity', '>=', (int)$data['adults'])
+        ->orWhere('rooms.max_capacity', '<=', (int)$data['adults']);
       }),
       array('rooms.max_capacity', '>', 0),
       array('T3.payload', '=', 'room_type'),
@@ -197,8 +197,8 @@ class RoomController extends APIController
       array('T3.payload', '=', 'room_type'),
       array('rooms.max_capacity', '>', 0),
       array(function($query)use($data){
-        $query->where('rooms.max_capacity', '>=', ((int)$data['filter']['adults'] + (int)$data['filter']['children']))
-        ->orWhere('rooms.max_capacity', '<=', ((int)$data['filter']['adults'] + (int)$data['filter']['children']));
+        $query->where('rooms.max_capacity', '>=', (int)$data['filter']['adults'])
+        ->orWhere('rooms.max_capacity', '<=', (int)$data['filter']['adults']);
       })
     );
     if($data['filter']['check_in'] !== null && $data['filter']['check_out'] !== null){
@@ -297,8 +297,8 @@ class RoomController extends APIController
       array('rooms.category', '=', $data['category_id']),
       array('rooms.deleted_at', '=', null),
       array(function($query)use($data){
-        $query->where('rooms.max_capacity', '>=', ((int)$data['adults'] + (int)$data['children']))
-        ->orWhere('rooms.max_capacity', '<=', ((int)$data['adults'] + (int)$data['children']));
+        $query->where('rooms.max_capacity', '>=', (int)$data['adults'])
+        ->orWhere('rooms.max_capacity', '<=', (int)$data['adults']);
       }),
       array('rooms.max_capacity', '>', 0),
     );

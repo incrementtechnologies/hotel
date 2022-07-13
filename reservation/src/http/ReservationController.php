@@ -574,15 +574,6 @@ class ReservationController extends APIController
 				}
 			}
 		}
-		$cart = app('Increment\Hotel\Room\Http\CartController')->getByReservationId($reservation['id']);
-		if($cart !== null){
-			$params = array(
-				'account_id' => $reservation['account_id'],
-				'date_of_stay' => Carbon::createFromFormat('Y-m-d H:i:s', $cart['check_in'])->copy()->tz($this->response['timezone'])->format('m/d/Y').' - '.Carbon::createFromFormat('Y-m-d H:i:s', $cart['check_out'])->copy()->tz($this->response['timezone'])->format('m/d/Y'),
-				'code' => $reservation['code'],
-				'status' => $data['status']
-			);
-		}
 		$this->response['data'] = $res;
 		return $this->response();
 	}
