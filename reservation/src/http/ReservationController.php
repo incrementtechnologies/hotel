@@ -105,7 +105,7 @@ class ReservationController extends APIController
 		// dd($existEmail);
 		if($existEmail !== null){
 			if(!isset($data['token'])){
-				$this->response['error'] = 'Your email is already existed. Please login before proceeding to checkout';
+				$this->response['error'] = 'Your email is already exists. Please login before proceeding to checkout';
 				$this->response['data'] = null;
 				return $this->response();
 			}else{
