@@ -296,7 +296,10 @@ class RoomController extends APIController
     $whereArray = array(
       array('rooms.category', '=', $data['category_id']),
       array('rooms.deleted_at', '=', null),
-      array('rooms.max_capacity', '>=', ((int)$data['adults'] + (int)$data['children'])),
+      array(function($query)use($data){
+        $query->where('rooms.max_capacity', '>=', ((int)$data['adults'] + (int)$data['children']))
+        ->orWhere('rooms.max_capacity', '<=', ((int)$data['adults'] + (int)$data['children']));
+      }),
       array('rooms.max_capacity', '>', 0),
     );
     if($data['check_in'] !== null && $data['check_out'] !== null){
