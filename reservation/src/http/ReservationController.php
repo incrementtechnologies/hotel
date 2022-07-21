@@ -67,7 +67,7 @@ class ReservationController extends APIController
 				if($coupon['type'] === 'fixed'){
 					$reserve['total'] = number_format((float)((double)$reserve['total'] - (double)$coupon['amount']), 2, '.', '');
 				}else if($coupon['type'] === 'percentage'){
-					$reserve['total'] = number_format((float)((double)$reserve['total'] - ((double)$coupon['amount'] / 100)), 2, '.', '');
+					$reserve['total'] = number_format((float)((double)$reserve['total'] - ((double)$reserve['total'] * ((double)$coupon['amount'] / 100))), 2, '.', '');
 				}
 			}
 			$reserve['account_info'] = app('Increment\Account\Http\AccountInformationController')->getByParamsWithColumns($reserve['account_id'], ['first_name as name', 'cellular_number as contactNumber', 'number_code']);
@@ -313,6 +313,7 @@ class ReservationController extends APIController
 			if($res !== null){
 				if($data['payment_method'] === 'bank'){
 					app('App\Http\Controllers\EmailController')->sendBankDetails($reserve);
+					$this->sendReceiptById($reserve['id']);
 				}else{
 					$this->sendReceiptById($reserve['id']);
 				}
@@ -547,7 +548,9 @@ class ReservationController extends APIController
 					$emailParams['status'] = $data['status'];
 					$emailParams['booking_status'] = $reservations['booking_status'];
 				}
-				app('App\Http\Controllers\EmailController')->sendUpdate($emailParams);
+				if(isset($data['account_id'])){
+					app('App\Http\Controllers\EmailController')->sendMyBookingUpdate($emailParams);
+				}
 			}
 			$res = Reservation::where('reservation_code', '=', $data['roomCode'])->update(array(
 				'status' => $data['status']
@@ -560,6 +563,9 @@ class ReservationController extends APIController
 				'updated_at' => Carbon::now()
 			);
 			app('Increment\Hotel\Room\Http\CartController')->updateByParams($condition, $updates);
+
+			$this->sendReceiptById($reservation['id']);
+
 			if(isset($data['booking'])){
 				if(sizeof($data['booking']) > 0){
 					for ($i=0; $i <= sizeof($data['booking'])-1; $i++) {
@@ -904,16 +910,31 @@ class ReservationController extends APIController
 			$account = $this->retrieveNameOnly($reserve['account_id']);
 			$detail = json_decode($reserve['details']);
 			$cart = app('Increment\Hotel\Room\Http\CartController')->countReservationId($reservation_id);
-
+			$selectedCategory = '';
+			if(sizeof($cart) > 0){
+				for ($i=0; $i <= sizeof($cart)-1 ; $i++) { 
+					$each = $cart[$i];
+					$payload = app('Increment\Common\Payload\Http\PayloadController')->retrieveByParams($each['category']);
+					if($payload !== null){
+						$selectedCategory .= $each['qty'].' '.$payload['payload_value'].' , ';
+					}
+				}
+			}
 			$params = array(
 				"code" => $reserve['code'],
 				'reservee' => $account,
 				'date' => sizeof($cart) > 0 !== null ? $cart[0]['check_in']. 'PM - '.$cart[0]['check_out'].' NN' : null,
 				'number_of_heads' => $detail->heads,
 				'number_of_rooms' => $cart[0]['totalRooms'],
-				'total' => $reserve['total']
-			);
+				'total' => $reserve['total'],
+				'status' => $reserve['status'],
+				'payment_method' => $details->payment_method,
+				'check_in' => Carbon::createFromFormat('Y-m-d H:i:s', $cart[0]['check_in'])->copy()->tz($this->response['timezone'])->format('F j, Y'),
+				'check_out' => Carbon::createFromFormat('Y-m-d H:i:s', $cart[0]['check_out'])->copy()->tz($this->response['timezone'])->format('F j, Y'),
+				'room_type' => $selectedCategory
 
+			);
+			dd($params);
 			$email = app('App\Http\Controllers')->receipt($reserve['account_id'], $params);
 			$this->response['data'] = $email;
 		}
@@ -921,28 +942,44 @@ class ReservationController extends APIController
 	}
 
 	public function sendReceiptById($id){
-		try{
+		// try{
 			$result = Reservation::where('id', '=', $id)->first();
 			if($result !== null){
 				//Recipt email
-				$cart = app('Increment\Hotel\Room\Http\CartController')->getByReservationId($result['id']);
-				$reserveDetails = json_decode($result['details']);
-				$receiptParams = array(
-					'reservee' => $this->retrieveName($result['account_id']),
-					'code' => $result['code'],
-					'date' => $cart !== null ? $cart['check_in'].'PM - '.$cart['check_out'].' NN' : 'N/A',
-					'status' => $result['status'],
-					'number_of_heads' => $reserveDetails->heads,
-					'merchant' => env('APP_NAME'),
-					'number_of_rooms' => $reserveDetails->totalRoom,
-					'payment_method' => $reserveDetails->payment_method,
-					'total' => $result['total']
-				);
+				$cart = app('Increment\Hotel\Room\Http\CartController')->retrieveAllByReservationId($result['id']);
+				$selectedCategory = '';
+				if(sizeof($cart) > 0){
+					for ($i=0; $i <= sizeof($cart)-1 ; $i++) { 
+						$each = $cart[$i];
+						$payload = app('Increment\Common\Payload\Http\PayloadController')->retrieveByParams($each['category_id']);
+						if($payload !== null){
+							$selectedCategory .= $each['qty'].' '.$payload['payload_value'].($i < sizeof($cart)-1 ? ' , ' : '');
+						}
+					}
+					$nightsDays = Carbon::parse($cart[0]['check_out'])->diffInDays(Carbon::parse($cart[0]['check_in']));
+					$reserveDetails = json_decode($result['details']);
+					$receiptParams = array(
+						'reservee' => $this->retrieveName($result['account_id']),
+						'code' => $result['code'],
+						'status' => $result['status'],
+						'adults' => $reserveDetails->adults,
+						'children' => $reserveDetails->child,
+						'merchant' => env('APP_NAME'),
+						'number_of_rooms' => $reserveDetails->totalRoom,
+						'payment_method' => ($reserveDetails->payment_method === 'credit' ? 'Paymaya' : $reserveDetails->payment_method === 'checkIn') ? 'Payment Upon Check-In' : 'Bank Payment',
+						'total' => $result['total'],
+						'check_in' => Carbon::createFromFormat('Y-m-d H:i:s', $cart[0]['check_in'])->copy()->tz($this->response['timezone'])->format('F j, Y'),
+						'check_out' => Carbon::createFromFormat('Y-m-d H:i:s', $cart[0]['check_out'])->copy()->tz($this->response['timezone'])->format('F j, Y'),
+						'room_type' => $selectedCategory,
+						'number_of_nights' => $nightsDays,
+						'add_ons' => $reserveDetails->selectedAddOn
+					);
+				}
 				return app('App\Http\Controllers\EmailController')->receipt($result['account_id'], $receiptParams);
 			}
-		}catch(\Throwable $th){
-			return $th;
-		}
+		// }catch(\Throwable $th){
+		// 	return $th;
+		// }
 	}
 
 	public function getReservationDetails($id){

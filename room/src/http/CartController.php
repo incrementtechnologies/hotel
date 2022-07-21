@@ -114,7 +114,7 @@ class CartController extends APIController
         // dd($priceId, $categoryId);
         $result = Cart::where('price_id', '=', $reservation_id)->where('deleted_at', '=', null)->where(function($query){
             $query->where('status', '=', 'confirmed');
-        })->where('status', '=', 'for_approval')->get([DB::raw('SUM(qty) as totalRooms'), 'check_in', 'check_out']);
+        })->where('status', '=', 'for_approval')->get([DB::raw('SUM(qty) as totalRooms'), 'check_in', 'check_out', 'category_id']);
         
         return $result;
     }
@@ -409,5 +409,9 @@ class CartController extends APIController
             })
         );
         return Cart::where($status)->whereBetween('check_in', [$start, $end])->count();
+    }
+
+    public function retrieveAllByReservationId($reservationId){
+        return Cart::where('reservation_id', '=', $reservationId)->get();
     }
 }
