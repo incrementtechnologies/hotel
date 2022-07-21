@@ -291,7 +291,6 @@ class ReservationController extends APIController
 			$condition[] = array('id', '=', $data['id']);
 		}
 		$reserve = Reservation::where($condition)->first();
-		
 		if($reserve !== null){
 			$details = json_decode($reserve['details']);
 			$details->allow_email_updates = $data['allow_email_updates'];
@@ -974,8 +973,8 @@ class ReservationController extends APIController
 						'number_of_nights' => $nightsDays,
 						'add_ons' => $reserveDetails->selectedAddOn
 					);
+					return app('App\Http\Controllers\EmailController')->receipt($result['account_id'], $receiptParams);
 				}
-				return app('App\Http\Controllers\EmailController')->receipt($result['account_id'], $receiptParams);
 			}
 		// }catch(\Throwable $th){
 		// 	return $th;
