@@ -16,6 +16,8 @@ class CartController extends APIController
 
     public function create(Request $request){
         $data = $request->all();
+        $data['check_in'] = Carbon::now($data['check_in'])->addHours(2);
+        $data['check_out'] = Carbon::now($data['check_out'])->addHours(12);
         if((int)$data['account_id'] == 0){
             $createdAccount = app('Increment\Account\Http\AccountController')->retrieveByEmail($data['email']);
 			if($createdAccount !== null){
