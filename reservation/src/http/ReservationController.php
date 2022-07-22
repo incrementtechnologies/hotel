@@ -562,8 +562,9 @@ class ReservationController extends APIController
 				'updated_at' => Carbon::now()
 			);
 			app('Increment\Hotel\Room\Http\CartController')->updateByParams($condition, $updates);
-
-			$this->sendReceiptById($reservation['id']);
+			if(!isset($data['account_id'])){
+				$this->sendReceiptById($reservation['id']);
+			}
 
 			if(isset($data['booking'])){
 				if(sizeof($data['booking']) > 0){
@@ -961,7 +962,7 @@ class ReservationController extends APIController
 						'reservee' => $this->retrieveName($result['account_id']),
 						'code' => $result['code'],
 						'status' => $result['status'],
-						'adults' => $reserveDetails->adults,
+						'adults' => $reserveDetails->adults === 'refunded' ? 'rebooked' : $reserveDetails->adults,
 						'children' => $reserveDetails->child,
 						'merchant' => env('APP_NAME'),
 						'number_of_rooms' => $reserveDetails->totalRoom,
