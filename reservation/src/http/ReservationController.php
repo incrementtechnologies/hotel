@@ -102,7 +102,6 @@ class ReservationController extends APIController
 		// 	return $this->response();
 		// }
 		$existEmail = app('Increment\Account\Http\AccountController')->retrieveByEmail($data['account_info']->email);
-		// dd($existEmail);
 		if($existEmail !== null){
 			if(!isset($data['token'])){
 				$this->response['error'] = 'Your email is already exists. Please login before proceeding to checkout';
@@ -203,17 +202,18 @@ class ReservationController extends APIController
 		$isValid = true;
 		$startOfDay = Carbon::now()->startOfDay();
 		$endOfDay = Carbon::now()->endOfDay();
-		$totalReservations = Reservation::where(function($query){
-			$query->where('status', '=', 'for_approval');
-		})->whereBetween('created_at', [$startOfDay, $endOfDay])->count();
-		$parameter = array(
-			array('payload', '=', 'reservations')
-		);
-		$reservationCanCater = app('Increment\Common\Payload\Http\PayloadController')->retrieveByParameter($parameter);
-		if((int)$totalReservations >= (int)$reservationCanCater['payload_value']){
-			$isValid = false;
+		$carts = app('Increment\Hotel\Room\Http\CartController')->getOwnCarts($data);
+		if(sizeof($carts) > 0){
+			for ($i=0; $i <= sizeof($carts)-1 ; $i++) { 
+				$item = $carts[$i];
+				$countCartsByCategory = app('Increment\Hotel\Room\Http\CartController')->countDailyCarts($item['check_in'], $item['check_out'], $item['category']);
+				$getLimitPerCategory = app('Increment\Hotel\Room\Http\AvailabilityController')->retrieveByPayloadPayloadValue('room_type', $item['category']);
+				if($countCartsByCategory == $getLimitPerCategory['limit_per_day']){
+					return false;
+				}
+			}
 		}
-		return $isValid; 
+		return true;
 	}
 
 	public function update(Request $request){
@@ -521,7 +521,12 @@ class ReservationController extends APIController
 
 	public function updateReservations(Request $request){
 		$data = $request->all();
-		$reservation = Reservation::where('reservation_code', '=', $data['roomCode'])->first();
+		$reservation = null;
+		if(isset($data['roomCode'])){
+			$reservation = Reservation::where('reservation_code', '=', $data['roomCode'])->first();
+		}else{
+			$reservation = Reservation::where('id', '=', $data['reservation_id'])->first();
+		}
 		$res = null;
 		if($reservation !== null){
 			if($data['status'] === 'completed'){
@@ -545,13 +550,14 @@ class ReservationController extends APIController
 					$emailParams['account_id'] = $reservations['account_id'];
 					$emailParams['code'] = $reservation['code'];
 					$emailParams['status'] = $data['status'];
+					$emailParams['date_cancelled'] = Carbon::now()->format('F d, Y');
 					$emailParams['booking_status'] = $reservations['booking_status'];
 				}
 				if(isset($data['account_id'])){
 					app('App\Http\Controllers\EmailController')->sendMyBookingUpdate($emailParams);
 				}
 			}
-			$res = Reservation::where('reservation_code', '=', $data['roomCode'])->update(array(
+			$res = Reservation::where('id', '=', $reservation['id'])->update(array(
 				'status' => $data['status']
 			));
 			$condition = array(
@@ -804,20 +810,21 @@ class ReservationController extends APIController
 				->offset($data['offset'])
 				->groupBy('carts.reservation_id')
 				->get();
-
 		$size =  Reservation::leftJoin('carts', 'carts.reservation_id', '=', 'reservations.id')->where($condition)
 			->groupBy('carts.reservation_id')
 			->orderBy($sortBy, array_values($data['sort'])[0])
 			->get();
 
-		for ($i=0; $i <= sizeof($res)-1; $i++) { 
-			$item = $res[$i];
-			$res[$i]['name'] = app('Increment\Account\Http\AccountInformationController')->getByParamsWithColumns($item['account_id'], ['first_name'])['first_name'];
-			$res[$i]['details'] = json_decode($item['details']);
-			$res[$i]['check_in'] = Carbon::createFromFormat('Y-m-d H:i:s', $item['check_in'])->copy()->tz($this->response['timezone'])->format('F j, Y');
-			$res[$i]['check_out'] = Carbon::createFromFormat('Y-m-d H:i:s', $item['check_out'])->copy()->tz($this->response['timezone'])->format('F j, Y');
-			$res[$i]['room'] = app('Increment\Hotel\Room\Http\RoomController')->retrieveByIDParams($item['room_id']);
-			$res[$i]['total'] = number_format($item['total'], 2, '.', '');
+		if(sizeof($res) > 0){
+			for ($i=0; $i <= sizeof($res)-1; $i++) { 
+				$item = $res[$i];
+				$res[$i]['name'] = app('Increment\Account\Http\AccountInformationController')->getByParamsWithColumns($item['account_id'], ['first_name'])['first_name'];
+				$res[$i]['details'] = json_decode($item['details']);
+				$res[$i]['check_in'] = Carbon::createFromFormat('Y-m-d H:i:s', $item['check_in'])->copy()->tz($this->response['timezone'])->format('F j, Y');
+				$res[$i]['check_out'] = Carbon::createFromFormat('Y-m-d H:i:s', $item['check_out'])->copy()->tz($this->response['timezone'])->format('F j, Y');
+				$res[$i]['room'] = app('Increment\Hotel\Room\Http\RoomController')->retrieveByIDParams($item['room_id']);
+				$res[$i]['total'] = number_format($item['total'], 2, '.', '');
+			}
 		}
 
 		$this->response['size'] = sizeOf($size);

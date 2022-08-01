@@ -416,4 +416,20 @@ class CartController extends APIController
     public function retrieveAllByReservationId($reservationId){
         return Cart::where('reservation_id', '=', $reservationId)->get();
     }
+
+    public function countDailyCarts($startDate, $endDate, $category){
+        $result = Cart::where('category_id', '=', $category)->where(function($query){
+            $query->where('status', '=', 'comfirmed')
+            ->orWhere('status', '=', 'for_approval');
+        })->where('check_in', '<=', $startDate)->where('check_in', '>=', $endDate)->where('deleted_at', '=', null)->count();
+        
+        return $result;
+    }
+
+    public function getOwnCarts($data){
+        return Carts::where('account_id', '=', $data['account_id'])->where(function($query){
+            $query->where('status', '=', 'pending')
+            ->orWhere('status', '=', 'inprogress');
+        })->get();
+    }
 }

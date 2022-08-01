@@ -38,7 +38,7 @@ class AvailabilityController extends APIController
             ->limit($data['limit'])
             ->offset($data['offset'])
             ->orderBy($con[0]['column'] == 'payload_value' ? 'T1.'.array_keys($data['sort'])[0] : array_keys($data['sort'])[0], array_values($data['sort'])[0])
-            ->get(['availabilities.id', 'start_date', 'end_date', 'T1.payload_value', 'limit', 'status']);
+            ->get(['availabilities.id', 'availabilities.limit_per_day', 'start_date', 'end_date', 'T1.payload_value', 'T1.id as room_type', 'limit', 'status']);
         
         $size = Availability::leftJoin('payloads as T1', 'T1.id', '=', 'availabilities.payload_value')
             ->where($con[0]['column'] == 'payload_value' ? 'T1.payload_value' : $con[0]['column'], $con[0]['clause'], $con[0]['value'])
@@ -46,6 +46,10 @@ class AvailabilityController extends APIController
             ->get();
         for ($i=0; $i <= sizeof($res)-1 ; $i++) { 
             $item = $res[$i];
+            $start_date = Carbon::now()->startOfDay();
+            $end_date = Carbon::now()->endOfDay();
+            $cartsPerDay = app('Increment\Hotel\Room\Http\CartController')->countDailyCarts($start_date, $end_date, $item['room_type']);
+            $res[$i]['remaining_qty'] = (float)$item['limit_per_day'] - (float)$cartsPerDay;
             $res[$i]['start_date'] = $item['start_date'] !== null ? Carbon::createFromFormat('Y-m-d H:i:s', $item['start_date'])->copy()->tz($this->response['timezone'])->format('F d, Y') : null;
             $res[$i]['end_date'] = $item['end_date'] !== null ? Carbon::createFromFormat('Y-m-d H:i:s', $item['end_date'])->copy()->tz($this->response['timezone'])->format('F d, Y') : null;
         }
@@ -78,6 +82,8 @@ class AvailabilityController extends APIController
         }
         for ($i=0; $i <= sizeof($result)-1 ; $i++) { 
             $item = $result[$i];
+            $carts =  app('Increment\Hotel\Room\Http\CartController')->countByCategory($item['payload_value']);
+            $result[$i]['remaining_qty'] = (float)$item['limit_per_day'] - (float)$carts;
             $result[$i]['start_date'] = $item['start_date'] !== null ? Carbon::createFromFormat('Y-m-d H:i:s', $item['start_date'])->copy()->tz($this->response['timezone'])->format('F d, Y') : null;
             $result[$i]['end_date'] = $item['end_date'] !== null ? Carbon::createFromFormat('Y-m-d H:i:s', $item['end_date'])->copy()->tz($this->response['timezone'])->format('F d, Y') : null;
         }
@@ -103,6 +109,7 @@ class AvailabilityController extends APIController
             'payload' => $data['payload'],
             'payload_value' => $data['payload_value'],
             'limit' => $data['limit'],
+            'limit_per_day' => $data['limit_per_day'],
             'start_date' => $data['start_date'],
             'end_date' => $data['end_date'],
             'status' => $data['status'],

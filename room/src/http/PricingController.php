@@ -52,7 +52,7 @@ class PricingController extends APIController
 				'category_id' => $data['category'],
 				'amount' => $data['tax_price'],
 				'refundable' => $data['refundable'] !== null ? (float)$data['refundable'] : (float)0,
-				'qty' => 1,
+				'qty' => $data['numberOfRooms'],
 				'status' => 'available'
 			);
 			app('Increment\Hotel\Room\Http\RoomPriceStatusController')->insertPriceStatus($params);
@@ -129,6 +129,17 @@ class PricingController extends APIController
 			}
 			$params['tax_price'] = $data['tax'] == 1 ? (float)$params['regular'] + ((ENV('TAX_PRICE')/100) * (float)$params['regular']) : (float)$params['regular'];
 		}
+		$totalAddedParams = array(
+			array('price_id', '!=', $data['id']),
+			array('category_id', '=', $data['category_id'])
+		);
+		$totalAddedRooms = app('Increment\Hotel\Room\Http\RoomPriceStatusController')->getTotalAdded($totalAddedParams);
+		$setAvailable = app('Increment\Hotel\Room\Http\AvailabilityController')->retrieveByPayloadPayloadValue('room_type', $data['category_id']);
+		if(($setAvailable['limit'] - ($totalAddedRooms + $data['room_qty'])) < 0){
+			$this->response['data'] = null;
+			$this->response['error'] = 'Failed to add room, number of rooms cannot be greater than the total number of rooms for this room type';
+			return $this->response();
+		}
 		$result = Pricing::where('id', '=', $data['id'])->update($params);
 		if($result){
 			$condition = array(
@@ -137,7 +148,8 @@ class PricingController extends APIController
 			$update = array(
 				'amount' => $params['tax_price'],
 				'refundable' => $data['refundable'] !== null ? (float)$data['refundable'] : (float)0,
-				'category_id' => $data['category_id']
+				'category_id' => $data['category_id'],
+				'qty' => $data['room_qty']
 			);
 			$updatePriceStatus = app('Increment\Hotel\Room\Http\RoomPriceStatusController')->updateByParams($condition, $update);
 		}

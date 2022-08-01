@@ -73,4 +73,16 @@ class RoomPriceStatusController extends APIController
     public function updateByParams($condition, $update){
         return RoomPriceStatus::where($condition)->update($update);
     }
+
+    public function getTotalRoomsAddedPerCategory($category){
+        return RoomPriceStatus::where('category_id', '=', $category)->sum('qty');
+    }
+
+    public function getTotalAdded($condition){
+        return RoomPriceStatus::where($condition)->sum('qty');
+    }
+
+    public function getByAmount($priceId, $category, $amount){
+        return RoomPriceStatus::where('price_id', '=', $priceId)->where('category_id', '=', $category)->where('amount', '=', $amount)->first();
+    }
 }
