@@ -63,4 +63,18 @@ Route::post($route.'update', $controller."update");
 Route::post($route.'delete', $controller."delete");
 Route::get($route.'test', $controller."test");
 
+//RoomTypes
+$route = env('PACKAGE_ROUTE', '').'/room_types/';
+$controller = 'Increment\Hotel\Room\Http\RoomTypeController@';
+Route::post($route.'create', $controller."create");
+Route::post($route.'create_with_images', $controller."createWithImages");
+Route::post($route.'retrieve', $controller."retrieve");
+Route::post($route.'retrieve_with_images', $controller."retrieveWithImage");
+Route::post($route.'retrieve_by_params', $controller."retrieveByParams");
+Route::post($route.'retrieve_by_date', $controller."getByDate");
+Route::post($route.'update', $controller."update");
+Route::post($route.'update_with_images', $controller."createWithImages");
+Route::post($route.'delete', $controller."delete");
+Route::get($route.'test', $controller."test");
+
 

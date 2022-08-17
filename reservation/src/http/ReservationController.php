@@ -73,7 +73,7 @@ class ReservationController extends APIController
 			$reserve['account_info'] = app('Increment\Account\Http\AccountInformationController')->getByParamsWithColumns($reserve['account_id'], ['first_name as name', 'cellular_number as contactNumber', 'number_code']);
 			$reserve['account_info']['email'] = app('Increment\Account\Http\AccountController')->getByParamsWithColumns($reserve['account_id'], ['email'])['email'];
 			$reserve['check_in'] = Carbon::parse($cart[0]['check_in'])->format('F j, Y H:i:s');
-			$reserve['check_out'] = Carbon::prse($cart[0]['check_out'])->format('F j, Y H:i:s');
+			$reserve['check_out'] = Carbon::parse($cart[0]['check_out'])->format('F j, Y H:i:s');
 			$reserve['coupon'] = $reserve['coupon_id'] !== null ? app('App\Http\Controllers\CouponController')->retrieveById($reserve['coupon_id']) : null;
 			$array = array(
 				'reservation' => $reserve,
