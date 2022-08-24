@@ -126,4 +126,15 @@ class RoomTypeController extends APIController
         $this->response['error'] = null;
         return $this->response();
     }
+
+    public function retrieveWithAvailability(Request $request){
+      $data = $request->all();
+      $types = Payload::where('payload', '=', 'room_type')->get(['id', 'payload_value']);
+      $addOns  = app('Increment\Hotel\AddOn\Http\AddOnController')->retrieveSelected();
+      $this->response['data'] = array(
+        'room_types' => $types,
+        'add_ons' => $addOns
+      );
+      return $this->response();
+    }
 }

@@ -82,4 +82,8 @@ class AddOnController extends APIController
 			return $this->response();
 		}
 	}
+
+	public function retrieveSelected(){
+		return AddOn::get(['title', 'id', 'price']);
+	}
 }

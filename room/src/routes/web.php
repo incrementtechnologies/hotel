@@ -72,6 +72,7 @@ Route::post($route.'retrieve', $controller."retrieve");
 Route::post($route.'retrieve_with_images', $controller."retrieveWithImage");
 Route::post($route.'retrieve_by_params', $controller."retrieveByParams");
 Route::post($route.'retrieve_by_date', $controller."getByDate");
+Route::post($route.'retrieve_with_availability', $controller."retrieveWithAvailability");
 Route::post($route.'update', $controller."update");
 Route::post($route.'update_with_images', $controller."createWithImages");
 Route::post($route.'delete', $controller."delete");
