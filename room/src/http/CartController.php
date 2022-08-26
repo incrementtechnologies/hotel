@@ -16,8 +16,6 @@ class CartController extends APIController
 
     public function create(Request $request){
         $data = $request->all();
-        $data['check_in'] = Carbon::now($data['check_in'])->addHours(2);
-        $data['check_out'] = Carbon::now($data['check_out'])->addHours(12);
         if((int)$data['account_id'] == 0){
             $createdAccount = app('Increment\Account\Http\AccountController')->retrieveByEmail($data['email']);
 			if($createdAccount !== null){
@@ -134,7 +132,6 @@ class CartController extends APIController
         $data = $request->all();
         if(isset($data['reservation_code'])){
             $reservationId = Reservation::where('reservation_code', '=', $data['reservation_code'])->get(['id']);
-            // dd($reservationId[0]['id']);
             $result = Cart::where('carts.account_id', '=', $data['account_id'])
                 ->where('reservation_id', '=', $reservationId[0]['id'])
                 ->where('deleted_at', '=', null)
@@ -167,11 +164,11 @@ class CartController extends APIController
                     $result[$i]['reservation_details'] = $reservation;
                     $result[$i]['code'] = sizeOf($reservation) > 0 ? $reservation[0]['code'] : null;
                     $result[$i]['reservation_code'] = sizeOf($reservation) > 0 ? $reservation[0]['reservation_code'] : null;
-                    $result[$i]['rooms'] = app('Increment\Hotel\Room\Http\RoomController')->getWithQty($item['category_id'], $item['price_id']);
-                    if($result[$i]['rooms'][0]['label'] === 'MONTH'){
-                        $nightsDays = $end->diffInMonths($start);
-                    }
-                    $result[$i]['price_per_qty'] = $result[$i]['rooms'][0]['tax_price'] * $item['checkoutQty'];
+                    $result[$i]['rooms'] = app('Increment\Hotel\Room\Http\AvailabilityController')->getDetails($item['category_id'], $item['price_id']);
+                    // if($result[$i]['rooms'][0]['label'] === 'MONTH'){
+                    //     $nightsDays = $end->diffInMonths($start);
+                    // }
+                    $result[$i]['price_per_qty'] = $result[$i]['rooms']['room_price'] * $item['checkoutQty'];
                     $result[$i]['price_with_number_of_days'] = number_format(($result[$i]['price_per_qty'] * $nightsDays), '2', '.', '');
                     $reserve['total'] = (double)$reserve['total'] + (double)$result[$i]['price_with_number_of_days'];
                     $reserve['subTotal'] = $reserve['total'];
@@ -219,10 +216,9 @@ class CartController extends APIController
             for ($i=0; $i <= sizeof($result) -1; $i++) {
                 $temp = [];
                 $item = $result[$i];
-                $rooms = app('Increment\Hotel\Room\Http\RoomController')->getWithQty($item['category_id'], $item['price_id']);
+                $rooms = app('Increment\Hotel\Room\Http\AvailabilityController')->getDetails($item['category_id'], $item['price_id']);
                 $result[$i]['rooms'] = $rooms;
-                $result[$i]['specificRooms'] = app('Increment\Hotel\Room\Http\RoomController')->retrieveByFilter($item['price_id'], $item['category_id']);
-                if(sizeOf($rooms) > 0){
+                if($rooms !== null){
                     $booking = app('Increment\Hotel\Reservation\Http\ReservationController')->retrieveBookingsByParams('reservation_id',  $item['reservation_id']);
                     if(sizeof($booking) > 0){
                         for ($a=0; $a <= sizeof($booking)-1; $a++) { 
@@ -254,18 +250,6 @@ class CartController extends APIController
             $refundable = 0;
             $nonRefundable = 0;
             $roomDetails = app('Increment\Hotel\Room\Http\RoomController')->getRoomDetails($result['category_id'], $result['price_id'], $result['checkoutQty']);
-            if(sizeof($roomDetails) > 0){
-                for ($i=0; $i <= sizeof($roomDetails)-1 ; $i++) { 
-                  $item = $roomDetails[$i];
-                  if($item['refundable'] !== null){
-                      $refundable ++;
-                  }else{
-                      $nonRefundable ++;
-                  }
-                }
-            }
-            $result['refundable'] = $refundable;
-            $result['non_refundable'] = $nonRefundable;
             $result['rooms'] = $roomDetails;
         }
         return $result;
@@ -343,7 +327,7 @@ class CartController extends APIController
                 $item = $result[$i];
                 $reservation =app('Increment\Hotel\Reservation\Http\ReservationController')->retrieveReservationByParams('id', $item['reservation_id'], ['code']);
                 $result[$i]['reservation_code'] = sizeOf($reservation) > 0 ? $reservation[0]['code'] : null;
-                $result[$i]['rooms'] = app('Increment\Hotel\Room\Http\RoomController')->getWithQty($item['category_id'], $item['price_id']);
+                $result[$i]['rooms'] = app('Increment\Hotel\Room\Http\AvailabilityController')->getDetails($item['category_id'], $item['price_id']);
             }
         }
         return $result;

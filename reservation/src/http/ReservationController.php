@@ -47,10 +47,10 @@ class ReservationController extends APIController
 				$start = Carbon::createFromFormat('Y-m-d H:i:s', $item['check_in']);
 				$end = Carbon::createFromFormat('Y-m-d H:i:s', $item['check_out']);
 				$nightsDays = $end->diffInDays($start);
-				if($item['rooms'][0]['label'] === 'MONTH'){
-					$nightsDays = $end->diffInMonths($start);
-				}
-				$cart[$i]['price_per_qty'] = number_format(($item['rooms'][0]['tax_price'] * $item['checkoutQty']), 2, '.', '');
+				// if($item['rooms'][0]['label'] === 'MONTH'){
+				// 	$nightsDays = $end->diffInMonths($start);
+				// }
+				$cart[$i]['price_per_qty'] = number_format(($item['rooms']['room_price'] * $item['checkoutQty']), 2, '.', '');
 				$cart[$i]['price_with_number_of_days'] = number_format(($cart[$i]['price_per_qty'] * $nightsDays), 2, '.', '');
 				$reserve['total'] = number_format((float)((double)$reserve['total'] + (double)$cart[$i]['price_with_number_of_days']), 2, '.', '');
 				$reserve['subTotal'] = $reserve['total'];

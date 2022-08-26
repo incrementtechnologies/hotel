@@ -295,4 +295,20 @@ class AvailabilityController extends APIController
        }
        return false;
     }
+
+    public function getDetails($category, $availabilty){
+        $temp = Availability::leftJoin('payloads as T1', 'T1.id', '=', 'availabilities.payload_value')
+            ->where('T1.id', '=', $category)->where('availabilities.id', '=', $availabilty)
+            ->select('availabilities.id as availabilityId', 'T1.id as categoryId', 'T1.payload_value as room_type', 'availabilities.*', 'T1.capacity',
+            'T1.category as general_description', 'T1.details as general_features', 'T1.tax')
+            ->first();
+        if($temp !== null){
+            $temp['general_features'] = json_decode($temp['general_features'], true);
+            $temp['description'] = json_decode($temp['description'], true);
+            $temp['general_description'] = $temp['general_description'];
+            $temp['images'] = app('Increment\Hotel\Room\Http\ProductImageController')->retrieveImageByStatus($temp['categoryId'], 'room_type');
+        }
+        
+        return $temp;
+    }
 }
