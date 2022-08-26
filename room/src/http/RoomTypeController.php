@@ -10,6 +10,9 @@ use Carbon\Carbon;
 class RoomTypeController extends APIController
 {
     function __construct(){
+      $this->notRequired = array(
+        'category', 'details', 'tax', 'person_rate', 'capacity', 'tax'
+      );
     }
 
     public function retrieveWithFilter(Request $request){
@@ -46,12 +49,12 @@ class RoomTypeController extends APIController
             'payload_value' => $data['payload_value'],
             'details' => isset($data['details']) ? $data['details'] : null,
             'capacity' => $data['capacity'],
-            'tax' => $data['tax'],
-            'person_rate' => $data['person_rate']
+            'tax' => $data['tax'] == true ? 1 : 0,
+            'person_rate' => $data['person_rate'] == true ? 1 : 0
           );
           if($data['status'] === 'create'){
             $this->model = new Payload();
-            $res = $this->insertDB($data);
+            $res = $this->insertDB($payload);
           }else if($data['status'] === 'update'){
             $payload['updated_at'] = Carbon::now();
             $res = Payload::where('id', '=', $data['id'])->update($payload);
@@ -131,9 +134,108 @@ class RoomTypeController extends APIController
       $data = $request->all();
       $types = Payload::where('payload', '=', 'room_type')->get(['id', 'payload_value']);
       $addOns  = app('Increment\Hotel\AddOn\Http\AddOnController')->retrieveSelected();
+      $availabilty = app('Increment\Hotel\Room\Http\AvailabilityController')->retrieveWithCondition($data);
       $this->response['data'] = array(
         'room_types' => $types,
-        'add_ons' => $addOns
+        'add_ons' => $addOns,
+        'availability' => $availabilty
+      );
+      return $this->response();
+    }
+
+    public function retrieveRoomTypes(Request $request){
+      $data = $request->all();
+      $whereArray = array(
+        array('payloads.payload', '=', 'room_type'),
+        array('T1.limit_per_day', '>', 0),
+        array('payloads.capacity', '=', $data['adults']),
+        array(function($query)use($data){
+          $query->where('T1.start_date', '>=', $data['check_in'])
+          ->orWhere('T1.end_date', '<=', $data['check_out']);
+        }),
+        array('T1.room_price', '>=', $data['min']),
+        array('T1.room_price', '<=', $data['max']),
+      );
+      $result = [];
+      $temp = Payload::leftJoin('availabilities as T1', 'T1.payload_value', '=', 'payloads.id')->where($whereArray)
+        ->orderBy('T1.room_price', 'asc')
+        ->groupBy('payloads.id')
+        ->get(['T1.id as availabilityId', 'payloads.id as category_id', 'payloads.payload_value as room_type', 'T1.*', 'payloads.capacity',
+         'payloads.category as general_description', 'payloads.details as general_features']);
+      if(sizeof($temp) > 0){
+        for ($i=0; $i <= sizeof($temp)-1 ; $i++) {
+          $item = $temp[$i];
+          $listPrice = Payload::leftJoin('availabilities as T1', 'T1.payload_value', '=', 'payloads.id')->where($whereArray)->orderBy('T1.room_price', 'asc')->select('T1.*')->first();
+          $temp[$i]['availabilityId'] = $listPrice['id'];
+          $temp[$i]['description'] = $listPrice['description'];
+          $temp[$i]['room_price'] = $listPrice['room_price'];
+          $temp[$i]['limit_per_day'] = $listPrice['limit_per_day'];
+          $temp[$i]['start_date'] = $listPrice['start_date'];
+          $temp[$i]['end_date'] = $listPrice['end_date'];
+          $temp[$i]['general_features'] = json_decode($item['general_features']);
+          $temp[$i]['description'] = json_decode($item['description']);
+          $temp[$i]['images'] = app('Increment\Hotel\Room\Http\ProductImageController')->retrieveImageByStatus($item['category_id'], 'room_type');
+          $isAvailable = app('Increment\Hotel\Room\Http\AvailabilityController')->isAvailable($item['payload_value'], $data['check_in'], $data['check_out']);
+          if($isAvailable){
+            array_push($result, $item);
+          }
+        }
+      }
+      usort($result, function($a, $b) {return (float)$a['room_price'] > (float)$b['room_price'];}); //asc
+      $result = array_slice($result, $data['offset'], $data['limit']);
+      $this->response['data'] = array(
+        'room' => $result,
+        'min_max' =>  app('Increment\Hotel\Room\Http\AvailabilityController')->retrieveMaxMin(),
+        'pricings' => array(
+          array('label' => 'Breakfast only'),
+          array('label' => 'Room only'),
+          array('label' => 'Both'),
+        ),
+        'category' => Payload::where('payload', '=', 'room_type')->get(['id', 'payload_value'])
+      );
+      return $this->response();
+    }
+
+    public function retrieveTypesByCode(Request $request){
+      $data = $request->all();
+      $whereArray = array(
+        array('payloads.payload', '=', 'room_type'),
+        array('T1.limit_per_day', '>', 0),
+        array('payloads.capacity', '=', $data['filter']['adults']),
+        array('payloads.id', '=', $data['category_id']),
+        array(function($query)use($data){
+          $query->where('T1.start_date', '>=', $data['filter']['check_in'])
+          ->orWhere('T1.end_date', '<=', $data['filter']['check_out']);
+        }),
+        array('T1.room_price', '>=', $data['filter']['min']),
+        array('T1.room_price', '<=', $data['filter']['max']),
+      );
+
+      $temp = Payload::leftJoin('availabilities as T1', 'T1.payload_value', '=', 'payloads.id')->where($whereArray)
+        ->groupBy('T1.room_price')
+        ->orderBy('T1.room_price', 'asc')
+        ->get(['T1.id as availabilityId', 'payloads.id as categoryId', 'payloads.payload_value as room_type', 'T1.*', 'payloads.capacity',
+         'payloads.category as general_description', 'payloads.details as general_features', 'payloads.tax']);
+      
+      $result = [];
+      if(sizeof($temp) > 0){
+        for ($i=0; $i <= sizeof($temp)-1 ; $i++) { 
+          $item = $temp[$i];
+          $temp[$i]['general_features'] = json_decode($item['general_features']);
+          $temp[$i]['description'] = json_decode($item['description'], true);
+          if($temp[$i]['description']['room_price'] == 0 && $temp[$i]['description']['break_fast'] != 0){
+            $temp[$i]['room_status'] = array('title' => 'Breakfast Only', 'price' => $temp[$i]['description']['break_fast']);
+          }else if($temp[$i]['description']['room_price'] != 0 && $temp[$i]['description']['break_fast'] == 0){
+            $temp[$i]['room_status'] = array('title' => 'Room Only', 'price' => $item['room_price']);
+          }else if($temp[$i]['description']['room_price'] != 0 && $temp[$i]['description']['break_fast'] != 0){
+            $temp[$i]['room_status'] = array('title' => 'Room with Breakfast', 'price' => $item['room_price']);
+          }
+          array_push($result, $item);
+        }
+      }
+      $this->response['data'] = array(
+        'result' => $result,
+        'images' => app('Increment\Hotel\Room\Http\ProductImageController')->retrieveImageByStatus($item['categoryId'], 'room_type'),
       );
       return $this->response();
     }

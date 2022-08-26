@@ -46,6 +46,7 @@ Route::post($route.'create', $controller."create");
 Route::post($route.'retrieve', $controller."retrieve");
 Route::post($route.'retrieve_by_code', $controller."retrieveTypeByCode");
 Route::post($route.'retrieve_by_id', $controller."retrieveById");
+Route::post($route.'retrieve_by_room_type', $controller."retrieveByRoomType");
 Route::post($route.'compare_dates', $controller."compareDates");
 Route::post($route.'update', $controller."update");
 Route::post($route.'delete', $controller."delete");
@@ -66,6 +67,23 @@ Route::get($route.'test', $controller."test");
 //RoomTypes
 $route = env('PACKAGE_ROUTE', '').'/room_types/';
 $controller = 'Increment\Hotel\Room\Http\RoomTypeController@';
+Route::post($route.'create', $controller."create");
+Route::post($route.'create_with_images', $controller."createWithImages");
+Route::post($route.'retrieve', $controller."retrieve");
+Route::post($route.'retrieve_with_images', $controller."retrieveWithImage");
+Route::post($route.'retrieve_by_params', $controller."retrieveByParams");
+Route::post($route.'retrieve_by_date', $controller."getByDate");
+Route::post($route.'retrieve_with_availability', $controller."retrieveWithAvailability");
+Route::post($route.'retrieve_by_code', $controller."retrieveTypesByCode");
+Route::post($route.'retrieve_room_types', $controller."retrieveRoomTypes");
+Route::post($route.'update', $controller."update");
+Route::post($route.'update_with_images', $controller."createWithImages");
+Route::post($route.'delete', $controller."delete");
+Route::get($route.'test', $controller."test");
+
+//RoomTypes
+$route = env('PACKAGE_ROUTE', '').'/features/';
+$controller = 'Increment\Hotel\Room\Http\FeatureController@';
 Route::post($route.'create', $controller."create");
 Route::post($route.'create_with_images', $controller."createWithImages");
 Route::post($route.'retrieve', $controller."retrieve");
