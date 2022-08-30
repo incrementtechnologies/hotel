@@ -371,9 +371,47 @@ class CartController extends APIController
     }
 
     public function getOwnCarts($data){
-        return Carts::where('account_id', '=', $data['account_id'])->where(function($query){
+        return Cart::where('account_id', '=', $data['account_id'])->where(function($query){
             $query->where('status', '=', 'pending')
             ->orWhere('status', '=', 'inprogress');
         })->get();
+    }
+
+    public function getCartsWithCount($reservationId){
+        $temp = Cart::where('reservation_id', '=', $reservationId)->get();
+        $breakfastOnly = 0;
+        $roomOnly = 0;
+        $both = 0;
+        if(sizeof($temp) > 0){
+            for ($i=0; $i <= sizeof($temp)-1 ; $i++) { 
+                $item = $temp[$i];
+                $roomDetails = app('Increment\Hotel\Room\Http\AvailabilityController')->retrieveByIds($item['category_id'], $item['price_id']);
+                if($roomDetails != null){
+                    if($roomDetails['description']['room_price'] != 0 && $roomDetails['description']['break_fast'] != 0){
+                        $both += 1;
+                    }
+                    if($roomDetails['description']['room_price'] != 0 && $roomDetails['description']['break_fast'] == 0){
+                        $roomOnly += 1;
+                    }
+                    if($roomDetails['description']['room_price'] == 0 && $roomDetails['description']['break_fast'] != 0){
+                        $breakfastOnly += 1;
+                    }
+                }
+            }
+        }
+        return array(
+            array(
+                'key' => 'break fast only',
+                'qty' => $breakfastOnly
+            ),
+            array(
+                'key' => 'room only',
+                'qty' => $roomOnly
+            ),
+            array(
+                'key' => 'room with breakfast',
+                'qty' => $both
+            )
+        );
     }
 }

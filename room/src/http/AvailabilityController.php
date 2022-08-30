@@ -310,4 +310,12 @@ class AvailabilityController extends APIController
         }
         return $temp;
     }
+
+    public function retrieveByIds($categoryId, $availabiltyid){
+        $result = Availability::where('payload_value', '=', $categoryId)->where('id', '=', $availabiltyid)->first();
+        if($result !== null){
+            $result['description'] = json_decode($result['description'], true);
+        }
+        return $result;
+    }
 }

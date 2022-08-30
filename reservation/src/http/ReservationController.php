@@ -635,26 +635,26 @@ class ReservationController extends APIController
 			})
 		);
 		$result = Reservation::leftJoin('carts as T1', 'T1.reservation_id', '=', 'reservations.id')
-			->leftJoin('pricings as T2', 'T2.id', '=', 'T1.price_id')
 			->where($whereArray)
 			->where('reservations.account_id', '=', $data['account_id'])
 			->groupBy('T1.reservation_id')
 			->limit($data['limit'])
 			->offset($data['offset'])
-			->get(['reservations.*', 'T2.regular', 'T2.refundable', 'T2.currency', 'T2.label', 'T1.check_in', 'T1.check_out']);
+			->get(['reservations.*','T1.check_in', 'T1.check_out', 'T1.price_id', 'T1.category_id']);
 		$size = Reservation::leftJoin('carts as T1', 'T1.reservation_id', '=', 'reservations.id')
-			->leftJoin('pricings as T2', 'T2.id', '=', 'T1.price_id')
 			->where($whereArray)
 			->where('reservations.account_id', '=', $data['account_id'])
 			->groupBy('T1.reservation_id')
-			->get(['reservations.*', 'T2.regular', 'T2.refundable', 'T2.currency', 'T2.label']);
+			->get(['reservations.*']);
 		if(sizeof($result) > 0){
 			for ($i=0; $i <= sizeof($result)-1 ; $i++) { 
 				$item = $result[$i];
+				$carts = app('Increment\Hotel\Room\Http\CartController')->getCartsWithCount($item['id']);
 				$result[$i]['details'] = json_decode($item['details']);
 				$result[$i]['check_in'] = Carbon::parse($item['check_in'])->format('F d, Y H:i:s');
         		$result[$i]['check_out'] = Carbon::parse($item['check_out'])->format('F d, Y H:i:s');
-				$result[$i]['rooms'] = app('Increment\Hotel\Room\Http\CartController')->retrieveCartWithRoomDetails($item['id']);
+				$result[$i]['carts'] = $carts;
+
 			}
 		}
 		$this->response['size'] = sizeof($size);
