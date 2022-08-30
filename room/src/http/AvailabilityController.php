@@ -308,7 +308,6 @@ class AvailabilityController extends APIController
             $temp['general_description'] = $temp['general_description'];
             $temp['images'] = app('Increment\Hotel\Room\Http\ProductImageController')->retrieveImageByStatus($temp['categoryId'], 'room_type');
         }
-        
         return $temp;
     }
 }

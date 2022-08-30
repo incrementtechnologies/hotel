@@ -11,7 +11,7 @@ class RoomTypeController extends APIController
 {
     function __construct(){
       $this->notRequired = array(
-        'category', 'details', 'tax', 'person_rate', 'capacity', 'tax'
+        'category', 'details', 'tax', 'person_rate', 'capacity', 'tax', 'code', 'label'
       );
     }
 
@@ -44,13 +44,15 @@ class RoomTypeController extends APIController
         }else{
           $payload = array(
             'account_id'    => $data['account_id'],
+            'code' => $this->generateCode(),
             'payload' => $data['payload'],
             'category' => $data['category'],
             'payload_value' => $data['payload_value'],
             'details' => isset($data['details']) ? $data['details'] : null,
             'capacity' => $data['capacity'],
             'tax' => $data['tax'] == true ? 1 : 0,
-            'person_rate' => $data['person_rate'] == true ? 1 : 0
+            'person_rate' => $data['person_rate'] == true ? 1 : 0,
+            'label' => $data['label']
           );
           if($data['status'] === 'create'){
             $this->model = new Payload();
@@ -76,6 +78,17 @@ class RoomTypeController extends APIController
           $this->response['error'] = null;
           return $this->response();
         }
+    }
+
+    public function generateCode()
+    {
+      $code = 'pay_' . substr(str_shuffle($this->codeSource), 0, 60);
+      $codeExist = Payload::where('code', '=', $code)->get();
+      if (sizeof($codeExist) > 0) {
+        $this->generateCode();
+      } else {
+        return $code;
+      }
     }
   
     public function retrieveWithImage(Request $request){
@@ -156,12 +169,36 @@ class RoomTypeController extends APIController
         array('T1.room_price', '>=', $data['min']),
         array('T1.room_price', '<=', $data['max']),
       );
+      if($data['priceType'] !== null){
+        $whereArray[] = array(function($query)use($data){
+          for ($i=0; $i <= sizeof($data['priceType'])-1; $i++) { 
+            $item = $data['priceType'][$i];
+            $subArray = array();
+            if($item['label'] == 'Breakfast only'){
+              $subArray[] = array('T1.description', 'like', '%"room_price":"0"%');
+            }
+            if($item['label'] == 'Room only'){
+              $subArray[] = array('T1.description', 'like', '%"break_fast":"0"%');
+            }
+            if($item['label'] == 'Both'){
+              $subArray[] = array(function($query2){
+                $query2->where('T1.description', 'not like', '%"room_price":"0"%')
+                ->orWhere('T1.description', 'not like', '%"break_fast":"0"%');
+              });
+            }
+
+            $query->where(function($query3)use($item, $subArray){
+              $query3->where($subArray);
+            });
+          }
+        });
+      }
       $result = [];
       $temp = Payload::leftJoin('availabilities as T1', 'T1.payload_value', '=', 'payloads.id')->where($whereArray)
         ->orderBy('T1.room_price', 'asc')
         ->groupBy('payloads.id')
         ->get(['T1.id as availabilityId', 'payloads.id as category_id', 'payloads.payload_value as room_type', 'T1.*', 'payloads.capacity',
-         'payloads.category as general_description', 'payloads.details as general_features']);
+         'payloads.category as general_description', 'payloads.details as general_features', 'payloads.price_label', 'payloads.code']);
       if(sizeof($temp) > 0){
         for ($i=0; $i <= sizeof($temp)-1 ; $i++) {
           $item = $temp[$i];
@@ -215,7 +252,7 @@ class RoomTypeController extends APIController
         ->groupBy('T1.room_price')
         ->orderBy('T1.room_price', 'asc')
         ->get(['T1.id as availabilityId', 'payloads.id as categoryId', 'payloads.payload_value as room_type', 'T1.*', 'payloads.capacity',
-         'payloads.category as general_description', 'payloads.details as general_features', 'payloads.tax']);
+         'payloads.category as general_description', 'payloads.details as general_features', 'payloads.tax', 'payloads.price_label', 'payloads.code']);
       
       $result = [];
       if(sizeof($temp) > 0){
@@ -237,6 +274,16 @@ class RoomTypeController extends APIController
         'result' => $result,
         'images' => app('Increment\Hotel\Room\Http\ProductImageController')->retrieveImageByStatus($item['categoryId'], 'room_type'),
       );
+      return $this->response();
+    }
+
+    public function retrieveDetailsByCode(Request $request){
+      $data = $request->all();
+      $temp = Payload::where('code', '=', $data['code'])->first();
+      if($temp !== null){
+        $temp['details'] = json_decode($temp['details'], true);
+      }
+      $this->response['data'] = $temp;
       return $this->response();
     }
 }

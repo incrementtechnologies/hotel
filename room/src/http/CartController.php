@@ -49,53 +49,13 @@ class CartController extends APIController
             $this->response['error'] = 'You had previously added rooms with this email with different dates in your cart. Kindly remove or checkout these rooms to proceed';
             return $this->response();
         }else{
-            $exist = Cart::where('account_id', '=', $data['account_id'])
-                ->where('price_id', '=', $data['price_id'])
-                ->where('category_id', '=', $data['category_id'])
-                ->where(function($query){
-                    $query->where('status', '=', 'pending')
-                    ->orWhere('status', '=', 'in_progress')
-                    ->orWhere('status', '=', 'for_approval');
-                })->first();
-            if($exist !== null){
-                $hasReservations = Cart::where('id', '=', $exist['id'])->first();
-                $addedQty =  (int)$exist['qty'] + (int)$data['qty'];
-                $res = null;
-                if($hasReservations !== null){
-                    $canAdd = app('Increment\Hotel\Room\Http\RoomPriceStatusController')->canAdd($data['price_id'], $data['category_id'], $addedQty);
-                    if(!$canAdd){
-                        $this->response['data'] = null;
-                        $this->response['error'] = 'Qty in carts exceeds the available qty';
-                        return $this->response();
-                    }else{
-                        $res = Cart::where('id', '=', $exist['id'])->update(array(
-                            'qty' => $addedQty
-                        ));
-                    }
-                }else{
-                    $canAdd = app('Increment\Hotel\Room\Http\RoomPriceStatusController')->canAdd($data['price_id'], $data['category_id'], (int)$data['qty']);
-                    if(!$canAdd){
-                        $this->response['data'] = null;
-                        $this->response['error'] = 'Qty in carts exceeds the available qty';
-                        return $this->response();
-                    }else{
-                        $res = Cart::where('id', '=', $exist['id'])->update(array(
-                            'qty' => (int)$data['qty']
-                        ));
-                    }
-                }
-                $this->response['data'] = $res;
-                $this->response['error'] = null;
-            }else{
-                if(isset($data['reservation_code'])){
-                    $reservation = app('Increment\Hotel\Reservation\Http\ReservationController')->retrieveReservationByParams('reservation_code', $data['reservation_code'], ['id', 'status']);
-                    $data['reservation_id'] = $reservation[0]['id'];
-                    $data['status'] = $reservation[0]['status'];
-                }
-                $res = Cart::create($data);
-                $this->response['data'] = $res;
-                $this->response['error'] = null;
+            if(isset($data['reservation_code'])){
+                $reservation = app('Increment\Hotel\Reservation\Http\ReservationController')->retrieveReservationByParams('reservation_code', $data['reservation_code'], ['id', 'status']);
+                $data['reservation_id'] = $reservation[0]['id'];
+                $data['status'] = $reservation[0]['status'];
             }
+            $res = Cart::create($data);
+            $this->response['data'] = $res;
             $this->response['error'] = null;
             return $this->response();
         }

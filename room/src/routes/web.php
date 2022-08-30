@@ -75,6 +75,7 @@ Route::post($route.'retrieve_by_params', $controller."retrieveByParams");
 Route::post($route.'retrieve_by_date', $controller."getByDate");
 Route::post($route.'retrieve_with_availability', $controller."retrieveWithAvailability");
 Route::post($route.'retrieve_by_code', $controller."retrieveTypesByCode");
+Route::post($route.'retrieve_details_by_code', $controller."retrieveDetailsByCode");
 Route::post($route.'retrieve_room_types', $controller."retrieveRoomTypes");
 Route::post($route.'update', $controller."update");
 Route::post($route.'update_with_images', $controller."createWithImages");
