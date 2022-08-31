@@ -262,9 +262,21 @@ class AvailabilityController extends APIController
         $condition = array(
             array('payload_value', '=', $data['room_type'])
         );
-        if($data['add_on'] == 'Breakfast'){
-            array('description', 'not like', '%"break_fast":"0"%');
-        }
+        $condition[] = array(function($query)use($data){
+            if($data['add_on'] == 'Breakfast'){
+                $query->where('description', 'not like', '%"break_fast":"0"%')
+                ->where('description', 'not like', '%"room_price":"0"%');
+            }else if($data['add_on'] == null){
+                $query->where('description', 'like', '%"break_fast":"0"%')
+                ->where('description', 'not like', '%"room_price":"0"%');
+            }else if($data['add_on'] == 'Room Only'){
+                $query->where('description', 'like', '%"break_fast":"0"%')
+                ->where('description', 'not like', '%"room_price":"0"%');
+            }else if($data['add_on'] == 'Breakfast Only'){
+                $query->where('description', 'not like', '%"break_fast":"0"%')
+                ->where('description', 'like', '%"room_price":"0"%');   
+            }
+        });
         $result = Availability::where($condition)->get();
         if(sizeof($result) > 0){
             for ($i=0; $i <= sizeof($result)-1 ; $i++) { 
