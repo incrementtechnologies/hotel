@@ -286,4 +286,18 @@ class RoomTypeController extends APIController
       $this->response['data'] = $temp;
       return $this->response();
     }
+
+    public function getTax($roomType){
+      $result = Payload::where('id', '=', $roomType)->first();
+      if($result != null){
+        if($result['tax'] == 1){
+          $tax = Payload::where('payload', '=', 'tax_rate')->first();
+          return $tax != null ? $tax['payload'] : 0;
+        }else{
+          return 0;
+        }
+      }else{
+        return 0;
+      }
+    }
 }

@@ -17,6 +17,8 @@ class AvailabilityController extends APIController
     public function create(Request $request){
 		$data = $request->all();
         $this->model = new Availability();
+        $tax = app('Increment\Hotel\Room\Http\RoomTypeController')->getTax($data['payload_value']);
+        $data['room_price'] = floatval($data['room_price']) + floatval($tax);
         if($data['limit_per_day'] == 0){
            $this->manageCreateUpdate($data);
         }else{
