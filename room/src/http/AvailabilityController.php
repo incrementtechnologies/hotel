@@ -22,7 +22,7 @@ class AvailabilityController extends APIController
         if($data['limit_per_day'] == 0){
            $this->manageCreateUpdate($data);
         }else{
-            $exist  = Availability::where('payload_value', '=', $data['payload_value'])->where('start_date', '=', $data['start_date'])->where('limit_per_day', '>', 0)->first();
+            $exist  = Availability::where('payload_value', '=', $data['payload_value'])->where('start_date', '=', $data['start_date'])->where('add_on', '=', $data['add_on'])->where('limit_per_day', '>', 0)->first();
             if($exist !== null){
                 $update = Availability::where('id', '=', $exist['id'])->update($data);
             }else{
@@ -33,18 +33,33 @@ class AvailabilityController extends APIController
 	}
 
     public function manageCreateUpdate($data){
+        //(1)get existing start date between current date and given start date;
+        //(2)get existing end date
+        //if status is available, get dates between date range whos status is still not available then convert them to available
+        // if status is not available. get  dates between date range whos status is still availble, then convert them to not available
+        //if there is no dates between given date range, 
+        //if given date range(a) is inside of a bigger range(b), cut the bigger range -> b1, b2
+        //(3) create new end date for b1
+        //(4) create new start date for b2
+        // update b1, then insert new data with (a), then insert the new data for b2
+        //if (a) overlaps the end date of existing dates, cut the existing dates, and update it with new end_date, then insert the (a)
+        //if (a) overlaps the start date of existing dates, cut the existing dates, and update it with new start_date, then insert the (a)
+
         $existStartDate = Availability::where('payload_value', '=', $data['payload_value'])
-            ->where('start_date', '<=', $data['start_date'])
+            ->whereBetween('start_date', [Carbon::now(),$data['start_date']])
+            ->where('add_on', '=', $data['add_on'])
             ->orderBy('id', 'desc')
             ->first();
         $existEndDate = Availability::where('payload_value', '=', $data['payload_value'])
             ->where('end_date', '>=', $data['end_date'])
+            ->where('add_on', '=', $data['add_on'])
             ->orderBy('id', 'desc')
             ->first();
         if($existStartDate !== null && $existEndDate !== null){
             $hasBlockedDates = Availability::where('payload_value', '=', $data['payload_value'])
                 ->where('start_date', '>=', $data['start_date'])
                 ->where('end_date', '<=', $data['end_date'])
+                ->where('add_on', '=', $data['add_on'])
                 ->where('status', '=', $data['limit_per_day'] == 0 ? 'available' : 'not_available')
                 ->get();
             if(sizeof($hasBlockedDates) > 0){
@@ -69,6 +84,7 @@ class AvailabilityController extends APIController
                             $newModel->limit_per_day = $existEndDate['limit_per_day'];
                             $newModel->description = $existEndDate['description'];
                             $newModel->room_price = $existEndDate['room_price'];
+                            $newModel->add_on = $existEndDate['add_on'];
                             $newModel->status = $existEndDate['status'];
                         $createNewEndOfFirst = $newModel->save();
                         $this->response['data'] = 'Date Updated';
@@ -92,7 +108,23 @@ class AvailabilityController extends APIController
                     $this->response['error'] =  null;
                 }
 
-            }else{
+            }else if($existStartDate == null && $existEndDate != null){
+                if($existEndDate['start_date'] > $data['end_date']){
+                    $createNewBlock = $this->insertDB($data);
+                    $this->response['data'] = $createNewBlock;
+                    $this->response['error'] =  null;
+                }else{
+                    $newStartDate = Carbon::parse($data['end_date'])->addDay();
+                    $updateFirst = Availability::where('id', '=', $existEndDate['id'])->update(array('start_date' => $newStartDate));
+                    if($updateFirst){
+                        $createNewBlock = $this->insertDB($data);
+                        $this->response['data'] = $createNewBlock;
+                        $this->response['error'] =  null;
+                    }
+                }
+            }
+            
+            else{
                 $this->insertDB($data);
             }
         }
@@ -235,8 +267,17 @@ class AvailabilityController extends APIController
 
     public function retrieveByRoomType(Request $request){
         $data = $request->all();
-        $result = Availability::where('payload', '=', $data['payload'])
-        ->where('payload_value', '=', $data['payload_value'])
+        $condition = array(
+            array('payload_value', '=', $data['payload_value']),
+            array('payload', '=', $data['payload']),
+            array('add_on', '=', $data['addOn'])
+        );
+        if($data['id'] != null){
+            $condition[] = array('id', '=', $data['id']);
+        }else{
+            $condition[] = array('start_date', '=', $data['start_date']);
+        }
+        $result = Availability::where($condition)
         ->select(['start_date', 'end_date', 'id', 'limit', 'description', 'limit_per_day'])->first();
         
         if($result != null){

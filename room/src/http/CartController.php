@@ -361,11 +361,11 @@ class CartController extends APIController
         return Cart::where('reservation_id', '=', $reservationId)->get();
     }
 
-    public function countDailyCarts($startDate, $endDate, $category){
+    public function countDailyCarts($startDate, $availability, $category){
         $result = Cart::where('category_id', '=', $category)->where(function($query){
             $query->where('status', '=', 'comfirmed')
             ->orWhere('status', '=', 'for_approval');
-        })->where('check_in', '<=', $startDate)->where('check_in', '>=', $endDate)->where('deleted_at', '=', null)->count();
+        })->where('check_in', '<=', $startDate)->where('price_id', '=', $availability)->where('deleted_at', '=', null)->count();
         
         return $result;
     }

@@ -162,12 +162,9 @@ class RoomTypeController extends APIController
         array('payloads.payload', '=', 'room_type'),
         array('T1.limit_per_day', '>', 0),
         array('payloads.capacity', '=', $data['adults']),
-        array(function($query)use($data){
-          $query->where('T1.start_date', '>=', $data['check_in'])
-          ->orWhere('T1.end_date', '<=', $data['check_out']);
-        }),
         array('T1.room_price', '>=', $data['min']),
         array('T1.room_price', '<=', $data['max']),
+        // array('T1.id', '=', 19),
       );
       if($data['priceType'] !== null){
         $whereArray[] = array(function($query)use($data){
@@ -194,34 +191,43 @@ class RoomTypeController extends APIController
         });
       }
       $result = [];
+      $finalResult = [];
       $temp = Payload::leftJoin('availabilities as T1', 'T1.payload_value', '=', 'payloads.id')->where($whereArray)
         ->orderBy('T1.room_price', 'asc')
-        ->groupBy('payloads.id')
         ->get(['T1.id as availabilityId', 'payloads.id as category_id', 'payloads.payload_value as room_type', 'T1.*', 'payloads.capacity',
          'payloads.category as general_description', 'payloads.details as general_features', 'payloads.price_label', 'payloads.code']);
+      // dd($temp);
       if(sizeof($temp) > 0){
         for ($i=0; $i <= sizeof($temp)-1 ; $i++) {
           $item = $temp[$i];
-          $listPrice = Payload::leftJoin('availabilities as T1', 'T1.payload_value', '=', 'payloads.id')->where($whereArray)->orderBy('T1.room_price', 'asc')->select('T1.*')->first();
-          $temp[$i]['availabilityId'] = $listPrice['id'];
-          $temp[$i]['description'] = $listPrice['description'];
-          $temp[$i]['room_price'] = $listPrice['room_price'];
-          $temp[$i]['limit_per_day'] = $listPrice['limit_per_day'];
-          $temp[$i]['start_date'] = $listPrice['start_date'];
-          $temp[$i]['end_date'] = $listPrice['end_date'];
+          // $listPrice = Payload::leftJoin('availabilities as T1', 'T1.payload_value', '=', 'payloads.id')->where($whereArray)->orderBy('T1.room_price', 'asc')->select('T1.*')->first();
+          // $temp[$i]['availabilityId'] = $listPrice['id'];
+          // $temp[$i]['description'] = $listPrice['description'];
+          // $temp[$i]['room_price'] = $listPrice['room_price'];
+          // $temp[$i]['limit_per_day'] = $listPrice['limit_per_day'];
+          // $temp[$i]['start_date'] = $listPrice['start_date'];
+          // $temp[$i]['end_date'] = $listPrice['end_date'];
           $temp[$i]['general_features'] = json_decode($item['general_features']);
           $temp[$i]['description'] = json_decode($item['description']);
           $temp[$i]['images'] = app('Increment\Hotel\Room\Http\ProductImageController')->retrieveImageByStatus($item['category_id'], 'room_type');
           $isAvailable = app('Increment\Hotel\Room\Http\AvailabilityController')->isAvailable($item['payload_value'], $data['check_in'], $data['check_out']);
           if($isAvailable){
-            array_push($result, $item);
+            if(Carbon::parse($data['check_in']) >= Carbon::parse($item['start_date']) && Carbon::parse($item['start_date'])->format('Y-m-d') >= Carbon::now()->format('Y-m-d')){
+              array_push($result, $temp[$i]);
+            }
           }
         }
       }
       usort($result, function($a, $b) {return (float)$a['room_price'] > (float)$b['room_price'];}); //asc
-      $result = array_slice($result, $data['offset'], $data['limit']);
+      for ($a=0; $a <= sizeof($result)-1 ; $a++) { 
+        $each = $result[$a];
+        if(Carbon::parse($data['check_out']) <= Carbon::parse($each['end_date'])){
+          array_push($finalResult, $each);
+        }
+      }
+      $finalResult = array_slice($finalResult, $data['offset'], $data['limit']);
       $this->response['data'] = array(
-        'room' => $result,
+        'room' => $finalResult,
         'min_max' =>  app('Increment\Hotel\Room\Http\AvailabilityController')->retrieveMaxMin(),
         'pricings' => array(
           array('label' => 'Breakfast only'),
@@ -240,21 +246,21 @@ class RoomTypeController extends APIController
         array('T1.limit_per_day', '>', 0),
         array('payloads.capacity', '=', $data['filter']['adults']),
         array('payloads.id', '=', $data['category_id']),
-        array(function($query)use($data){
-          $query->where('T1.start_date', '>=', $data['filter']['check_in'])
-          ->orWhere('T1.end_date', '<=', $data['filter']['check_out']);
-        }),
+        // array(function($query)use($data){
+        //   $query->where('T1.start_date', '>=', $data['filter']['check_in'])
+        //   ->orWhere('T1.end_date', '>=', $data['filter']['check_out']);
+        // }),
         array('T1.room_price', '>=', $data['filter']['min']),
         array('T1.room_price', '<=', $data['filter']['max']),
       );
 
       $temp = Payload::leftJoin('availabilities as T1', 'T1.payload_value', '=', 'payloads.id')->where($whereArray)
-        ->groupBy('T1.room_price')
+        // ->groupBy('T1.room_price')
         ->orderBy('T1.room_price', 'asc')
         ->get(['T1.id as availabilityId', 'payloads.id as categoryId', 'payloads.payload_value as room_type', 'T1.*', 'payloads.capacity',
          'payloads.category as general_description', 'payloads.details as general_features', 'payloads.tax', 'payloads.price_label', 'payloads.code']);
-      
       $result = [];
+      $finalResult = [];
       if(sizeof($temp) > 0){
         for ($i=0; $i <= sizeof($temp)-1 ; $i++) { 
           $item = $temp[$i];
@@ -267,7 +273,18 @@ class RoomTypeController extends APIController
           }else if($temp[$i]['description']['room_price'] != 0 && $temp[$i]['description']['break_fast'] != 0){
             $temp[$i]['room_status'] = array('title' => 'Room with Breakfast', 'price' => $item['room_price']);
           }
-          array_push($result, $item);
+          $cartReservation = app('Increment\Hotel\Room\Http\CartController')->countDailyCarts($item['start_date'], $item['availabilityId'], $item['categoryId']);
+          if($cartReservation != $item['limit_per_day']){
+            if(Carbon::parse($data['filter']['check_in']) >= Carbon::parse($item['start_date']) && Carbon::parse($item['start_date'])->format('Y-m-d') >= Carbon::now()->format('Y-m-d')){
+              array_push($result, $temp[$i]);
+            }
+          }
+        }
+        for ($a=0; $a <= sizeof($result)-1 ; $a++) { 
+          $each = $result[$a];
+          if(Carbon::parse($data['filter']['check_out']) <= Carbon::parse($each['end_date'])){
+            array_push($finalResult, $each);
+          }
         }
       }
       $this->response['data'] = array(
