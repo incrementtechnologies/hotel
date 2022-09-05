@@ -164,7 +164,7 @@ class RoomTypeController extends APIController
         array('payloads.capacity', '=', $data['adults']),
         array('T1.room_price', '>=', $data['min']),
         array('T1.room_price', '<=', $data['max']),
-        // array('T1.id', '=', 19),
+        array('T1.id', '=', 21),
       );
       if($data['priceType'] !== null){
         $whereArray[] = array(function($query)use($data){
@@ -196,10 +196,11 @@ class RoomTypeController extends APIController
         ->orderBy('T1.room_price', 'asc')
         ->get(['T1.id as availabilityId', 'payloads.id as category_id', 'payloads.payload_value as room_type', 'T1.*', 'payloads.capacity',
          'payloads.category as general_description', 'payloads.details as general_features', 'payloads.price_label', 'payloads.code']);
-      // dd($temp);
+
       if(sizeof($temp) > 0){
         for ($i=0; $i <= sizeof($temp)-1 ; $i++) {
           $item = $temp[$i];
+          // dd(Carbon::parse($data['check_in']) >= Carbon::parse($item['start_date']), Carbon::parse($item['start_date'])->format('Y-m-d'), Carbon::now()->format('Y-m-d'));
           // $listPrice = Payload::leftJoin('availabilities as T1', 'T1.payload_value', '=', 'payloads.id')->where($whereArray)->orderBy('T1.room_price', 'asc')->select('T1.*')->first();
           // $temp[$i]['availabilityId'] = $listPrice['id'];
           // $temp[$i]['description'] = $listPrice['description'];
@@ -212,7 +213,7 @@ class RoomTypeController extends APIController
           $temp[$i]['images'] = app('Increment\Hotel\Room\Http\ProductImageController')->retrieveImageByStatus($item['category_id'], 'room_type');
           $isAvailable = app('Increment\Hotel\Room\Http\AvailabilityController')->isAvailable($item['payload_value'], $data['check_in'], $data['check_out']);
           if($isAvailable){
-            if(Carbon::parse($data['check_in']) >= Carbon::parse($item['start_date']) && Carbon::parse($item['start_date'])->format('Y-m-d') >= Carbon::now()->format('Y-m-d')){
+            if(Carbon::parse($data['check_in']) >= Carbon::parse($item['start_date'])){
               array_push($result, $temp[$i]);
             }
           }
@@ -275,7 +276,7 @@ class RoomTypeController extends APIController
           }
           $cartReservation = app('Increment\Hotel\Room\Http\CartController')->countDailyCarts($item['start_date'], $item['availabilityId'], $item['categoryId']);
           if($cartReservation != $item['limit_per_day']){
-            if(Carbon::parse($data['filter']['check_in']) >= Carbon::parse($item['start_date']) && Carbon::parse($item['start_date'])->format('Y-m-d') >= Carbon::now()->format('Y-m-d')){
+            if(Carbon::parse($data['filter']['check_in']) >= Carbon::parse($item['start_date'])){
               array_push($result, $temp[$i]);
             }
           }
@@ -288,7 +289,7 @@ class RoomTypeController extends APIController
         }
       }
       $this->response['data'] = array(
-        'result' => $result,
+        'result' => $finalResult,
         'images' => app('Increment\Hotel\Room\Http\ProductImageController')->retrieveImageByStatus($item['categoryId'], 'room_type'),
       );
       return $this->response();
