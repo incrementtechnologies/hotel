@@ -161,7 +161,7 @@ class RoomTypeController extends APIController
       $whereArray = array(
         array('payloads.payload', '=', 'room_type'),
         array('T1.limit_per_day', '>', 0),
-        array('payloads.capacity', '=', $data['adults']),
+        array('payloads.capacity', '<=', $data['adults']),
         array('T1.room_price', '>=', $data['min']),
         array('T1.room_price', '<=', $data['max']),
         array('T1.id', '=', 21),
@@ -171,13 +171,10 @@ class RoomTypeController extends APIController
           for ($i=0; $i <= sizeof($data['priceType'])-1; $i++) { 
             $item = $data['priceType'][$i];
             $subArray = array();
-            if($item['label'] == 'Breakfast only'){
-              $subArray[] = array('T1.description', 'like', '%"room_price":"0"%');
-            }
-            if($item['label'] == 'Room only'){
+            if($item['label'] == 'Room Only'){
               $subArray[] = array('T1.description', 'like', '%"break_fast":"0"%');
             }
-            if($item['label'] == 'Both'){
+            if($item['label'] == 'With Breakfast'){
               $subArray[] = array(function($query2){
                 $query2->where('T1.description', 'not like', '%"room_price":"0"%')
                 ->orWhere('T1.description', 'not like', '%"break_fast":"0"%');
@@ -231,9 +228,8 @@ class RoomTypeController extends APIController
         'room' => $finalResult,
         'min_max' =>  app('Increment\Hotel\Room\Http\AvailabilityController')->retrieveMaxMin(),
         'pricings' => array(
-          array('label' => 'Breakfast only'),
-          array('label' => 'Room only'),
-          array('label' => 'Both'),
+          array('label' => 'Room Only'),
+          array('label' => 'With Breakfast'),
         ),
         'category' => Payload::where('payload', '=', 'room_type')->get(['id', 'payload_value'])
       );
@@ -245,15 +241,33 @@ class RoomTypeController extends APIController
       $whereArray = array(
         array('payloads.payload', '=', 'room_type'),
         array('T1.limit_per_day', '>', 0),
-        array('payloads.capacity', '=', $data['filter']['adults']),
+        array('payloads.capacity', '<=', $data['filter']['adults']),
         array('payloads.id', '=', $data['category_id']),
-        // array(function($query)use($data){
-        //   $query->where('T1.start_date', '>=', $data['filter']['check_in'])
-        //   ->orWhere('T1.end_date', '>=', $data['filter']['check_out']);
-        // }),
         array('T1.room_price', '>=', $data['filter']['min']),
         array('T1.room_price', '<=', $data['filter']['max']),
       );
+
+      if($data['filter']['priceType'] !== null){
+        $whereArray[] = array(function($query)use($data){
+          for ($i=0; $i <= sizeof($data['filter']['priceType'])-1; $i++) { 
+            $item = $data['filter']['priceType'][$i];
+            $subArray = array();
+            if($item['label'] == 'Room Only'){
+              $subArray[] = array('T1.description', 'like', '%"break_fast":"0"%');
+            }
+            if($item['label'] == 'With Breakfast'){
+              $subArray[] = array(function($query2){
+                $query2->where('T1.description', 'not like', '%"room_price":"0"%')
+                ->where('T1.description', 'not like', '%"break_fast":"0"%');
+              });
+            }
+
+            $query->where(function($query3)use($item, $subArray){
+              $query3->where($subArray);
+            });
+          }
+        });
+      }
 
       $temp = Payload::leftJoin('availabilities as T1', 'T1.payload_value', '=', 'payloads.id')->where($whereArray)
         // ->groupBy('T1.room_price')
