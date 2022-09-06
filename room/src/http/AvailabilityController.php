@@ -310,8 +310,7 @@ class AvailabilityController extends APIController
                 $query->where('description', 'not like', '%"break_fast":"0"%')
                 ->where('description', 'not like', '%"room_price":"0"%');
             }else if($data['add_on'] == null){
-                $query->where('description', 'like', '%"break_fast":"0"%')
-                ->where('description', 'not like', '%"room_price":"0"%');
+                $query->where('add_on', '=', null); 
             }else if($data['add_on'] == 'Room Only'){
                 $query->where('description', 'like', '%"break_fast":"0"%')
                 ->where('description', 'not like', '%"room_price":"0"%');
