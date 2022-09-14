@@ -33,7 +33,7 @@ class AvailabilityController extends APIController
 	}
 
     public function manageCreateUpdate($data){
-        //(1)get existing start date between current date and given start date;
+        //(1)get existing start date inside given start date;
         //(2)get existing end date
         //if status is available, get dates between date range whos status is still not available then convert them to available
         // if status is not available. get  dates between date range whos status is still availble, then convert them to not available
@@ -46,7 +46,9 @@ class AvailabilityController extends APIController
         //if (a) overlaps the start date of existing dates, cut the existing dates, and update it with new start_date, then insert the (a)
 
         $existStartDate = Availability::where('payload_value', '=', $data['payload_value'])
-            ->whereBetween('start_date', [Carbon::now(),$data['start_date']])
+            // ->whereBetween('start_date', [Carbon::now(),$data['start_date']])
+            // ->where('start_date', '<=', Carbon::now())
+            ->where('start_date', '<=', $data['end_date'])
             ->where('add_on', '=', $data['add_on'])
             ->orderBy('id', 'desc')
             ->first();
