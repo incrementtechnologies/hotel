@@ -72,8 +72,6 @@ class AvailabilityController extends APIController
                 }
                 $this->response['data'] = 'Updated avaiable date';
             }else{
-                $newEndDate = Carbon::parse($data['start_date'])->subDays(1);
-                $newStartDate = Carbon::parse($data['end_date'])->addDay();
                 if(Carbon::parse($existStartDate['start_date']) == Carbon::parse($data['start_date'])){
                     $newStartDate = Carbon::parse($data['end_date'])->addDay();
                     $updateExistingEndDate = Availability::where('id', '=', $existEndDate['id'])->update(array('start_date' => $newStartDate));
@@ -87,6 +85,8 @@ class AvailabilityController extends APIController
                         }
                     }
                 }else{
+                    $newEndDate = Carbon::parse($data['start_date'])->subDays(1);
+                    $newStartDate = Carbon::parse($data['end_date'])->addDay();
                     $updateFirst = Availability::where('id', '=', $existStartDate['id'])->update(array('end_date' => $newEndDate));
                     if($updateFirst){
                         $data['status'] = $data['limit_per_day'] == 0 ? 'not_available' : 'available';
