@@ -66,7 +66,7 @@ class RoomTypeController extends APIController
               for ($i=0; $i <= sizeof($data['images'])-1 ; $i++) { 
                 $item = $data['images'][$i];
                 $params = array(
-                  'room_id' => $data['status'] === 'create' ? $res : $data['id'],
+                  'room_id' => $data['status'] === 'create' ? $res['id'] : $data['id'],
                   'url' => $item['url'],
                   'status' => 'room_type'
                 );
