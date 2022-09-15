@@ -74,30 +74,38 @@ class AvailabilityController extends APIController
             }else{
                 $newEndDate = Carbon::parse($data['start_date'])->subDays(1);
                 $newStartDate = Carbon::parse($data['end_date'])->addDay();
-                $updateFirst = Availability::where('id', '=', $existStartDate['id'])->update(array('end_date' => $newEndDate));
-                if($updateFirst){
-                    $data['status'] = $data['limit_per_day'] == 0 ? 'not_available' : 'available';
-                    $createNewBlock = $this->insertDB($data);
-                    if($createNewBlock && (Carbon::parse($data['end_date']) < Carbon::parse($existEndDate['end_date']) || Carbon::parse($data['start_date']) < Carbon::parse($existEndDate['end_date']))){
-                        $newModel = new Availability();
-                            $newModel->payload = 'room_type';
-                            $newModel->payload_value = $existStartDate['payload_value'];
-                            $newModel->start_date = $newStartDate;
-                            $newModel->end_date = $existEndDate['end_date'];
-                            $newModel->limit_per_day = $existEndDate['limit_per_day'];
-                            $newModel->description = $existEndDate['description'];
-                            $newModel->room_price = $existEndDate['room_price'];
-                            $newModel->add_on = $existEndDate['add_on'];
-                            $newModel->status = $existEndDate['status'];
-                        $createNewEndOfFirst = $newModel->save();
-                        $this->response['data'] = 'Date Updated';
-                    }else{
-                        $this->response['data'] = null;
-                        $this->response['error'] = 'Error in creating new';
+                if(Carbon::parse($existStartDate['start_date']) == Carbon::parse($data['start_date'])){
+                    $newStartDate = Carbon::parse($data['end_date'])->addDay();
+                    $updateExistingEndDate = Availability::where('id', '=', $existEndDate['id'])->update(array('start_date' => $newStartDate));
+                    if($updateExistingEndDate){
+                        $this->insertDB($data);
                     }
                 }else{
-                    $this->response['data'] = null;
-                    $this->response['error'] = 'Error in updating first';
+                    $updateFirst = Availability::where('id', '=', $existStartDate['id'])->update(array('end_date' => $newEndDate));
+                    if($updateFirst){
+                        $data['status'] = $data['limit_per_day'] == 0 ? 'not_available' : 'available';
+                        $createNewBlock = $this->insertDB($data);
+                        if($createNewBlock && (Carbon::parse($data['end_date']) < Carbon::parse($existEndDate['end_date']) || Carbon::parse($data['start_date']) < Carbon::parse($existEndDate['end_date']))){
+                            $newModel = new Availability();
+                                $newModel->payload = 'room_type';
+                                $newModel->payload_value = $existStartDate['payload_value'];
+                                $newModel->start_date = $newStartDate;
+                                $newModel->end_date = $existEndDate['end_date'];
+                                $newModel->limit_per_day = $existEndDate['limit_per_day'];
+                                $newModel->description = $existEndDate['description'];
+                                $newModel->room_price = $existEndDate['room_price'];
+                                $newModel->add_on = $existEndDate['add_on'];
+                                $newModel->status = $existEndDate['status'];
+                            $createNewEndOfFirst = $newModel->save();
+                            $this->response['data'] = 'Date Updated';
+                        }else{
+                            $this->response['data'] = null;
+                            $this->response['error'] = 'Error in creating new';
+                        }
+                    }else{
+                        $this->response['data'] = null;
+                        $this->response['error'] = 'Error in updating first';
+                    }
                 }
             }
         }else{
