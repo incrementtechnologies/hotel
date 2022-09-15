@@ -12,7 +12,7 @@ class FeatureController extends APIController
     function __construct(){
       $this->model = new Payload();
       $this->notRequired = array(
-        'category', 'details', 'tax', 'person_rate', 'capacity', 'tax'
+        'category', 'details', 'tax', 'person_rate', 'capacity', 'tax', 'price_label', 'code'
       );
     }
 
