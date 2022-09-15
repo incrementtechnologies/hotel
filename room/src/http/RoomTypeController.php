@@ -52,7 +52,7 @@ class RoomTypeController extends APIController
             'capacity' => $data['capacity'],
             'tax' => $data['tax'] == true ? 1 : 0,
             'person_rate' => $data['person_rate'] == true ? 1 : 0,
-            'label' => $data['label']
+            'price_label' => $data['price_label']
           );
           if($data['status'] === 'create'){
             $this->model = new Payload();
