@@ -56,7 +56,7 @@ class RoomTypeController extends APIController
           );
           if($data['status'] === 'create'){
             $this->model = new Payload();
-            $res = $this->insertDB($payload);
+            $res = Payload::create($payload);
           }else if($data['status'] === 'update'){
             $payload['updated_at'] = Carbon::now();
             $res = Payload::where('id', '=', $data['id'])->update($payload);
