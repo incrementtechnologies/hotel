@@ -80,6 +80,7 @@ Route::post($route.'retrieve_room_types', $controller."retrieveRoomTypes");
 Route::post($route.'update', $controller."update");
 Route::post($route.'update_with_images', $controller."createWithImages");
 Route::post($route.'delete', $controller."delete");
+Route::post($route.'delete_with_images', $controller."removeWithImage");
 Route::get($route.'test', $controller."test");
 
 //RoomTypes
