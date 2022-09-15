@@ -22,8 +22,9 @@ class AvailabilityController extends APIController
         if($data['limit_per_day'] == 0){
            $this->manageCreateUpdate($data);
         }else{
-            $exist  = Availability::where('payload_value', '=', $data['payload_value'])->where('start_date', '=', $data['start_date'])->where('add_on', '=', $data['add_on'])->where('limit_per_day', '>', 0)->first();
+            $exist  = Availability::where('payload_value', '=', $data['payload_value'])->where('start_date', '=', $data['start_date'])->where('end_date', '=', $data['end_date'])->where('add_on', '=', $data['add_on'])->where('limit_per_day', '>', 0)->first();
             if($exist !== null){
+                $data['id'] = $exist['id'];
                 $update = Availability::where('id', '=', $exist['id'])->update($data);
             }else{
                 $this->manageCreateUpdate($data);
