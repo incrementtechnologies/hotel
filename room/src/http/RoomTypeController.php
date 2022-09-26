@@ -208,7 +208,7 @@ class RoomTypeController extends APIController
           }
         }
       }
-      usort($result, function($a, $b) {return (float)$a['room_price'] > (float)$b['room_price'];}); //asc
+      usort($result, function($a, $b) {return (float)$a['room_price'] <=> (float)$b['room_price'];}); //asc
       for ($a=0; $a <= sizeof($result)-1 ; $a++) { 
         $each = $result[$a];
         if(Carbon::parse($data['check_out']) <= Carbon::parse($each['end_date'])){
