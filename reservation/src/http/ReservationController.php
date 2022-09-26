@@ -101,7 +101,7 @@ class ReservationController extends APIController
 		// 	$this->response['error'] = 'Apologies, the maximum amount of reservations that we can cater today is already reached';
 		// 	return $this->response();
 		// }
-		$existEmail = app('Increment\Account\Http\AccountController')->retrieveByEmail($data['account_info']->email);
+		$existEmail = app('Increment\Account\Http\AccountController')->retrieveByEmail($data['account_info']['email']);
 		if($existEmail !== null){
 			if(!isset($data['token'])){
 				$this->response['error'] = 'Your email is already exists. Please login before proceeding to checkout';
@@ -114,21 +114,21 @@ class ReservationController extends APIController
 		}else{
 			$tempAccount = array(
 				'password' => $this->generateTempPassword(),
-				'username' => $data['account_info']->email,
-				'email' => $data['account_info']->email,
+				'username' => $data['account_info']['email'],
+				'email' => $data['account_info']['email'],
 				'account_type' => 'USER',
 				'status' => 'NOT_VERIFIED',
 				'referral_code' => null
 			);
 			$acc = app('Increment\Account\Http\AccountController')->createAccount($tempAccount);
 			$createdAccountId = $acc;
-			$createdAccount = app('Increment\Account\Http\AccountController')->retrieveByEmail($data['account_info']->email);
+			$createdAccount = app('Increment\Account\Http\AccountController')->retrieveByEmail($data['account_info']['email']);
 			if($createdAccount !== null){
 				$data['account_id'] = $createdAccount['id'];
 				$finalResult['username'] = $tempAccount['username'];
 				$finalResult['password'] = $tempAccount['password'];
 			}
-			app('App\Http\Controllers\EmailController')->sendTempPassword($data['account_info']->email, $tempAccount['password']);
+			app('App\Http\Controllers\EmailController')->sendTempPassword($data['account_info']['email'], $tempAccount['password']);
 		}
 		$this->insertIntoAccountInformation($data);
 		$this->model = new Reservation();
@@ -230,12 +230,12 @@ class ReservationController extends APIController
 		}else{
 			$reservation = Reservation::where('reservation_code', '=', $data['reservation_code'])->first();
 		}
-		$data['account_info'] = json_decode($data['account_info']);
+		$data['account_info'] = json_decode($data['account_info'], true);
 		$accountInfo = array(
-			'first_name' => $data['account_info']->name,
-			'cellular_number' => $data['account_info']->contactNumber,
-			'number_code' => $data['account_info']->numberCode,
-			'country_code' => $data['account_info']->countryCode,
+			'first_name' => $data['account_info']['name'],
+			'cellular_number' => $data['account_info']['contactNumber'],
+			'number_code' => $data['account_info']['numberCode'],
+			'country_code' => $data['account_info']['countryCode'],
 		);
 		app('Increment\Account\Http\AccountInformationController')->updateByAccountId($data['account_id'], $accountInfo);
 		$cart = json_decode($data['carts']);
