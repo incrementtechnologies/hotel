@@ -10,6 +10,7 @@ use Carbon\Carbon;
 class RoomTypeController extends APIController
 {
     function __construct(){
+      $this->model = new Payload();
       $this->notRequired = array(
         'category', 'details', 'tax', 'person_rate', 'capacity', 'tax', 'code', 'label'
       );
