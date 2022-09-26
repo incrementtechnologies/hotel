@@ -93,7 +93,7 @@ class ReservationController extends APIController
 	public function create(Request $request)
 	{
 		$data = $request->all();
-		$data['account_info'] = json_decode($data['account_info']);
+		$data['account_info'] = json_decode($data['account_info'], true);
 		$createdAccountId = null;
 		$finalResult = [];
 		// if($this->validateBeforeCreate($data) == false){
@@ -164,9 +164,9 @@ class ReservationController extends APIController
 		$existAccount = app('Increment\Account\Http\AccountInformationController')->getByParamsWithColumns($data['account_id'], ['first_name']);
 		$customerInfo = array(
 			'account_id' => $data['account_id'],
-			'first_name' => $data['account_info']->name,
-			'cellular_number' => $data['account_info']->contactNumber,
-			'number_code' => $data['account_info']->numberCode,
+			'first_name' => $data['account_info']['name'],
+			'cellular_number' => $data['account_info']['contactNumber'],
+			'number_code' => $data['account_info']['numberCode'],
 		);
 		if($existAccount != null){
 			app('Increment\Account\Http\AccountInformationController')->updateByAccountId($data['account_id'], $customerInfo);
