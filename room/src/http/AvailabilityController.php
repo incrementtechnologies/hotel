@@ -49,50 +49,65 @@ class AvailabilityController extends APIController
         $existStartDate = Availability::where('payload_value', '=', $data['payload_value'])
             // ->whereBetween('start_date', [Carbon::now(),$data['start_date']])
             // ->where('start_date', '<=', Carbon::now())
-            ->where('start_date', '<=', $data['end_date'])
+            ->where('start_date', '<=', $data['start_date'])
             ->where('add_on', '=', $data['add_on'])
-            ->orderBy('id', 'desc')
+            ->orderBy('start_date', 'desc')
             ->first();
         $existEndDate = Availability::where('payload_value', '=', $data['payload_value'])
             ->where('end_date', '>=', $data['end_date'])
             ->where('add_on', '=', $data['add_on'])
-            ->orderBy('id', 'desc')
+            ->orderBy('end_date', 'asc')
             ->first();
+        // dd($existStartDate['id'], $existEndDate['id']);
         if($existStartDate !== null && $existEndDate !== null){
-            $hasBlockedDates = Availability::where('payload_value', '=', $data['payload_value'])
-                ->where('start_date', '>=', $data['start_date'])
-                ->where('end_date', '<=', $data['end_date'])
-                ->where('add_on', '=', $data['add_on'])
-                ->where('status', '=', $data['limit_per_day'] == 0 ? 'available' : 'not_available')
-                ->get();
-            if(sizeof($hasBlockedDates) > 0){
-                for ($i=0; $i <= sizeof($hasBlockedDates)-1 ; $i++) { 
-                    $item = $hasBlockedDates[$i];
-                    Availability::where('id', '=', $item['id'])->update(array('limit_per_day' => $data['limit_per_day'], 'status' => $data['limit_per_day'] == 0 ? 'not_available' : 'available'));
-                }
-                $this->response['data'] = 'Updated avaiable date';
-            }else{
-                if(Carbon::parse($existStartDate['start_date']) == Carbon::parse($data['start_date'])){
-                    $newStartDate = Carbon::parse($data['end_date'])->addDay();
-                    $updateExistingEndDate = Availability::where('id', '=', $existEndDate['id'])->update(array('start_date' => $newStartDate));
-                    if($updateExistingEndDate){
-                        if($existEndDate['id'] == $existStartDate['id']){
-                            $this->insertDB($data);
-                        }else{
-                            $data['id'] = $existStartDate['id'];
-                            $this->response['data'] = $this->updateDB($data);
-                            $this->response['error'] = null;
-                        }
-                    }
-                }else{
+            // $hasBlockedDates = Availability::where('payload_value', '=', $data['payload_value'])
+            //     ->where('start_date', '>=', $data['start_date'])
+            //     ->where('end_date', '<=', $data['end_date'])
+            //     ->where('add_on', '=', $data['add_on'])
+            //     ->where('status', '=', $data['limit_per_day'] == 0 ? 'available' : 'not_available')
+            //     ->get();
+            // if(sizeof($hasBlockedDates) > 0){
+            //     for ($i=0; $i <= sizeof($hasBlockedDates)-1 ; $i++) { 
+            //         $item = $hasBlockedDates[$i];
+            //         Availability::where('id', '=', $item['id'])->update(array('limit_per_day' => $data['limit_per_day'], 'status' => $data['status']));
+            //     }
+            //     $this->response['data'] = 'Updated avaiable date';
+            // }else{
+                // if(Carbon::parse($existStartDate['start_date']) == Carbon::parse($data['start_date'])){
+                //     $newStartDate = Carbon::parse($data['end_date'])->addDay();
+                //     $updateExistingEndDate = Availability::where('id', '=', $existEndDate['id'])->update(array('start_date' => $newStartDate));
+                //     if($updateExistingEndDate){
+                //         if($existEndDate['id'] == $existStartDate['id']){
+                //             $this->insertDB($data);
+                //         }else{
+                //             $data['id'] = $existStartDate['id'];
+                //             $data['deleted_at'] = Carbon::now();
+                //             $this->response['data'] = $this->updateDB($data);
+                //             $this->response['error'] = null;
+                //         }
+                //     }
+                // }else{
                     $newEndDate = Carbon::parse($data['start_date'])->subDays(1);
                     $newStartDate = Carbon::parse($data['end_date'])->addDay();
-                    $updateFirst = Availability::where('id', '=', $existStartDate['id'])->update(array('end_date' => $newEndDate));
-                    if($updateFirst){
-                        $data['status'] = $data['limit_per_day'] == 0 ? 'not_available' : 'available';
+                    $deletePrev = Availability::where('id', '=', $existStartDate['id'])->update(array('deleted_at' => Carbon::now()));
+                    if($deletePrev){
                         $createNewBlock = $this->insertDB($data);
-                        if($createNewBlock && (Carbon::parse($data['end_date']) < Carbon::parse($existEndDate['end_date']) || Carbon::parse($data['start_date']) < Carbon::parse($existEndDate['end_date']))){
+                        if(Carbon::parse($existStartDate['start_date']) != Carbon::parse($data['start_date'])){
                             $newModel = new Availability();
+                            $newModel->payload = 'room_type';
+                            $newModel->payload_value = $existStartDate['payload_value'];
+                            $newModel->start_date = $existStartDate['start_date'];
+                            $newModel->end_date = $newEndDate;
+                            $newModel->limit_per_day = $existStartDate['limit_per_day'];
+                            $newModel->description = $existStartDate['description'];
+                            $newModel->room_price = $existStartDate['room_price'];
+                            $newModel->add_on = $existStartDate['add_on'];
+                            $newModel->status = $existStartDate['status'];
+                            $createNewEndOfFirst = $newModel->save();
+                        }
+                        if($createNewBlock && (Carbon::parse($data['end_date']) < Carbon::parse($existEndDate['end_date']) && Carbon::parse($data['start_date']) < Carbon::parse($existEndDate['end_date']))){
+                            if($existEndDate['id'] == $existStartDate['id']){
+                                $newModel = new Availability();
                                 $newModel->payload = 'room_type';
                                 $newModel->payload_value = $existStartDate['payload_value'];
                                 $newModel->start_date = $newStartDate;
@@ -102,18 +117,24 @@ class AvailabilityController extends APIController
                                 $newModel->room_price = $existEndDate['room_price'];
                                 $newModel->add_on = $existEndDate['add_on'];
                                 $newModel->status = $existEndDate['status'];
-                            $createNewEndOfFirst = $newModel->save();
+                                $createNewEndOfFirst = $newModel->save();
+                            }else{
+                                Availability::where('id', '=', $existEndDate['id'])->update(array('start_date' => $newStartDate));
+                            }
                             $this->response['data'] = 'Date Updated';
                         }else{
-                            $this->response['data'] = null;
-                            $this->response['error'] = 'Error in creating new';
+                            if(Carbon::parse($existEndDate['end_date']) == Carbon::parse($data['end_date'])){
+                                Availability::where('id', '=', $existEndDate['id'])->update(array('deleted_at' => Carbon::now()));
+                            }
+                            $this->response['data'] = 'Updated';
+                            $this->response['error'] = null;
                         }
                     }else{
                         $this->response['data'] = null;
                         $this->response['error'] = 'Error in updating first';
                     }
-                }
-            }
+                // }
+            // }
         }else{
             if($existStartDate !== null && $existEndDate == null){
                 $newEndDate = Carbon::parse($data['start_date'])->subDays(1);
@@ -321,9 +342,10 @@ class AvailabilityController extends APIController
     public function retrieveWithCondition($data){
         $condition = array(
             array('payload_value', '=', $data['room_type']),
-            array('add_on', '=', $data['add_on'])
+            array('add_on', '=', $data['add_on']),
+            array('deleted_at', '=', null)
         );
-        $result = Availability::where($condition)->where('deleted_at', '=', null)->get();
+        $result = Availability::where($condition)->get();
         if(sizeof($result) > 0){
             for ($i=0; $i <= sizeof($result)-1 ; $i++) { 
                 $item = $result[$i];
