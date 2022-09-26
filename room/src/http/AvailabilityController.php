@@ -323,7 +323,7 @@ class AvailabilityController extends APIController
             array('payload_value', '=', $data['room_type']),
             array('add_on', '=', $data['add_on'])
         );
-        $result = Availability::where($condition)->get();
+        $result = Availability::where($condition)->where('deleted_at', '=', null)->get();
         if(sizeof($result) > 0){
             for ($i=0; $i <= sizeof($result)-1 ; $i++) { 
                 $item = $result[$i];
