@@ -33,6 +33,7 @@ class CartController extends APIController
                     $createdCart = Cart::where('reservation_id', '=', $getReservation[0]['id'])->first();
                     if(isset($data['reservation_code'])){
                         if($createdCart !== null){
+                            $this->model = new Cart();
                             $cartParams = array(
                                 'account_id' => $data['account_id'],
                                 'price_id' => $data['price_id'],
