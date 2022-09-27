@@ -248,17 +248,9 @@ class RoomTypeController extends APIController
       if($data['filter']['priceType'] !== null){
         $whereArray[] = array(function($query)use($data){
           for ($i=0; $i <= sizeof($data['filter']['priceType'])-1; $i++) { 
-            $item = $data['filter']['priceType'][$i];
+            $item = $data['priceType']['filter'][$i];
             $subArray = array();
-            if($item['label'] == 'Room Only'){
-              $subArray[] = array('T1.description', 'like', '%"break_fast":"0"%');
-            }
-            if($item['label'] == 'With Breakfast'){
-              $subArray[] = array(function($query2){
-                $query2->where('T1.description', 'not like', '%"room_price":"0"%')
-                ->where('T1.description', 'not like', '%"break_fast":"0"%');
-              });
-            }
+            $subArray[] = array('payloads.add_on', '=', $item['label']);
 
             $query->where(function($query3)use($item, $subArray){
               $query3->where($subArray);
