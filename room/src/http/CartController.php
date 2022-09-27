@@ -45,12 +45,13 @@ class CartController extends APIController
                                 'check_out' => $createdCart['check_out']
                             );
                             $this->insertDB($cartParams);
+                            return $this->response();
                         }
                     }else{
                         $this->response['data'] = [];
                         $this->response['error'] = 'You had previously added rooms with this email with different dates in your cart. Kindly remove or checkout these rooms to proceed';
+                        return $this->response();
                     }
-                    return $this->response();
                 }
             }
         }
