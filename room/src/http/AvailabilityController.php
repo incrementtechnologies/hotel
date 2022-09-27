@@ -352,7 +352,7 @@ class AvailabilityController extends APIController
                 $result[$i]['description'] = json_decode($item['description'], true);
                 $roomPrice = $result[$i]['room_price'];
                 $breakFast = $result[$i]['description']['break_fast'];
-                $result[$i]['price'] = floatval($roomPrice) + floatval($breakFast);
+                $result[$i]['price'] = floatval($roomPrice);
             }
         }
         return $result;
