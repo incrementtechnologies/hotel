@@ -380,7 +380,7 @@ class AvailabilityController extends APIController
         $temp = Availability::leftJoin('payloads as T1', 'T1.id', '=', 'availabilities.payload_value')
             ->where('T1.id', '=', $category)->where('availabilities.id', '=', $availabilty)
             ->select('availabilities.id as availabilityId', 'T1.id as categoryId', 'T1.payload_value as room_type', 'availabilities.*', 'T1.capacity',
-            'T1.category as general_description', 'T1.details as general_features', 'T1.tax')
+            'T1.category as general_description', 'T1.details as general_features', 'T1.tax', 'T1.price_label')
             ->first();
         if($temp !== null){
             $temp['general_features'] = json_decode($temp['general_features'], true);
