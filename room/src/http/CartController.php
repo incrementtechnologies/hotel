@@ -30,10 +30,21 @@ class CartController extends APIController
                     ->where('check_in', 'like', '%'.$data['check_in'].'%')
                     ->where('check_out', 'like', '%'.$data['check_out'].'%')->get();
                 if(sizeof($existingCart) <= 0){
+                    $createdCart = Cart::where('reservation_id', '=', $getReservation[0]['id'])->first();
                     if(isset($data['reservation_code'])){
-                        $data['reservation_id'] = $getReservation[0]['id'];
-                        $data['status'] = $getReservation[0]['status'];
-                        $this->insertDB($data);
+                        if($createdCart !== null){
+                            $cartParams = array(
+                                'account_id' => $data['account_id'],
+                                'price_id' => $data['price_id'],
+                                'category_id' => $data['category_id'],
+                                'reservation_id' => $getReservation[0]['id'],
+                                'qty' => $data['qty'],
+                                'status' => $getReservation[0]['status'],
+                                'check_in' => $createdCart['check_in'],
+                                'check_out' => $createdCart['check_out']
+                            );
+                            $this->insertDB($cartParams);
+                        }
                     }else{
                         $this->response['data'] = [];
                         $this->response['error'] = 'You had previously added rooms with this email with different dates in your cart. Kindly remove or checkout these rooms to proceed';
