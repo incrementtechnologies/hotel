@@ -44,7 +44,9 @@ class CartController extends APIController
                                 'check_in' => $createdCart['check_in'],
                                 'check_out' => $createdCart['check_out']
                             );
-                            $this->insertDB($cartParams);
+                            $res = Cart::create($cartParams);
+                            $this->response['data'] = $res;
+                            $this->response['error'] = null;
                             return $this->response();
                         }
                     }else{
