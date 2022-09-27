@@ -24,15 +24,15 @@ class CartController extends APIController
         }
         $emptyCart = Cart::where('account_id', '=', $data['account_id'])->where('status', '!=', 'completed')->where('deleted_at', '=', null)->get();
         if(isset($data['reservation_code'])){
-            $getReservation = app('Increment\Hotel\Reservation\Http\ReservationController')->retrieveReservationByParams('reservation_code', $data['reservation_code'], ['id']);
+            $getReservation = app('Increment\Hotel\Reservation\Http\ReservationController')->retrieveReservationByParams('reservation_code', $data['reservation_code'], ['id', 'status']);
             if(sizeof($getReservation) > 0){
                 $existingCart = Cart::where('reservation_id', '=', $getReservation[0]['id'])
                     ->where('check_in', 'like', '%'.$data['check_in'].'%')
                     ->where('check_out', 'like', '%'.$data['check_out'].'%')->get();
                 if(sizeof($existingCart) <= 0){
                     if(isset($data['reservation_code'])){
-                        $data['reservation_id'] = $existingCart[0]['reservation_id'];
-                        $data['status'] = $existingCart[0]['status'];
+                        $data['reservation_id'] = $getReservation[0]['id'];
+                        $data['status'] = $getReservation[0]['status'];
                         $this->insertDB($data);
                     }else{
                         $this->response['data'] = [];
