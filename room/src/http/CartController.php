@@ -30,8 +30,14 @@ class CartController extends APIController
                     ->where('check_in', 'like', '%'.$data['check_in'].'%')
                     ->where('check_out', 'like', '%'.$data['check_out'].'%')->get();
                 if(sizeof($existingCart) <= 0){
-                    $this->response['data'] = [];
-                    $this->response['error'] = 'You had previously added rooms with this email with different dates in your cart. Kindly remove or checkout these rooms to proceed';
+                    if(isset($data['reservation_code'])){
+                        $data['reservation_id'] = $existingCart[0]['reservation_id'];
+                        $data['status'] = $existingCart[0]['status'];
+                        $this->insertDB($data);
+                    }else{
+                        $this->response['data'] = [];
+                        $this->response['error'] = 'You had previously added rooms with this email with different dates in your cart. Kindly remove or checkout these rooms to proceed';
+                    }
                     return $this->response();
                 }
             }
