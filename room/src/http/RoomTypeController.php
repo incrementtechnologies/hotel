@@ -271,7 +271,7 @@ class RoomTypeController extends APIController
         // ->groupBy('T1.room_price')
         ->orderBy('T1.room_price', 'asc')
         ->get(['T1.id as availabilityId', 'payloads.id as categoryId', 'payloads.payload_value as room_type', 'T1.*', 'payloads.capacity',
-         'payloads.category as general_description', 'payloads.details as general_features', 'payloads.tax', 'payloads.price_label', 'payloads.code']);
+         'payloads.person_rate', 'payloads.category as general_description', 'payloads.details as general_features', 'payloads.tax', 'payloads.price_label', 'payloads.code']);
       $result = [];
       $finalResult = [];
       if(sizeof($temp) > 0){
