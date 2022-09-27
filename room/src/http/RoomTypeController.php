@@ -305,6 +305,7 @@ class RoomTypeController extends APIController
       $temp = Payload::where('code', '=', $data['code'])->first();
       if($temp !== null){
         $temp['details'] = json_decode($temp['details'], true);
+        $temp['images'] = app('Increment\Hotel\Room\Http\ProductImageController')->retrieveImageByStatus($temp['id'], 'room_type');
       }
       $this->response['data'] = $temp;
       return $this->response();
