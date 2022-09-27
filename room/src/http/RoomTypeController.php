@@ -323,4 +323,8 @@ class RoomTypeController extends APIController
         return 0;
       }
     }
+
+    public function getById($id){
+      return Payload::where('id', '=', $id)->first();
+    }
 }
