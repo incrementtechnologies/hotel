@@ -302,7 +302,7 @@ class RoomTypeController extends APIController
       }
       $this->response['data'] = array(
         'result' => $finalResult,
-        'images' => app('Increment\Hotel\Room\Http\ProductImageController')->retrieveImageByStatus($item['categoryId'], 'room_type'),
+        'images' => app('Increment\Hotel\Room\Http\ProductImageController')->retrieveImageByStatus($data['category_id'], 'room_type'),
       );
       return $this->response();
     }
