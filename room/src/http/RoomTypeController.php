@@ -213,7 +213,12 @@ class RoomTypeController extends APIController
       for ($a=0; $a <= sizeof($result)-1 ; $a++) { 
         $each = $result[$a];
         if(Carbon::parse($data['check_out']) <= Carbon::parse($each['end_date'])){
-          array_push($finalResult, $each);
+          $exist = array_filter($finalResult, function($el){
+            return $el['category_id'] == $each['category_id'];
+          });
+          if(sizeof($exist) <= 0){
+            array_push($finalResult, $each);
+          }
         }
       }
       $finalResult = array_slice($finalResult, $data['offset'], $data['limit']);
