@@ -304,7 +304,8 @@ class AvailabilityController extends APIController
             ->first();
         if($checkIn == null){
             $data['data'] = null;
-            return $data['error'] = 'This room type is not available during the set start date';
+            $data['error'] = 'This room type is not available during the set start date';
+            return $data;
         }
         $checkOut = Availability::where('payload_value', '=', $payloadValue)
             ->where('payload', '=', $payload)
@@ -313,10 +314,12 @@ class AvailabilityController extends APIController
             ->first();
         if($checkOut == null){
             $data['data'] = null;
-            return $data['error'] = 'This room type is not available during the set end date';
+            $data['error'] = 'This room type is not available during the set end date';
+            return $data;
         }
         $data['data'] = true;
         $data['error'] = null;
+        return $data;
     }
 
     public function retrieveByRoomType(Request $request){
