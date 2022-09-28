@@ -266,17 +266,25 @@ class RoomTypeController extends APIController
       );
 
       if($data['filter']['priceType'] !== null){
-        $whereArray[] = array(function($query)use($data){
-          for ($i=0; $i <= sizeof($data['filter']['priceType'])-1; $i++) { 
-            $item = $data['priceType']['filter'][$i];
-            $subArray = array();
-            $subArray[] = array('payloads.add_on', '=', $item['label']);
-
-            $query->where(function($query3)use($item, $subArray){
-              $query3->where($subArray);
-            });
-          }
+        $tempLabel = [];
+        for ($i=0; $i <= sizeof($data['filter']['priceType'])-1; $i++) {
+          $item = $data['filter']['priceType'][$i];
+          array_push($tempLabel, $item['label']);
+        }
+        $whereArray[] = array(function($query)use($tempLabel){
+          $query->whereIn('T1.add_on', $tempLabel);
         });
+        // $whereArray[] = array(function($query)use($data){
+        //   for ($i=0; $i <= sizeof($data['filter']['priceType'])-1; $i++) { 
+        //     $item = $data['priceType']['filter'][$i];
+        //     $subArray = array();
+        //     $subArray[] = array('payloads.add_on', '=', $item['label']);
+
+        //     $query->where(function($query3)use($item, $subArray){
+        //       $query3->where($subArray);
+        //     });
+        //   }
+        // });
       }
 
       $temp = Payload::leftJoin('availabilities as T1', 'T1.payload_value', '=', 'payloads.id')->where($whereArray)
