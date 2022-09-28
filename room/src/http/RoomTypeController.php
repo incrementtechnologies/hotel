@@ -168,17 +168,25 @@ class RoomTypeController extends APIController
         // array('T1.id', '=', 21),
       );
       if($data['priceType'] !== null){
-        $whereArray[] = array(function($query)use($data){
-          for ($i=0; $i <= sizeof($data['priceType'])-1; $i++) { 
-            $item = $data['priceType'][$i];
-            $subArray = array();
-            $subArray[] = array('payloads.add_on', '=', $item['label']);
-
-            $query->where(function($query3)use($item, $subArray){
-              $query3->where($subArray);
-            });
-          }
+        $tempLabel = [];
+        for ($i=0; $i <= sizeof($data['priceType'])-1; $i++) {
+          $item = $data['priceType'][$i];
+          array_push($tempLabel, $item['label']);
+        }
+        $whereArray[] = array(function($query)use($tempType){
+          $query->whereIn('T1.add_on', $tempLabel);
         });
+        // $whereArray[] = array(function($query)use($data){
+        //   for ($i=0; $i <= sizeof($data['priceType'])-1; $i++) { 
+        //     $item = $data['priceType'][$i];
+        //     $subArray = array();
+        //     $subArray[] = array('payloads.add_on', '=', $item['label']);
+
+        //     $query->where(function($query3)use($item, $subArray){
+        //       $query3->where($subArray);
+        //     });
+        //   }
+        // });
       }
       if($data['type'] !== null){
         $tempType = [];
