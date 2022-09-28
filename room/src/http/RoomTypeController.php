@@ -184,8 +184,9 @@ class RoomTypeController extends APIController
         $tempType = [];
         for ($i=0; $i <= sizeof($data['type'])-1; $i++) { 
           $each = $data['type'][$i];
-          dd($each);
+          array_push($tempType, $each);
         }
+        dd($tempType);
       }
       $result = [];
       $finalResult = [];
