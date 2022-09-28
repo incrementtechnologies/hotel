@@ -873,7 +873,7 @@ class ReservationController extends APIController
 					}
 				}
 			}
-			(int)$data['adults'] > $totalCapacity;
+			dd((int)$data['adults'] > $totalCapacity);
 			if((int)$data['adults'] > $totalCapacity){
 				array_push($errors, 'The set number of guest is greater than the total capacity of included room type/s');
 			}
