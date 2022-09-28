@@ -296,11 +296,27 @@ class AvailabilityController extends APIController
     }
 
     public function checkIfAvailable($payload, $payloadValue, $startDate, $endDate){
-        return Availability::where('payload_value', '=', $payloadValue)
+        $data = [];
+        $checkIn = Availability::where('payload_value', '=', $payloadValue)
             ->where('payload', '=', $payload)
             ->where('start_date', '<=', $startDate)
-            ->where('end_date', '>=', $endDate)
+            ->where('limit_per_day', '>', 0)
             ->first();
+        if($checkIn == null){
+            $data['data'] = null;
+            return $data['error'] = 'This room type is not available during the set start date'
+        }
+        $checkOut = Availability::where('payload_value', '=', $payloadValue)
+            ->where('payload', '=', $payload)
+            ->where('end_date', '>=', $endDate)
+            ->where('limit_per_day', '>', 0)
+            ->first();
+        if($checkOut == null){
+            $data['data'] = null;
+            return $data['error'] = 'This room type is not available during the set end date'
+        }
+        $data['data'] = true;
+        $data['error'] = null;
     }
 
     public function retrieveByRoomType(Request $request){

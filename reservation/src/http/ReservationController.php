@@ -852,17 +852,15 @@ class ReservationController extends APIController
 		$couponError = null;
 		$couponData = null;
 		$category = null;
+		$totalCapacity= 0;
 		if($reservation !== null){
 			for ($i=0; $i <= sizeof($data['categories'])-1 ; $i++) {
 				$item = $data['categories'][$i];
 				$dateAvailable = app('Increment\Hotel\Room\Http\AvailabilityController')->checkIfAvailable('room_type', $item['category_id'], $data['check_in'], $data['check_out']);
 				$category = app('Increment\Common\Payload\Http\PayloadController')->retrieveByParams($item['category_id']);
-				if($dateAvailable === null){
-					array_push($errors, $category['payload_value'].' category is not available during that date');
-				}
-				$availableRoom = app('Increment\Hotel\Room\Http\RoomController')->availableRoomByCapacity($item['category_id'], $data['heads']);
-				if(sizeof($availableRoom) <= 0){
-					array_push($errors, $category['payload_value'].' category has no available rooms with that number of people');
+				$totalCapacity += $category['capacity'];
+				if($dateAvailable['error'] !== null){
+					array_push($errors, $dateAvailable['error']);
 				}
 				if($data['coupon'] !== null){
 					$validCoupon = app('App\Http\Controllers\CouponController')->validCoupon($data['coupon'], $item['category_id'], $data['account_id']);
@@ -874,6 +872,9 @@ class ReservationController extends APIController
 						$couponError = $validCoupon['error'];
 					}
 				}
+			}
+			if($data['adults'] > $totalCapacity){
+				array_push($errors, 'The set capacity is greater than the total capacity of included room type/s');
 			}
 			if($couponError !== null){
 				array_push($errors, $couponError);	
