@@ -186,7 +186,9 @@ class RoomTypeController extends APIController
           $each = $data['type'][$i];
           array_push($tempType, $each);
         }
-        dd($tempType);
+        $whereArray[] = array(function($query)use($tempType){
+          $query->whereIn('payloads.payload_value', $tempType);
+        });
       }
       $result = [];
       $finalResult = [];
