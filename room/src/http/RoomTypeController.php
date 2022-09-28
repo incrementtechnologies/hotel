@@ -328,4 +328,8 @@ class RoomTypeController extends APIController
     public function getById($id){
       return Payload::where('id', '=', $id)->first();
     }
+
+    public function retrieveByParams($id){
+      return Payload::where('id', '=', $id)->first();
+    }
 }

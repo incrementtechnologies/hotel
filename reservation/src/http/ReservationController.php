@@ -857,7 +857,7 @@ class ReservationController extends APIController
 			for ($i=0; $i <= sizeof($data['categories'])-1 ; $i++) {
 				$item = $data['categories'][$i];
 				$dateAvailable = app('Increment\Hotel\Room\Http\AvailabilityController')->checkIfAvailable('room_type', $item['category_id'], $data['check_in'], $data['check_out']);
-				$category = app('Increment\Common\Payload\Http\PayloadController')->retrieveByParams($item['category_id']);
+				$category = app('Increment\Hotel\Room\Http\RoomTypeController')->retrieveByParams($item['category_id']);
 				$totalCapacity += (int)$category['capacity'];
 				if($dateAvailable['error'] !== null){
 					array_push($errors, $dateAvailable['error']);
