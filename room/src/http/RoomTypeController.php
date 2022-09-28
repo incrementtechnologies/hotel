@@ -173,7 +173,7 @@ class RoomTypeController extends APIController
           $item = $data['priceType'][$i];
           array_push($tempLabel, $item['label']);
         }
-        $whereArray[] = array(function($query)use($tempType){
+        $whereArray[] = array(function($query)use($tempLabel){
           $query->whereIn('T1.add_on', $tempLabel);
         });
         // $whereArray[] = array(function($query)use($data){
