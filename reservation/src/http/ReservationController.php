@@ -858,7 +858,7 @@ class ReservationController extends APIController
 				$item = $data['categories'][$i];
 				$dateAvailable = app('Increment\Hotel\Room\Http\AvailabilityController')->checkIfAvailable('room_type', $item['category_id'], $data['check_in'], $data['check_out']);
 				$category = app('Increment\Common\Payload\Http\PayloadController')->retrieveByParams($item['category_id']);
-				$totalCapacity += $category['capacity'];
+				$totalCapacity += (int)$category['capacity'];
 				if($dateAvailable['error'] !== null){
 					array_push($errors, $dateAvailable['error']);
 				}
@@ -873,8 +873,9 @@ class ReservationController extends APIController
 					}
 				}
 			}
-			if($data['adults'] > $totalCapacity){
-				array_push($errors, 'The set capacity is greater than the total capacity of included room type/s');
+			(int)$data['adults'] > $totalCapacity;
+			if((int)$data['adults'] > $totalCapacity){
+				array_push($errors, 'The set number of guest is greater than the total capacity of included room type/s');
 			}
 			if($couponError !== null){
 				array_push($errors, $couponError);	
