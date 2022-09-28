@@ -104,7 +104,7 @@ class ReservationController extends APIController
 		$existEmail = app('Increment\Account\Http\AccountController')->retrieveByEmail($data['account_info']['email']);
 		if($existEmail !== null){
 			if(!isset($data['token'])){
-				$this->response['error'] = 'Your email is already exists. Please login before proceeding to checkout';
+				$this->response['error'] = 'Your email already exists. Please login before proceeding to checkout';
 				$this->response['data'] = null;
 				return $this->response();
 			}else{
