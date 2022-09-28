@@ -180,6 +180,13 @@ class RoomTypeController extends APIController
           }
         });
       }
+      if($data['type'] !== null){
+        $tempType = [];
+        for ($i=0; $i <= sizeof($data['type'])-1; $i++) { 
+          $each = $data['type'][$i];
+          dd($each);
+        }
+      }
       $result = [];
       $finalResult = [];
       $temp = Payload::leftJoin('availabilities as T1', 'T1.payload_value', '=', 'payloads.id')->where($whereArray)
