@@ -232,6 +232,7 @@ class RoomTypeController extends APIController
           }
         }
       }
+      $this->response['size'] = sizeOf($finalResult);
       $finalResult = array_slice($finalResult, $data['offset'], $data['limit']);
       $this->response['data'] = array(
         'room' => $finalResult,
