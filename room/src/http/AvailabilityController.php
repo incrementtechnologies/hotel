@@ -415,7 +415,10 @@ class AvailabilityController extends APIController
     }
 
     public function retrieveByIds($categoryId, $availabiltyid){
-        $result = Availability::where('payload_value', '=', $categoryId)->where('id', '=', $availabiltyid)->first();
+        $result = Availability::where('payload_value', '=', $categoryId)->where('id', '=', $availabiltyid)->where(function($query){
+            $query->where('deleted_at', '=', null)
+            ->orWhere('deleted_at', '!=', null);
+        })->first();
         if($result !== null){
             $result['description'] = json_decode($result['description'], true);
         }
