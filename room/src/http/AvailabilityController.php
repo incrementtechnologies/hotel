@@ -58,7 +58,6 @@ class AvailabilityController extends APIController
             ->where('add_on', '=', $data['add_on'])
             ->orderBy('end_date', 'asc')
             ->first();
-        // dd($existStartDate['id'], $existEndDate['id']);
         if($existStartDate !== null && $existEndDate !== null){
             // $hasBlockedDates = Availability::where('payload_value', '=', $data['payload_value'])
             //     ->where('start_date', '>=', $data['start_date'])
@@ -137,13 +136,18 @@ class AvailabilityController extends APIController
             // }
         }else{
             if($existStartDate !== null && $existEndDate == null){
-                $newEndDate = Carbon::parse($data['start_date'])->subDays(1);
-                $updateFirst = Availability::where('id', '=', $existStartDate['id'])->update(array('end_date' => $newEndDate));
-                if($updateFirst){
-                    $data['status'] = 'not_available';
-                    $createNewBlock = $this->insertDB($data);
-                    $this->response['data'] = $createNewBlock;
-                    $this->response['error'] =  null;
+                $existingTempDates = Availability::where('payload_value', '=', $data['payload_value'])
+                ->where('start_date', '>=', $data['start_date'])
+                ->where('add_on', '=', $data['add_on'])
+                ->get();
+                if(sizeof($existingTempDates) > 0){
+                    for ($i=0; $i <= sizeOf($existingTempDates)-1; $i++) { 
+                        $item = $existingTempDates[$i];
+                        if(Carbon::parse($item['start_date']) >= Carbon::parse($data['start_date']) && Carbon::parse($item['end_date']) < Carbon::parse($data['end_date'])){
+                            Availability::where('id', '=', $item['id'])->update(array('deleted_at' => Carbon::now()));
+                        }
+                    }
+                    $res = $this->insertDB($data);
                 }
 
             }else if($existStartDate == null && $existEndDate != null){
