@@ -145,7 +145,7 @@ class CartController extends APIController
                     $result[$i]['reservation_details'] = $reservation;
                     $result[$i]['code'] = sizeOf($reservation) > 0 ? $reservation[0]['code'] : null;
                     $result[$i]['reservation_code'] = sizeOf($reservation) > 0 ? $reservation[0]['reservation_code'] : null;
-                    $result[$i]['rooms'] = app('Increment\Hotel\Room\Http\AvailabilityController')->getDetails($item['category_id'], $item['price_id']);
+                    $result[$i]['rooms'] = app('Increment\Hotel\Room\Http\AvailabilityController')->getDetails($item['category_id'], $item['check_in']);
                     // if($result[$i]['rooms'][0]['label'] === 'MONTH'){
                     //     $nightsDays = $end->diffInMonths($start);
                     // }
@@ -197,7 +197,7 @@ class CartController extends APIController
             for ($i=0; $i <= sizeof($result) -1; $i++) {
                 $temp = [];
                 $item = $result[$i];
-                $rooms = app('Increment\Hotel\Room\Http\AvailabilityController')->getDetails($item['category_id'], $item['price_id']);
+                $rooms = app('Increment\Hotel\Room\Http\AvailabilityController')->getDetails($item['category_id'], $item['check_in']);
                 $result[$i]['rooms'] = $rooms;
                 if($rooms !== null){
                     $booking = app('Increment\Hotel\Reservation\Http\ReservationController')->retrieveBookingsByParams('reservation_id',  $item['reservation_id']);
@@ -308,7 +308,7 @@ class CartController extends APIController
                 $item = $result[$i];
                 $reservation =app('Increment\Hotel\Reservation\Http\ReservationController')->retrieveReservationByParams('id', $item['reservation_id'], ['code']);
                 $result[$i]['reservation_code'] = sizeOf($reservation) > 0 ? $reservation[0]['code'] : null;
-                $result[$i]['rooms'] = app('Increment\Hotel\Room\Http\AvailabilityController')->getDetails($item['category_id'], $item['start_date']);
+                $result[$i]['rooms'] = app('Increment\Hotel\Room\Http\AvailabilityController')->getDetails($item['category_id'], $item['check_in']);
             }
         }
         return $result;
@@ -416,7 +416,7 @@ class CartController extends APIController
         if(sizeof($temp) > 0){
             for ($i=0; $i <= sizeof($temp)-1 ; $i++) { 
                 $item = $temp[$i];
-                $roomDetails = app('Increment\Hotel\Room\Http\AvailabilityController')->retrieveByIds($item['category_id'], $item['start_date']);
+                $roomDetails = app('Increment\Hotel\Room\Http\AvailabilityController')->retrieveByIds($item['category_id'], $item['check_in']);
                 $roomType = app('Increment\Hotel\Room\Http\RoomTypeController')->getById($item['category_id']);
                 if($roomDetails != null){
                     if($roomDetails['add_on'] == 'With Breakfast'){
