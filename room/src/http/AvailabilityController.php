@@ -6,7 +6,6 @@ use Illuminate\Http\Request;
 use App\Http\Controllers\APIController;
 use Increment\Hotel\Room\Models\Availability;
 use Carbon\Carbon;
-use Illuminate\Support\Facades\DB;
 
 class AvailabilityController extends APIController
 {
@@ -400,9 +399,12 @@ class AvailabilityController extends APIController
        return false;
     }
 
-    public function getDetails($category, $availabilty){
+    public function getDetails($category, $startDate){
         $temp = Availability::leftJoin('payloads as T1', 'T1.id', '=', 'availabilities.payload_value')
-            ->where('T1.id', '=', $category)->where('availabilities.id', '=', $availabilty)
+            ->where('T1.id', '=', $category)->where(function($query)use($startDate){
+                $query->where('availabilities.start_date', '<=', $startDate)
+                ->where('availabilities.end_date', '>=', $startDate);
+            })
             ->select('availabilities.id as availabilityId', 'T1.id as categoryId', 'T1.payload_value as room_type', 'availabilities.*', 'T1.capacity',
             'T1.category as general_description', 'T1.details as general_features', 'T1.tax', 'T1.price_label')
             ->first();
@@ -415,10 +417,13 @@ class AvailabilityController extends APIController
         return $temp;
     }
 
-    public function retrieveByIds($categoryId, $availabiltyid){
-        $result = DB::table('availabilities')->where('payload_value', '=', $categoryId)->where('id', '=', $availabiltyid)->first();
+    public function retrieveByIds($categoryId, $startDate){
+        $result = Availability::where('payload_value', '=', $categoryId)
+            ->where(function($query)use($startDate){
+                $query->where('start_date', '<=', $startDate)
+                ->where('end_date', '>=', $startDate);
+            })->first();
         if($result !== null){
-            $result = json_decode(json_encode($result), true);
             $result['description'] = json_decode($result['description'], true);
         }
         return $result;
