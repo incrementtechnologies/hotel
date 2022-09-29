@@ -418,7 +418,7 @@ class AvailabilityController extends APIController
     public function retrieveByIds($categoryId, $availabiltyid){
         $result = DB::table('availabilities')->where('payload_value', '=', $categoryId)->where('id', '=', $availabiltyid)->first();
         if($result !== null){
-            $result = json_decode($result, true);
+            $result = json_decode(json_encode($result), true);
             $result['description'] = json_decode($result['description'], true);
         }
         return $result;
