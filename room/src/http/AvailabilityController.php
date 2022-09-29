@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Http\Controllers\APIController;
 use Increment\Hotel\Room\Models\Availability;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
 
 class AvailabilityController extends APIController
 {
@@ -415,11 +416,9 @@ class AvailabilityController extends APIController
     }
 
     public function retrieveByIds($categoryId, $availabiltyid){
-        $result = Availability::where('payload_value', '=', $categoryId)->where('id', '=', $availabiltyid)->where(function($query){
-            $query->where('deleted_at', '=', null)
-            ->orWhere('deleted_at', '!=', null);
-        })->first();
+        $result = DB::table('availabilities')->where('payload_value', '=', $categoryId)->where('id', '=', $availabiltyid)->first();
         if($result !== null){
+            $result = json_decode($result, true);
             $result['description'] = json_decode($result['description'], true);
         }
         return $result;
