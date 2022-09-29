@@ -148,6 +148,8 @@ class AvailabilityController extends APIController
                         }
                     }
                     $res = $this->insertDB($data);
+                    $this->response['data'] = $rese;
+                    $this->response['error'] =  null;
                 }
 
             }else if($existStartDate == null && $existEndDate != null){
@@ -165,9 +167,10 @@ class AvailabilityController extends APIController
                     }
                 }
             }
-            
             else{
-                $this->insertDB($data);
+                $res = $this->insertDB($data);
+                $this->response['data'] = $rese;
+                $this->response['error'] =  null;
             }
         }
     }
