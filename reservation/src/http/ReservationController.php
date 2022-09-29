@@ -259,8 +259,8 @@ class ReservationController extends APIController
 				'status' => 'in_progress',
 				'qty' => $item->checkoutQty,
 				'reservation_id' => $data['id'],
-				'check_in' => Carbon::now($data['check_in'])->addHours(2),
-				'check_out' => Carbon::now($data['check_out'])->addHours(12),
+				'check_in' => Carbon::parse($data['check_in'])->addHours(2),
+				'check_out' => Carbon::parse($data['check_out'])->addHours(12),
 				'updated_at' => Carbon::now()
 			);
 			app('Increment\Hotel\Room\Http\CartController')->updateByParams($condition, $updates);
