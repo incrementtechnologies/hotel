@@ -401,10 +401,8 @@ class AvailabilityController extends APIController
 
     public function getDetails($category, $startDate){
         $temp = Availability::leftJoin('payloads as T1', 'T1.id', '=', 'availabilities.payload_value')
-            ->where('T1.id', '=', $category)->where(function($query)use($startDate){
-                $query->where('availabilities.start_date', '<=', $startDate)
-                ->where('availabilities.end_date', '>=', $startDate);
-            })
+            ->where('availabilities.start_date', '<=', $startDate)
+            ->where('availabilities.end_date', '>=', $startDate)
             ->select('availabilities.id as availabilityId', 'T1.id as categoryId', 'T1.payload_value as room_type', 'availabilities.*', 'T1.capacity',
             'T1.category as general_description', 'T1.details as general_features', 'T1.tax', 'T1.price_label')
             ->first();
