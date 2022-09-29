@@ -148,12 +148,12 @@ class AvailabilityController extends APIController
                         }
                     }
                     $res = $this->insertDB($data);
-                    $this->response['data'] = $rese;
+                    $this->response['data'] = $res;
                     $this->response['error'] =  null;
                 }else{
                     if(Carbon::parse($existStartDate['end_date']) < Carbon::parse($data['start_date'])){
                         $res = $this->insertDB($data);
-                        $this->response['data'] = $rese;
+                        $this->response['data'] = $res;
                         $this->response['error'] =  null;   
                     }
                 }
@@ -175,7 +175,7 @@ class AvailabilityController extends APIController
             }
             else{
                 $res = $this->insertDB($data);
-                $this->response['data'] = $rese;
+                $this->response['data'] = $res;
                 $this->response['error'] =  null;
             }
         }
