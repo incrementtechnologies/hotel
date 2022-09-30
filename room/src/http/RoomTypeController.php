@@ -204,7 +204,6 @@ class RoomTypeController extends APIController
         ->orderBy('T1.room_price', 'asc')
         ->get(['T1.id as availabilityId', 'payloads.id as category_id', 'payloads.payload_value as room_type', 'T1.*', 'payloads.capacity',
          'payloads.category as general_description', 'payloads.details as general_features', 'payloads.price_label', 'payloads.code']);
-
       if(sizeof($temp) > 0){
         for ($i=0; $i <= sizeof($temp)-1 ; $i++) {
           $item = $temp[$i];
@@ -231,13 +230,11 @@ class RoomTypeController extends APIController
       usort($result, function($a, $b) {return (float)$a['room_price'] <=> (float)$b['room_price'];}); //asc
       for ($a=0; $a <= sizeof($result)-1 ; $a++) { 
         $each = $result[$a];
-        if(Carbon::parse($data['check_out']) <= Carbon::parse($each['end_date'])){
-          $exist = array_filter($finalResult, function($el)use($each){
-            return $el['category_id'] == $each['category_id'];
-          });
-          if(sizeof($exist) <= 0){
-            array_push($finalResult, $each);
-          }
+        $exist = array_filter($finalResult, function($el)use($each){
+          return $el['category_id'] == $each['category_id'];
+        });
+        if(sizeof($exist) <= 0){
+          array_push($finalResult, $each);
         }
       }
       $this->response['size'] = sizeOf($finalResult);
@@ -315,7 +312,10 @@ class RoomTypeController extends APIController
         }
         for ($a=0; $a <= sizeof($result)-1 ; $a++) { 
           $each = $result[$a];
-          if(Carbon::parse($data['filter']['check_out']) <= Carbon::parse($each['end_date'])){
+          $exist = array_filter($finalResult, function($el)use($each){
+            return $el['add_on'] == $each['add_on'] && $el['categoryId'] == $each['categoryId'] && $each['tax'] == $el['tax'];
+          });
+          if(sizeof($exist) <= 0){
             array_push($finalResult, $each);
           }
         }

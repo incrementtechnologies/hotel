@@ -386,8 +386,7 @@ class CartController extends APIController
         $result = Cart::where('category_id', '=', $category)->where(function($query){
             $query->where('status', '=', 'comfirmed')
             ->orWhere('status', '=', 'for_approval');
-        })->where('check_in', '<=', $startDate)->where('price_id', '=', $availability)->where('deleted_at', '=', null)->count();
-        
+        })->where('check_in', '<=', $startDate)->where('deleted_at', '=', null)->sum('qty');
         return $result;
     }
 
