@@ -121,7 +121,7 @@ class ReservationController extends APIController
 				'referral_code' => null
 			);
 			$acc = app('Increment\Account\Http\AccountController')->createAccount($tempAccount);
-			dd($acc);
+			dd($acc, $tempAccount);
 			$createdAccountId = $acc;
 			$createdAccount = app('Increment\Account\Http\AccountController')->retrieveByEmail($data['account_info']['email']);
 			if($createdAccount !== null){
