@@ -307,7 +307,7 @@ class AvailabilityController extends APIController
             ->where('end_date', '>=', Carbon::parse($endDate)->format('Y-m-d'))
             ->where('limit_per_day', '>', 0)
             ->first();
-        dd($checkOut);
+        // dd($checkOut);
         if($checkOut == null){
             $data['data'] = null;
             $data['error'] = 'This room type is not available during the set end date';
