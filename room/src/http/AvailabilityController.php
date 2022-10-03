@@ -398,7 +398,7 @@ class AvailabilityController extends APIController
             ->where('availabilities.start_date', '<=', $startDate)
             ->where('availabilities.end_date', '>=', $startDate)
             ->select('availabilities.id as availabilityId', 'T1.id as categoryId', 'T1.payload_value as room_type', 'availabilities.*', 'T1.capacity',
-            'T1.category as general_description', 'T1.details as general_features', 'T1.tax', 'T1.price_label')
+            'T1.category as general_description', 'T1.details as general_features', 'T1.tax', 'T1.price_label', 'limit_per_day')
             ->first();
         if($temp !== null){
             $temp['general_features'] = json_decode($temp['general_features'], true);

@@ -813,7 +813,6 @@ class ReservationController extends APIController
 			->groupBy('carts.reservation_id')
 			->orderBy($sortBy, array_values($data['sort'])[0])
 			->get();
-
 		if(sizeof($res) > 0){
 			for ($i=0; $i <= sizeof($res)-1; $i++) { 
 				$item = $res[$i];

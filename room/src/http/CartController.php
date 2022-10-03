@@ -295,11 +295,9 @@ class CartController extends APIController
         }
         if($params['method'] === 'update'){
             $result = Cart::where($whereArray)
-            ->groupBy('carts.price_id')
             ->get(['id', 'qty', 'price_id', 'reservation_id', 'check_in', 'check_out', 'category_id', DB::raw('Sum(qty) as checkoutQty')]);
         }else{
             $result = Cart::where($whereArray)
-            ->groupBy('carts.price_id')
             ->get(['id', 'qty', 'price_id', 'reservation_id', 'check_in', 'check_out', 'category_id', DB::raw('Sum(qty) as checkoutQty')]);
         }
         
