@@ -293,7 +293,7 @@ class AvailabilityController extends APIController
         $data = [];
         $checkIn = Availability::where('payload_value', '=', $payloadValue)
             ->where('payload', '=', $payload)
-            ->where('start_date', '<=', $startDate)
+            ->where('start_date', '<=', Carbon::parse($startDate)->format('Y-m-d'))
             ->where('limit_per_day', '>', 0)
             ->first();
         if($checkIn == null){
@@ -301,12 +301,13 @@ class AvailabilityController extends APIController
             $data['error'] = 'This room type is not available during the set start date';
             return $data;
         }
-        dd($payload, $payloadValue, $startDate, $endDate);
+        // dd($payload, $payloadValue, $startDate, $endDate);
         $checkOut = Availability::where('payload_value', '=', $payloadValue)
             ->where('payload', '=', $payload)
-            ->where('end_date', '>=', $endDate)
+            ->where('end_date', '>=', Carbon::parse($endDate)->format('Y-m-d'))
             ->where('limit_per_day', '>', 0)
             ->first();
+        dd($checkOut);
         if($checkOut == null){
             $data['data'] = null;
             $data['error'] = 'This room type is not available during the set end date';
