@@ -381,12 +381,16 @@ class AvailabilityController extends APIController
 	}
 
     public function isAvailable($roomType, $checkIn, $checkOut){
-       $startDate = Availability::where('payload_value', '=', $roomType)->where('start_date', '<=', $checkIn)->where('limit_per_day', '>', 0)->get();
-    //    $endDate =  Availability::where('payload_value', '=', $roomType)->where('end_date', '>=', $checkOut)->get();
-       if(sizeof($startDate) > 0){
-        return true;
-       }
-       return false;
+        $carts = app('Increment\Hotel\Room\Http\CartController')->countDailyCarts($checkIn, null, $roomType);
+        $availability = Availability::where('payload_value', '=', $roomType)->where('start_date', '<=', $checkIn)->where('limit_per_day', '>', 0)->get();
+        if(sizeof($availability) > 0){
+            if((int)$carts < $availability[0]['limit_per_day']){
+                return true;
+            }else{
+                return false;
+            }
+        }
+        return false;
     }
 
     public function getDetails($category, $startDate){
@@ -411,5 +415,14 @@ class AvailabilityController extends APIController
             $result['description'] = json_decode($result['description'], true);
         }
         return $result;
+    }
+
+    public function checkAvailability($toBeInsert, $checkIn, $category){
+        $carts = app('Increment\Hotel\Room\Http\CartController')->countDailyCarts($checkIn, null, $category);
+        $temp = Availability::where('payload_value', '=', $category)->where('start_date', '<=', $checkIn)->where('limit_per_day', '>', 0)->first();
+        if(((int)$toBeInsert + (int)$carts) <= $temp['limit_per_day']){
+            return true;
+        }
+        return false;
     }
 }

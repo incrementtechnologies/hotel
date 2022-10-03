@@ -96,11 +96,11 @@ class ReservationController extends APIController
 		$data['account_info'] = json_decode($data['account_info'], true);
 		$createdAccountId = null;
 		$finalResult = [];
-		// if($this->validateBeforeCreate($data) == false){
-		// 	$this->response['data'] = null;
-		// 	$this->response['error'] = 'Apologies, the maximum amount of reservations that we can cater today is already reached';
-		// 	return $this->response();
-		// }
+		if($this->validateBeforeCreate($data) == false){
+			$this->response['data'] = null;
+			$this->response['error'] = 'Apologies, the maximum amount of reservations that we can cater today is already reached';
+			return $this->response();
+		}
 		$existEmail = app('Increment\Account\Http\AccountController')->retrieveByEmail($data['account_info']['email']);
 		if($existEmail !== null){
 			if(!isset($data['token'])){
@@ -200,15 +200,14 @@ class ReservationController extends APIController
 
 	public function validateBeforeCreate($data){
 		$isValid = true;
-		$startOfDay = Carbon::now()->startOfDay();
-		$endOfDay = Carbon::now()->endOfDay();
 		$carts = app('Increment\Hotel\Room\Http\CartController')->getOwnCarts($data);
 		if(sizeof($carts) > 0){
-			for ($i=0; $i <= sizeof($carts)-1 ; $i++) { 
+			for ($i=0; $i <= sizeof($carts)-1 ; $i++) {
 				$item = $carts[$i];
-				$countCartsByCategory = app('Increment\Hotel\Room\Http\CartController')->countDailyCarts($item['check_in'], $item['check_out'], $item['category']);
-				$getLimitPerCategory = app('Increment\Hotel\Room\Http\AvailabilityController')->retrieveByPayloadPayloadValue('room_type', $item['category']);
-				if($countCartsByCategory == $getLimitPerCategory['limit_per_day']){
+				$isAvailable = app('Increment\Hotel\Room\Http\AvailabilityController')->checkAvailability($item['qty'], $item['check_in'], $item['category_id']);
+				if($isAvailable){
+					return true;
+				}else{
 					return false;
 				}
 			}
@@ -818,7 +817,8 @@ class ReservationController extends APIController
 		if(sizeof($res) > 0){
 			for ($i=0; $i <= sizeof($res)-1; $i++) { 
 				$item = $res[$i];
-				$res[$i]['name'] = app('Increment\Account\Http\AccountInformationController')->getByParamsWithColumns($item['account_id'], ['first_name'])['first_name'];
+				$accountInfo = app('Increment\Account\Http\AccountInformationController')->getByParamsWithColumns($item['account_id'], ['first_name']);
+				$res[$i]['name'] = $accountInfo !== null ? $accountInfo['first_name'] : $this->retrieveNameOnly($item['account_id']);
 				$res[$i]['details'] = json_decode($item['details']);
 				$res[$i]['check_in'] = Carbon::createFromFormat('Y-m-d H:i:s', $item['check_in'])->copy()->tz($this->response['timezone'])->format('F j, Y');
 				$res[$i]['check_out'] = Carbon::createFromFormat('Y-m-d H:i:s', $item['check_out'])->copy()->tz($this->response['timezone'])->format('F j, Y');
