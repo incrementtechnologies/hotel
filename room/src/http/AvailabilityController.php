@@ -301,6 +301,7 @@ class AvailabilityController extends APIController
             $data['error'] = 'This room type is not available during the set start date';
             return $data;
         }
+        dd($payload, $payloadValue, $startDate, $endDate);
         $checkOut = Availability::where('payload_value', '=', $payloadValue)
             ->where('payload', '=', $payload)
             ->where('end_date', '>=', $endDate)
