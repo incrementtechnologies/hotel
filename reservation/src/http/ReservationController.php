@@ -98,7 +98,7 @@ class ReservationController extends APIController
 		$finalResult = [];
 		if($this->validateBeforeCreate($data) == false){
 			$this->response['data'] = null;
-			$this->response['error'] = 'Apologies, the maximum amount of reservations that we can cater today is already reached';
+			$this->response['error'] = 'Apologies, the maximum amount of reservations that we can cater today is already reached. Try to lessen your qty number or book other room type';
 			return $this->response();
 		}
 		$existEmail = app('Increment\Account\Http\AccountController')->retrieveByEmail($data['account_info']['email']);

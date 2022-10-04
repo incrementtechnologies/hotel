@@ -428,4 +428,14 @@ class AvailabilityController extends APIController
         }
         return false;
     }
+
+    public function getRemainingQty($checkIn, $category){
+        $carts = app('Increment\Hotel\Room\Http\CartController')->countDailyCarts($checkIn, null, $category);
+        $temp = Availability::where('payload_value', '=', $category)->where('start_date', '<=', $checkIn)->where('end_date', '>=', $checkIn)->where('limit_per_day', '>', 0)->orderBy('room_price', 'asc')->first();
+        if((int)$carts > 0){
+            return (int)$carts - $temp['limit_per_day'];
+        }else{
+            return $temp['limit_per_day'];
+        }
+    }
 }
