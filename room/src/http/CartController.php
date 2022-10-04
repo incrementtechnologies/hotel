@@ -265,10 +265,12 @@ class CartController extends APIController
     }
 
     public function retrieveOwn($params){
-        $result = null;
-        $account_id = $params['condition'][0]['value']; 
+        $result = [];
+        $account_id = $params['condition'][0]['value'];
+        $checkoutQty = 0; 
         $whereArray = array(
-            array('account_id', '=', $account_id)
+            array('account_id', '=', $account_id),
+            array('deleted_at', '=', null)
         );
         if($params['method'] === 'update'){
             array_push($whereArray, array(
@@ -295,17 +297,21 @@ class CartController extends APIController
         }
         if($params['method'] === 'update'){
             $result = Cart::where($whereArray)
-            ->get(['id', 'qty', 'price_id', 'reservation_id', 'check_in', 'check_out', 'category_id', DB::raw('Sum(qty) as checkoutQty')]);
+            ->select('id', 'qty', 'price_id', 'reservation_id', 'check_in', 'check_out', 'category_id')
+            ->get();
+            $checkoutQty = Cart::where($whereArray)->sum('qty');
         }else{
             $result = Cart::where($whereArray)
-            ->get(['id', 'qty', 'price_id', 'reservation_id', 'check_in', 'check_out', 'category_id', DB::raw('Sum(qty) as checkoutQty')]);
+            ->select('id', 'qty', 'price_id', 'reservation_id', 'check_in', 'check_out', 'category_id')
+            ->get();
+            $checkoutQty = Cart::where($whereArray)->sum('qty');
         }
-        
         if(sizeof($result) > 0 ){
             for ($i=0; $i <= sizeof($result) -1; $i++) { 
                 $item = $result[$i];
                 $reservation =app('Increment\Hotel\Reservation\Http\ReservationController')->retrieveReservationByParams('id', $item['reservation_id'], ['code']);
                 $result[$i]['reservation_code'] = sizeOf($reservation) > 0 ? $reservation[0]['code'] : null;
+                $result[$i]['checkoutQty'] = $checkoutQty;
                 $result[$i]['rooms'] = app('Increment\Hotel\Room\Http\AvailabilityController')->getDetails($item['category_id'], $item['check_in']);
             }
         }
