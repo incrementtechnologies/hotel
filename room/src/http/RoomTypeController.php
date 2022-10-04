@@ -306,7 +306,7 @@ class RoomTypeController extends APIController
           }
           $cartReservation = app('Increment\Hotel\Room\Http\CartController')->countDailyCarts($item['start_date'], $item['availabilityId'], $item['categoryId']);
           if($cartReservation != $item['limit_per_day']){
-            if(Carbon::parse($data['filter']['check_in']) <= Carbon::parse($item['start_date'])){
+            if(Carbon::parse($data['filter']['check_in']) >= Carbon::parse($item['start_date'])){
               array_push($result, $temp[$i]);
             }
           }
