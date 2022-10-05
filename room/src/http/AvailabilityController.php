@@ -397,6 +397,7 @@ class AvailabilityController extends APIController
     }
 
     public function getDetails($category, $startDate){
+        $startDate = Carbon::parse($startDate)->format('Y-m-d');
         $temp = Availability::leftJoin('payloads as T1', 'T1.id', '=', 'availabilities.payload_value')
             ->where('availabilities.start_date', '<=', $startDate)
             ->where('availabilities.end_date', '>=', $startDate)
