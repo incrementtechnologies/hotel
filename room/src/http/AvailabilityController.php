@@ -25,7 +25,8 @@ class AvailabilityController extends APIController
             $exist  = Availability::where('payload_value', '=', $data['payload_value'])->where('start_date', '=', $data['start_date'])->where('end_date', '=', $data['end_date'])->where('add_on', '=', $data['add_on'])->where('limit_per_day', '>', 0)->first();
             if($exist !== null){
                 $data['id'] = $exist['id'];
-                $update = Availability::where('id', '=', $exist['id'])->update($data);
+                $update = $this->updateDB($data);
+                $this->response['data'] = $update;
             }else{
                 $this->manageCreateUpdate($data);
             }
