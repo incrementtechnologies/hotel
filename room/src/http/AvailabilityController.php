@@ -415,6 +415,7 @@ class AvailabilityController extends APIController
     }
 
     public function retrieveByIds($categoryId, $startDate){
+        $startDate= Carbon::parse($startDate)->format('Y-m-d');
         $result = Availability::where('payload_value', '=', $categoryId)->where('start_date', '<=', $startDate)->where('end_date', '>=', $startDate)->first();
         if($result !== null){
             $result['description'] = json_decode($result['description'], true);

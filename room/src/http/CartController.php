@@ -407,16 +407,7 @@ class CartController extends APIController
         $breakfastOnly = 0;
         $roomOnly = 0;
         $both = 0;
-        $returnArray = array(
-            array(
-                'key' => 'room only',
-                'qty' => 0
-            ),
-            array(
-                'key' => 'room with breakfast',
-                'qty' => 0
-            )
-        ); 
+        $returnArray = array(); 
         if(sizeof($temp) > 0){
             for ($i=0; $i <= sizeof($temp)-1 ; $i++) { 
                 $item = $temp[$i];
@@ -424,12 +415,18 @@ class CartController extends APIController
                 $roomType = app('Increment\Hotel\Room\Http\RoomTypeController')->getById($item['category_id']);
                 if($roomDetails != null){
                     if($roomDetails['add_on'] == 'With Breakfast'){
-                        $returnArray[1]['qty'] += 1;
-                        $returnArray[1]['room_type'] = $roomType['payload_value'];
+                        $returnArray[] = array(
+                            'qty' => $item['qty'],
+                            'room_type' => $roomType['payload_value'],
+                            'key' => 'room only'
+                        );
                     }
                     if($roomDetails['add_on'] == 'Room Only'){
-                        $returnArray[0]['qty'] += 1;
-                        $returnArray[0]['room_type'] = $roomType['payload_value'];
+                        $returnArray[] = array(
+                            'qty' => $item['qty'],
+                            'room_type' => $roomType['payload_value'],
+                            'key' => 'room with breakfast'
+                        );
                     }
                 }
             }
