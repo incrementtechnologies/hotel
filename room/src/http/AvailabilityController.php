@@ -425,6 +425,7 @@ class AvailabilityController extends APIController
 
     public function checkAvailability($toBeInsert, $checkIn, $category){
         $carts = app('Increment\Hotel\Room\Http\CartController')->countDailyCarts($checkIn, null, $category);
+        $checkIn = Carbon::parse($checkIn)->format('Y-m-d');
         $temp = Availability::where('payload_value', '=', $category)->where('start_date', '<=', $checkIn)->where('limit_per_day', '>', 0)->first();
         if(((int)$toBeInsert + (int)$carts) <= $temp['limit_per_day']){
             return true;
