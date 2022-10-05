@@ -387,10 +387,11 @@ class CartController extends APIController
     }
 
     public function countDailyCarts($startDate, $availability, $category){
+        $startDate = Carbon::parse($startDate)->format('Y-m-d');
         $result = Cart::where('category_id', '=', $category)->where(function($query){
             $query->where('status', '=', 'comfirmed')
             ->orWhere('status', '=', 'for_approval');
-        })->where('check_in', '=', $startDate)->where('deleted_at', '=', null)->sum('qty');
+        })->where('check_in', 'like', '%'.$startDate.'%')->where('deleted_at', '=', null)->sum('qty');
         return $result;
     }
 

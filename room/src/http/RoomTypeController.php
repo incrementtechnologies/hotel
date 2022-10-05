@@ -304,7 +304,7 @@ class RoomTypeController extends APIController
           }else if($temp[$i]['description']['room_price'] != 0 && $temp[$i]['description']['break_fast'] != 0){
             $temp[$i]['room_status'] = array('title' => 'Room with Breakfast', 'price' => $item['room_price']);
           }
-          $cartReservation = app('Increment\Hotel\Room\Http\CartController')->countDailyCarts($item['start_date'], $item['availabilityId'], $item['categoryId']);
+          $cartReservation = app('Increment\Hotel\Room\Http\CartController')->countDailyCarts($data['filter']['check_in'], $item['availabilityId'], $item['categoryId']);
           $temp[$i]['remaining_qty'] = $item['limit_per_day'] - $cartReservation;
           if($cartReservation != $item['limit_per_day']){
             if(Carbon::parse($data['filter']['check_in']) >= Carbon::parse($item['start_date']) && Carbon::parse($data['filter']['check_in']) <= Carbon::parse($item['end_date'])){
