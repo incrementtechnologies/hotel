@@ -65,9 +65,21 @@ class CartController extends APIController
                 ->orWhere('status', '=', 'in_progress');
             })->where('deleted_at', '=', null)
             ->first();
+        $totalAddedByDate = Cart::where('account_id', '=', $data['account_id'])
+            ->where('check_in', '=', $data['check_in'])
+            ->where(function($query){
+                $query->where('status', '=', 'pending')
+                ->orWhere('status', '=', 'in_progress');
+            })->where('deleted_at', '=', null)
+            ->sum('qty');
+        $availability = app('Increment\Hotel\Room\Http\AvailabilityController')->retrieveByIds($data['category_id'], $data['check_in']);
         if($existingCart != null && sizeof($emptyCart) > 0){
             $this->response['data'] = [];
             $this->response['error'] = 'You had previously added rooms with this email with different dates in your cart. Kindly remove or checkout these rooms to proceed';
+            return $this->response();
+        }else if(((int)$totalAddedByDate - (int)$availability['limit_per_day']) <= 0){
+            $this->response['error']  = `Your added cart already exceeds the remaining slots of room category for this day`;
+            $this->response['data'] = null;
             return $this->response();
         }else{
             if(isset($data['reservation_code'])){
@@ -306,6 +318,7 @@ class CartController extends APIController
             ->get();
             $checkoutQty = Cart::where($whereArray)->sum('qty');
         }
+        $final = [];
         if(sizeof($result) > 0 ){
             for ($i=0; $i <= sizeof($result) -1; $i++) { 
                 $item = $result[$i];
@@ -313,9 +326,16 @@ class CartController extends APIController
                 $result[$i]['reservation_code'] = sizeOf($reservation) > 0 ? $reservation[0]['code'] : null;
                 $result[$i]['checkoutQty'] = $checkoutQty;
                 $result[$i]['rooms'] = app('Increment\Hotel\Room\Http\AvailabilityController')->getDetails($item['category_id'], $item['check_in']);
+
+                $exist = array_filter($final, function($each)use($item){
+                    return $each['category_id'] == $item['category_id'] && $each['rooms']['add_on'] == $item['rooms']['add_on'] && $each['rooms']['room_price'] == $item['rooms']['room_price'];
+                });
+                if(sizeof($exist) <= 0){
+                    array_push($final, $result[$i]);
+                }
             }
         }
-        return $result;
+        return $final;
     }
 
     public function getByDate(Request $request){
