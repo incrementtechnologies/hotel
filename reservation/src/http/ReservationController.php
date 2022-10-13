@@ -529,7 +529,15 @@ class ReservationController extends APIController
 		$res = null;
 		if($reservation !== null){
 			if($data['status'] === 'completed'){
-				app('App\Http\Controllers\EmailController')->sendThankYou($reservation['account_id']);
+				$reservations = $this->getReservationDetails($reservation['id']);
+				if($reservations !== null){
+					$emailParams = array(
+						'account_id' => $reservation['id'],
+						'check_in' => Carbon::createFromFormat('Y-m-d H:i:s', $reservations['check_in'])->copy()->tz($this->response['timezone'])->format('F d, Y'),
+						'check_out' => Carbon::createFromFormat('Y-m-d H:i:s', $reservations['check_out'])->copy()->tz($this->response['timezone'])->format('F d, Y')
+					);
+					app('App\Http\Controllers\EmailController')->sendThankYou($emailParams);
+				}
 			}else{
 				$reservations = $this->getReservationDetails($reservation['id']);
 				if($reservations !== null){
