@@ -438,14 +438,14 @@ class CartController extends APIController
                         $returnArray[] = array(
                             'qty' => $item['qty'],
                             'room_type' => $roomType['payload_value'],
-                            'key' => 'room only'
+                            'key' => 'room with breakfast'
                         );
                     }
                     if($roomDetails['add_on'] == 'Room Only'){
                         $returnArray[] = array(
                             'qty' => $item['qty'],
                             'room_type' => $roomType['payload_value'],
-                            'key' => 'room with breakfast'
+                            'key' => 'room only'
                         );
                     }
                 }
