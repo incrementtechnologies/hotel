@@ -77,7 +77,7 @@ class CartController extends APIController
             $this->response['data'] = [];
             $this->response['error'] = 'You had previously added rooms with this email with different dates in your cart. Kindly remove or checkout these rooms to proceed';
             return $this->response();
-        }else if(((int)$totalAddedByDate - (int)$availability['limit_per_day']) <= 0){
+        }else if(((int)$availability['limit_per_day'] - (int)$totalAddedByDate) <= 0){
             $this->response['error']  = `Your added cart already exceeds the remaining slots of room category for this day`;
             $this->response['data'] = null;
             return $this->response();
