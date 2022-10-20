@@ -137,6 +137,12 @@ class AvailabilityController extends APIController
                         $res = $this->insertDB($data);
                         $this->response['data'] = $res;
                         $this->response['error'] =  null;   
+                    }else if(Carbon::parse($existStartDate['end_date']) == Carbon::parse($data['start_date'])){
+                        $newEndDate = Carbon::parse($existStartDate['end_date'])->subDays(1);
+                        Availability::where('id', '=', $existStartDate['id'])->update(array('end_date' => $newEndDate));
+                        $res = $this->insertDB($data);
+                        $this->response['data'] = $res;
+                        $this->response['error'] =  null;  
                     }
                 }
 
