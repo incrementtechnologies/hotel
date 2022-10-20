@@ -559,6 +559,7 @@ class ReservationController extends APIController
 					$emailParams['status'] = $data['status'];
 					$emailParams['date_cancelled'] = Carbon::now()->format('F d, Y');
 					$emailParams['booking_status'] = $reservations['booking_status'];
+					$emailParams['carts'] = $reservations['carts'];
 				}
 				if(isset($data['account_id'])){
 					app('App\Http\Controllers\EmailController')->sendMyBookingUpdate($emailParams);
@@ -962,6 +963,7 @@ class ReservationController extends APIController
 			if($result !== null){
 				//Recipt email
 				$cart = app('Increment\Hotel\Room\Http\CartController')->retrieveAllByReservationId($result['id']);
+				$carts = app('Increment\Hotel\Room\Http\CartController')->getCartsWithCount($id);
 				$selectedCategory = '';
 				if(sizeof($cart) > 0){
 					for ($i=0; $i <= sizeof($cart)-1 ; $i++) { 
@@ -987,7 +989,8 @@ class ReservationController extends APIController
 						'check_out' => Carbon::createFromFormat('Y-m-d H:i:s', $cart[0]['check_out'])->copy()->tz($this->response['timezone'])->format('F j, Y'),
 						'room_type' => $selectedCategory,
 						'number_of_nights' => $nightsDays,
-						'add_ons' => $reserveDetails->selectedAddOn
+						'add_ons' => $reserveDetails->selectedAddOn,
+						'carts' => $carts
 					);
 					return app('App\Http\Controllers\EmailController')->receipt($result['account_id'], $receiptParams);
 				}
@@ -1008,12 +1011,15 @@ class ReservationController extends APIController
 		if(sizeof($temp) > 0){
 			for ($i=0; $i <= sizeof($temp)-1 ; $i++) { 
 				$item = $temp[$i];
+				
 				$roomTypes .= $item['qty'].' ' . $item['payload_value'] . ($i < (sizeOf($temp)-1) ? ', ' : '');
+				$carts = app('Increment\Hotel\Room\Http\CartController')->getCartsWithCount($item['reservation_id']);
 				$result['check_in'] = $item['check_in'];
 				$result['check_out'] = $item['check_out'];
 				$result['details'] = json_decode($item['details']);
 				$result['account_id'] = $item['account_id'];
 				$result['total'] = $item['total'];
+				$result['carts'] = $carts;
 				if($result['details']->payment_method == 'checkIn'){
 					$result['booking_status'] = 'Payment upon check-in';
 				}else if($result['details']->payment_method == 'bank'){
