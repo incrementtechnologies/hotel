@@ -151,6 +151,27 @@ class AvailabilityController extends APIController
                     $createNewBlock = $this->insertDB($data);
                     $this->response['data'] = $createNewBlock;
                     $this->response['error'] =  null;
+                }else if($existEndDate['start_date'] > $data['start_date']){
+                    $listDateWithinRange = [];
+                    $dateWithinTheRage = Availability::where('start_date', '>', $data['start_date'])->where('payload_value', '=', $data['payload_value'])->get();
+                    if(sizeof($dateWithinTheRage) > 0){
+                        for ($i=0; $i <= sizeof($dateWithinTheRage)-1; $i++) { 
+                            $item = $dateWithinTheRage[$i];
+                            if(Carbon::parse($item['end_date']) <= Carbon::parse($data['end_date'])){
+                                array_push($listDateWithinRange, $dateWithinTheRage[$i]);
+                            }
+                        }
+                        if(sizeof($listDateWithinRange) > 0){
+                            for ($a=0; $a <= sizeof($listDateWithinRange)-1; $a++) { 
+                                $each = $listDateWithinRange[$a];
+                                Availability::where('id', '=', $each['id'])->update(array('deleted_at' => Carbon::now()));
+                            }
+                            $res = $this->insertDB($data);
+                            $this->response['data'] = $res;
+                            $this->response['error'] = null;
+                            return $this->response();
+                        }
+                    }
                 }else{
                     $newStartDate = Carbon::parse($data['end_date'])->addDay();
                     $updateFirst = Availability::where('id', '=', $existEndDate['id'])->update(array('start_date' => $newStartDate));
