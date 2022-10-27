@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Http\Controllers\APIController;
 use Increment\Hotel\Room\Models\Availability;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Log;
 
 class AvailabilityController extends APIController
 {
@@ -20,7 +21,7 @@ class AvailabilityController extends APIController
         $tax = app('Increment\Hotel\Room\Http\RoomTypeController')->getTax($data['payload_value']);
         $data['room_price'] = floatval($data['room_price']) + floatval($tax);
         if($data['limit_per_day'] == 0){
-           $this->manageCreateUpdate($data);
+           $this->manageDates($data);
         }else{
             $exist  = Availability::where('payload_value', '=', $data['payload_value'])->where('start_date', '=', $data['start_date'])->where('end_date', '=', $data['end_date'])->where('add_on', '=', $data['add_on'])->where('limit_per_day', '>', 0)->first();
             if($exist !== null){
@@ -28,11 +29,115 @@ class AvailabilityController extends APIController
                 $update = $this->updateDB($data);
                 $this->response['data'] = $update;
             }else{
-                $this->manageCreateUpdate($data);
+                $this->manageDates($data);
             }
         }
 		return $this->response();
 	}
+
+    public function manageDates($data){
+        $data['start_date'] = Carbon::parse($data['start_date']);
+        $data['end_date'] = Carbon::parse($data['end_date']);
+        $existingDates = Availability::where('payload_value', '=', $data['payload_value'])
+        ->where(function($query)use($data){
+            $query->whereBetween('start_date', [$data['start_date'], $data['end_date']])
+                ->orWhereBetween('end_date', [$data['start_date'], $data['end_date']]);
+        })
+        ->where('add_on', '=', $data['add_on'])
+        ->orderBy('start_date', 'desc')
+        ->get();
+        if(sizeof($existingDates) > 0){
+            for ($i=0; $i <= sizeof($existingDates)-1 ; $i++) { 
+                $item = $existingDates[$i];
+                $item['start_date'] = Carbon::parse($item['start_date']);
+                $item['end_date'] = Carbon::parse($item['end_date']);
+                if($item['start_date'] == $data['start_date'] && $item['end_date'] > $data['date_date']){ // shorting the existing range with same start date
+                    Log::info('[FIRST======]');
+                    $newStartDate = Carbon::parse($data['end_date'])->addDay();
+                    $reInsertOld = Availability::where('id', '=', $item['id'])->update(array('start_date' => $newStartDate));
+                    if($reInsertOld){
+                        $this->model = new Availability();
+                        $this->insertDB($data);
+                    }
+                }else if($item['start_date'] == $data['start_date'] && $item['end_date'] <= $data['date_date']){ // expanding the existing range w/ same start date
+                    Log::info('[SECOND======]');
+                    $deleted = Availability::where('id', '=', $item['id'])->update(array('deleted_at' => Carbon::now()));
+                    if($deleted){
+                        $this->model = new Availability();
+                        $this->insertDB($data);
+                    }
+                }else if($data['start_date'] < $item['start_date'] && $data['end_date'] >= $item['end_date']){ // expanding the existing range w/ lesser start date but greater end date
+                    Log::info('[THIRD======]');
+                    $deleted = Availability::where('id', '=', $item['id'])->update(array('deleted_at' => Carbon::now()));
+                    if($deleted){
+                        $this->model = new Availability();
+                        $this->insertDB($data);
+                    }
+                }else if($data['start_date'] < $item['start_date'] && ($data['end_date'] >= $item['start_date'] && $data['end_date'] < $item['end_date'])){ //start date of existing range is within the given range
+                    Log::info('[FOURTH======]');
+                    $newStartDate = Carbon::parse($data['end_date'])->addDay();
+                    $reInsertOld = Availability::where('id', '=', $item['id'])->update(array('start_date' => $newStartDate));
+                    if($reInsertOld){
+                        $this->model = new Availability();
+                        $this->insertDB($data);
+                    }
+                }else if(($data['start_date'] > $item['start_date'] && $data['start_date'] <= $item['end_date']) && $data['end_date'] > $item['end_date']){ //end date of existing range is within the give range
+                    Log::info('[FIFTH======]');
+                    $newEndDate = Carbon::parse($data['start_date'])->subDays(1);
+                    $reInsertOld = Availability::where('id', '=', $item['id'])->update(array('end_date' => $newEndDate));
+                    if($reInsertOld){
+                        $this->model = new Availability();
+                        $this->insertDB($data);
+                    }
+                }else if($data['start_date'] < $item['start_date'] && $data['end_date'] < $item['start_date']){ //given range is within the existing range
+                    Log::info('[SIXTH======]');
+                    $deleted = Availability::where('id', '=', $item['id'])->update(array('deleted_at' => Carbon::now()));
+                    if($deleted){
+                        $newEndDate = Carbon::parse($data['start_date'])->subDays(1);
+                        $newStartDate = Carbon::parse($data['end_date'])->addDay();
+
+                        $newModel = new Availability();
+                        $newModel->payload = 'room_type';
+                        $newModel->payload_value = $item['payload_value'];
+                        $newModel->start_date = $item['start_date'];
+                        $newModel->end_date = $newEndDate;
+                        $newModel->limit_per_day = $item['limit_per_day'];
+                        $newModel->description = $item['description'];
+                        $newModel->room_price = $item['room_price'];
+                        $newModel->add_on = $item['add_on'];
+                        $newModel->status = $item['status'];
+                        $createNewEndOfFirst = $newModel->save();
+                        if($createNewEndOfFirst){
+                            $newModel = new Availability();
+                            $newModel->payload = 'room_type';
+                            $newModel->payload_value = $item['payload_value'];
+                            $newModel->start_date = $item['start_date'];
+                            $newModel->end_date = $newEndDate;
+                            $newModel->limit_per_day = $item['limit_per_day'];
+                            $newModel->description = $item['description'];
+                            $newModel->room_price = $item['room_price'];
+                            $newModel->add_on = $item['add_on'];
+                            $newModel->status = $item['status'];
+                            $createNewStartOfFirst = $newModel->save();
+                            if($createNewStartOfFirst){
+                                $this->model = new Availability();
+                                $this->insertDB($data);
+                            }
+                        }
+                    }
+                }else{
+                    $this->model = new Availability();
+                    $this->insertDB($data);
+                }
+            }
+            $this->response['data'] = 'updated';
+            return $this->response();
+        }else{
+            $this->model = new Availability();
+            $this->insertDB($data);
+            return $this->response();   
+        }
+    }
 
     public function manageCreateUpdate($data){
         //(1)get existing start date inside given start date;
@@ -46,7 +151,6 @@ class AvailabilityController extends APIController
         // update b1, then insert new data with (a), then insert the new data for b2
         //if (a) overlaps the end date of existing dates, cut the existing dates, and update it with new end_date, then insert the (a)
         //if (a) overlaps the start date of existing dates, cut the existing dates, and update it with new start_date, then insert the (a)
-
         $existStartDate = Availability::where('payload_value', '=', $data['payload_value'])
             // ->whereBetween('start_date', [Carbon::now(),$data['start_date']])
             // ->where('start_date', '<=', Carbon::now())
@@ -166,6 +270,24 @@ class AvailabilityController extends APIController
                             $this->response['data'] = $res;
                             $this->response['error'] = null;
                             return $this->response();
+                        }else if(Carbon::parse($existEndDate['start_date']) == Carbon::parse($data['end_date'])){
+                            $newStartDate = Carbon::parse($data['end_date'])->addDay();
+                            $updateFirst = Availability::where('id', '=', $existEndDate['id'])->update(array('start_date' => $newStartDate));
+                            if($updateFirst){
+                                $createNewBlock = $this->insertDB($data);
+                                $this->response['data'] = $createNewBlock;
+                                $this->response['error'] =  null;
+                            }
+                        }
+                    }else{
+                        if(Carbon::parse($existEndDate['start_date']) == Carbon::parse($data['end_date'])){
+                            $newStartDate = Carbon::parse($data['end_date'])->addDay();
+                            $updateFirst = Availability::where('id', '=', $existEndDate['id'])->update(array('start_date' => $newStartDate));
+                            if($updateFirst){
+                                $createNewBlock = $this->insertDB($data);
+                                $this->response['data'] = $createNewBlock;
+                                $this->response['error'] =  null;
+                            }
                         }
                     }
                 }else if($existEndDate['start_date'] > $data['end_date']){
