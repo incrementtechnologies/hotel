@@ -147,11 +147,7 @@ class AvailabilityController extends APIController
                 }
 
             }else if($existStartDate == null && $existEndDate != null){
-                if($existEndDate['start_date'] > $data['end_date']){
-                    $createNewBlock = $this->insertDB($data);
-                    $this->response['data'] = $createNewBlock;
-                    $this->response['error'] =  null;
-                }else if($existEndDate['start_date'] > $data['start_date']){
+                if($existEndDate['start_date'] > $data['start_date'] && $data['end_date'] <= $existEndDate['end_date']){
                     $listDateWithinRange = [];
                     $dateWithinTheRage = Availability::where('start_date', '>', $data['start_date'])->where('payload_value', '=', $data['payload_value'])->get();
                     if(sizeof($dateWithinTheRage) > 0){
@@ -172,6 +168,10 @@ class AvailabilityController extends APIController
                             return $this->response();
                         }
                     }
+                }else if($existEndDate['start_date'] > $data['end_date']){
+                    $createNewBlock = $this->insertDB($data);
+                    $this->response['data'] = $createNewBlock;
+                    $this->response['error'] =  null;
                 }else{
                     $newStartDate = Carbon::parse($data['end_date'])->addDay();
                     $updateFirst = Availability::where('id', '=', $existEndDate['id'])->update(array('start_date' => $newStartDate));
