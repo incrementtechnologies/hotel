@@ -56,41 +56,6 @@ class AvailabilityController extends APIController
             }
         }
         
-        // if($existStartDate != null && $existEndDate !== null){
-        //     if($existStartDate['id'] == $existEndDate['id']){
-        //         $deleted = Availability::where('id', '=', $existStartDate['id'])->update(array('deleted_at' => Carbon::now()));
-        //         if($deleted){
-        //             $newEndDate = Carbon::parse($data['start_date']);
-        //             $newStartDate = Carbon::parse($data['end_date']);
-
-        //             $newModel = new Availability();
-        //             $newModel->payload = 'room_type';
-        //             $newModel->payload_value = $existStartDate['payload_value'];
-        //             $newModel->start_date = $existStartDate['start_date'];
-        //             $newModel->end_date = $newEndDate->subDays(1);
-        //             $newModel->limit_per_day = $existStartDate['limit_per_day'];
-        //             $newModel->description = $existStartDate['description'];
-        //             $newModel->room_price = $existStartDate['room_price'];
-        //             $newModel->add_on = $existStartDate['add_on'];
-        //             $newModel->status = $existStartDate['status'];
-        //             $createNewEndOfFirst = $newModel->save();
-
-        //             $newModel = new Availability();
-        //             $newModel->payload = 'room_type';
-        //             $newModel->payload_value = $existEndDate['payload_value'];
-        //             $newModel->start_date = $existEndDate['start_date'];
-        //             $newModel->end_date = $newEndDate->addDay();
-        //             $newModel->limit_per_day = $existEndDate['limit_per_day'];
-        //             $newModel->description = $existEndDate['description'];
-        //             $newModel->room_price = $existEndDate['room_price'];
-        //             $newModel->add_on = $existEndDate['add_on'];
-        //             $newModel->status = $existEndDate['status'];
-        //             $createNewEndOfFirst = $newModel->save();
-                    
-        //             return $this->response['data'];
-        //         }
-        //     }
-        // }
         if($existStartDate != null){
             $esd = Carbon::parse($existStartDate['start_date']);
             $eed = Carbon::parse($existStartDate['end_date']);
@@ -133,10 +98,12 @@ class AvailabilityController extends APIController
                 ));
             }
         }
-        Availability::whereBetween('start_date', [$data['start_date'], $data['end_date']])
+        if($existStartDate && $existEndDate){
+            Availability::whereBetween('start_date', [$data['start_date'], $data['end_date']])
             ->whereBetween('end_date', [$data['start_date'], $data['end_date']])
             ->where('id', '!=', $this->response['data'])
             ->update(array('deleted_at' => Carbon::now()));
+        }
     }
 
     public function manageBlocking($data){
