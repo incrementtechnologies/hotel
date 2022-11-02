@@ -20,11 +20,7 @@ class AvailabilityController extends APIController
         $this->model = new Availability();
         $tax = app('Increment\Hotel\Room\Http\RoomTypeController')->getTax($data['payload_value']);
         $data['room_price'] = floatval($data['room_price']) + floatval($tax);
-        if($data['limit_per_day'] > 0){
-            $this->manageDates($data);
-        }else{
-            $this->manageBlocking($data);
-        }
+        $this->manageDates($data);
 		return $this->response();
 	}
 
