@@ -39,11 +39,12 @@ class AvailabilityController extends APIController
             ->where('add_on', '=', $data['add_on'])
             ->orderBy('end_date', 'asc')
             ->first();
+
         if($existStartDate && $existEndDate && $existEndDate['id'] == $existStartDate['id']){
             $sDate = $data['start_date'].' 00:00:00';
             $eDate = $data['end_date'].' 00:00:00';
 
-            if($sDate == $existStartDate['start_date'] && $eDate == $existStartDate['end_date']){
+            if($sDate == $existStartDate['start_date'] && $eDate == $existStartDate['end_date']){ //updating the same range
                 $updated = Availability::where('id', '=', $existStartDate['id'])->update(array(
                     'limit_per_day' => $data['limit_per_day'],
                     'add_on' => $data['add_on'],
@@ -61,12 +62,13 @@ class AvailabilityController extends APIController
             $eed = Carbon::parse($existStartDate['end_date']);
             $startDate = Carbon::parse($data['start_date']);
             $endDate = Carbon::parse($data['end_date']);
-            if($existStartDate['start_date'] != ($data['end_date'].' 00:00:00')){
+            if($existStartDate['start_date'] != ($data['end_date'].' 00:00:00')){ // updating existing range with new end date
                 $updated = Availability::where('id', '=', $existStartDate['id'])->update(array(
                     'end_date' => $startDate->subDays(1)
                 ));
             }else{
-                $updated = Availability::where('id', '=', $existStartDate['id'])->update(array(
+                //start date of exising range = end date of given range
+                $updated = Availability::where('id', '=', $existStartDate['id'])->update(array( // updating the existing range with new start date 
                     'start_date' => $startDate->addDay()
                 ));
             }
@@ -79,26 +81,47 @@ class AvailabilityController extends APIController
             $endDate = Carbon::parse($data['end_date']);
 
             if($existStartDate != null && $existStartDate['id'] == $existEndDate['id']){
-                // insert new date
-                $nStartDate = Carbon::parse($data['end_date']);
-                $newModel = new Availability();
-                $newModel->payload = 'room_type';
-                $newModel->payload_value = $existStartDate['payload_value'];
-                $newModel->start_date = $nStartDate->addDay();
-                $newModel->end_date = $existStartDate['end_date'];
-                $newModel->limit_per_day = $existStartDate['limit_per_day'];
-                $newModel->description = $existStartDate['description'];
-                $newModel->room_price = $existStartDate['room_price'];
-                $newModel->add_on = $existStartDate['add_on'];
-                $newModel->status = $existStartDate['status'];
-                $newModel->save();
+                if($startDate != $eed && $startDate != $esd){
+                    //continuing the other range for the cutted existing data
+                    // insert new date
+                    $nStartDate = Carbon::parse($data['end_date']);
+                    $newModel = new Availability();
+                    $newModel->payload = 'room_type';
+                    $newModel->payload_value = $existStartDate['payload_value'];
+                    $newModel->start_date = $nStartDate->addDay();
+                    $newModel->end_date = $existStartDate['end_date'];
+                    $newModel->limit_per_day = $existStartDate['limit_per_day'];
+                    $newModel->description = $existStartDate['description'];
+                    $newModel->room_price = $existStartDate['room_price'];
+                    $newModel->add_on = $existStartDate['add_on'];
+                    $newModel->status = $existStartDate['status'];
+                    $newModel->save();
+                }
+                
             }else{
-                $updated = Availability::where('id', '=', $existEndDate['id'])->update(array(
-                    'start_date' => $endDate->addDay()
-                ));
+                if($esd < $endDate && $endDate == $eed){
+                    //existing end date range is within the range of given data
+                    $updated = Availability::where('id', '=', $existEndDate['id'])->update(array(
+                        'deleted_at' => Carbon::now()
+                    ));
+                }else{
+                    //updating exising date range with new start date
+                    $updated = Availability::where('id', '=', $existEndDate['id'])->update(array(
+                        'start_date' => $endDate->addDay()
+                    ));
+                }
+                
             }
         }
         if($existStartDate && $existEndDate){
+            //deleting ranges not equal to inserted data which are within the given range
+            Availability::whereBetween('start_date', [$data['start_date'], $data['end_date']])
+            ->whereBetween('end_date', [$data['start_date'], $data['end_date']])
+            ->where('id', '!=', $this->response['data'])
+            ->update(array('deleted_at' => Carbon::now()));
+        }else if($existStartDate == null && $existEndDate == null){
+            //deleting all ranges within the given ranges
+            //expanding existing range with lesser start date and bigger end date
             Availability::whereBetween('start_date', [$data['start_date'], $data['end_date']])
             ->whereBetween('end_date', [$data['start_date'], $data['end_date']])
             ->where('id', '!=', $this->response['data'])
