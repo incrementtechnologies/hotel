@@ -39,6 +39,22 @@ class AvailabilityController extends APIController
             ->where('add_on', '=', $data['add_on'])
             ->orderBy('end_date', 'asc')
             ->first();
+        if($existStartDate && $existEndDate && $existEndDate['id'] == $existStartDate['id']){
+            $sDate = $data['start_date'].' 00:00:00';
+            $eDate = $data['end_date'].' 00:00:00';
+
+            if($sDate == $existStartDate['start_date'] && $eDate == $existStartDate['end_date']){
+                $updated = Availability::where('id', '=', $existStartDate['id'])->update(array(
+                    'limit_per_day' => $data['limit_per_day'],
+                    'add_on' => $data['add_on'],
+                    'status' => $data['status'],
+                    'description' => $data['description'],
+                    'room_price' => $data['room_price'],
+                    'updated_at' => Carbon::now()
+                ));
+                return 1;
+            }
+        }
         
         // if($existStartDate != null && $existEndDate !== null){
         //     if($existStartDate['id'] == $existEndDate['id']){
