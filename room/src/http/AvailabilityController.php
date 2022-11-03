@@ -37,7 +37,6 @@ class AvailabilityController extends APIController
             ->first();
 
         $this->insertData($data);
-
         if($existStartDate && $existEndDate){
             //deleting ranges not equal to inserted data which are within the given range
             Availability::whereBetween('start_date', [$data['start_date'], $data['end_date']])
@@ -53,12 +52,18 @@ class AvailabilityController extends APIController
             ->update(array('deleted_at' => Carbon::now()));
         }else if($existEndDate != null && $existStartDate == null){
             //remove all remaining ranges that are covered with the given range
+            //existing range is within the given range
             if($data['start_date'].' 00:00:00' < $existEndDate['start_date'] && $existEndDate['end_date'] <= $data['end_date'].' 00:00:00'){
                 Availability::whereBetween('start_date', [$data['start_date'], $data['end_date']])
                 ->whereBetween('end_date', [$data['start_date'], $data['end_date']])
                 ->where('id', '!=', $this->response['data'])
                 ->update(array('deleted_at' => Carbon::now()));
-            }
+            }else if($data['start_date'].' 00:00:00' < $existEndDate['start_date'] && ($existEndDate['start_date'] <= $data['end_date'].' 00:00:00' && $existEndDate['end_date'] > $data['end_date'].' 00:00:00')) {// only the start date of existing range is within the given range
+                Availability::whereBetween('start_date', [$data['start_date'], $data['end_date']])
+                ->whereBetween('end_date', [$data['start_date'], $data['end_date']])
+                ->where('id', '!=', $this->response['data'])
+                ->update(array('deleted_at' => Carbon::now()));
+            }  
         }
 
         if($existStartDate && $existEndDate && $existEndDate['id'] == $existStartDate['id']){
