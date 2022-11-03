@@ -59,9 +59,15 @@ class AvailabilityController extends APIController
             $startDate = Carbon::parse($data['start_date']);
             $endDate = Carbon::parse($data['end_date']);
             if($existStartDate['start_date'] != ($data['end_date'].' 00:00:00')){ // updating existing range with new end date
-                $updated = Availability::where('id', '=', $existStartDate['id'])->update(array(
-                    'end_date' => $startDate->subDays(1)
-                ));
+                if($esd == $startDate && $eed < $endDate){ //expanding exising range with same start date but greater end date
+                    $updated = Availability::where('id', '=', $existStartDate['id'])->update(array(
+                        'deleted_at' => Carbon::now()
+                    ));
+                }else{
+                    $updated = Availability::where('id', '=', $existStartDate['id'])->update(array(
+                        'end_date' => $startDate->subDays(1)
+                    ));
+                }
             }else{
                 //start date of exising range = end date of given range
                 $updated = Availability::where('id', '=', $existStartDate['id'])->update(array( // updating the existing range with new start date 
