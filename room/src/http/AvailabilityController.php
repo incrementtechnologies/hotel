@@ -35,7 +35,6 @@ class AvailabilityController extends APIController
             ->where('add_on', '=', $data['add_on'])
             ->orderBy('end_date', 'asc')
             ->first();
-
         if($existStartDate && $existEndDate && $existEndDate['id'] == $existStartDate['id']){
             $sDate = $data['start_date'].' 00:00:00';
             $eDate = $data['end_date'].' 00:00:00';
@@ -128,6 +127,14 @@ class AvailabilityController extends APIController
             ->whereBetween('end_date', [$data['start_date'], $data['end_date']])
             ->where('id', '!=', $this->response['data'])
             ->update(array('deleted_at' => Carbon::now()));
+        }else if($existEndDate != null && $existStartDate == null){
+            //remove all remaining ranges that are covered with the given range
+            if($data['start_date'].' 00:00:00' < $existEndDate['start_date'] && $existEndDate['end_date'] <= $data['end_date'].' 00:00:00'){
+                Availability::whereBetween('start_date', [$data['start_date'], $data['end_date']])
+                ->whereBetween('end_date', [$data['start_date'], $data['end_date']])
+                ->where('id', '!=', $this->response['data'])
+                ->update(array('deleted_at' => Carbon::now()));
+            }
         }
     }
 
