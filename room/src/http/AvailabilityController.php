@@ -39,11 +39,12 @@ class AvailabilityController extends APIController
         $this->insertData($data);
         if($existStartDate && $existEndDate){
             //deleting ranges not equal to inserted data which are within the given range
-            Availability::whereBetween('start_date', [$data['start_date'], $data['end_date']])
+            $temp = Availability::whereBetween('start_date', [$data['start_date'], $data['end_date']])
             ->whereBetween('end_date', [$data['start_date'], $data['end_date']])
             ->where('id', '!=', $this->response['data'])
             ->where('payload_value', '=', $data['payload_value'])
             ->where('add_on', '=', $data['add_on'])
+            // ->get();
             ->update(array('deleted_at' => Carbon::now()));
         }else if($existStartDate == null && $existEndDate == null){
             //deleting all ranges within the given ranges
@@ -73,7 +74,6 @@ class AvailabilityController extends APIController
                 ->update(array('deleted_at' => Carbon::now()));
             }  
         }
-
         if($existStartDate && $existEndDate && $existEndDate['id'] == $existStartDate['id']){
             $sDate = $data['start_date'].' 00:00:00';
             $eDate = $data['end_date'].' 00:00:00';
@@ -102,9 +102,15 @@ class AvailabilityController extends APIController
                         'deleted_at' => Carbon::now()
                     ));
                 }else{
-                    $updated = Availability::where('id', '=', $existStartDate['id'])->update(array(
-                        'end_date' => $startDate->subDays(1)
-                    ));
+                    if($esd == $startDate && $endDate < $eed){
+                        $updated = Availability::where('id', '=', $existStartDate['id'])->update(array(
+                            'start_date' => $endDate->addDay()
+                        ));
+                    }else{
+                        $updated = Availability::where('id', '=', $existStartDate['id'])->update(array(
+                            'end_date' => $startDate->subDays(1)
+                        ));
+                    }
                 }
             }else{
                 //start date of exising range = end date of given range
@@ -136,7 +142,6 @@ class AvailabilityController extends APIController
                     $newModel->status = $existStartDate['status'];
                     $newModel->save();
                 }
-                
             }else{
                 if($esd < $endDate && $endDate == $eed){
                     //existing end date range is within the range of given data
