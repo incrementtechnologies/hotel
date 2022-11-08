@@ -42,6 +42,8 @@ class AvailabilityController extends APIController
             Availability::whereBetween('start_date', [$data['start_date'], $data['end_date']])
             ->whereBetween('end_date', [$data['start_date'], $data['end_date']])
             ->where('id', '!=', $this->response['data'])
+            ->where('payload_value', '=', $data['payload_value'])
+            ->where('add_on', '=', $data['add_on'])
             ->update(array('deleted_at' => Carbon::now()));
         }else if($existStartDate == null && $existEndDate == null){
             //deleting all ranges within the given ranges
@@ -49,6 +51,8 @@ class AvailabilityController extends APIController
             Availability::whereBetween('start_date', [$data['start_date'], $data['end_date']])
             ->whereBetween('end_date', [$data['start_date'], $data['end_date']])
             ->where('id', '!=', $this->response['data'])
+            ->where('payload_value', '=', $data['payload_value'])
+            ->where('add_on', '=', $data['add_on'])
             ->update(array('deleted_at' => Carbon::now()));
         }else if($existEndDate != null && $existStartDate == null){
             //remove all remaining ranges that are covered with the given range
@@ -57,11 +61,15 @@ class AvailabilityController extends APIController
                 Availability::whereBetween('start_date', [$data['start_date'], $data['end_date']])
                 ->whereBetween('end_date', [$data['start_date'], $data['end_date']])
                 ->where('id', '!=', $this->response['data'])
+                ->where('payload_value', '=', $data['payload_value'])
+                ->where('add_on', '=', $data['add_on'])
                 ->update(array('deleted_at' => Carbon::now()));
             }else if($data['start_date'].' 00:00:00' < $existEndDate['start_date'] && ($existEndDate['start_date'] <= $data['end_date'].' 00:00:00' && $existEndDate['end_date'] > $data['end_date'].' 00:00:00')) {// only the start date of existing range is within the given range
                 Availability::whereBetween('start_date', [$data['start_date'], $data['end_date']])
                 ->whereBetween('end_date', [$data['start_date'], $data['end_date']])
                 ->where('id', '!=', $this->response['data'])
+                ->where('payload_value', '=', $data['payload_value'])
+                ->where('add_on', '=', $data['add_on'])
                 ->update(array('deleted_at' => Carbon::now()));
             }  
         }
