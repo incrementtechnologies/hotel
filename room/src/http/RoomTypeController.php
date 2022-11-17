@@ -362,4 +362,23 @@ class RoomTypeController extends APIController
     public function retrieveByParams($id){
       return Payload::where('id', '=', $id)->first();
     }
+    
+
+    public function getDetails($category, $details){
+      $details = json_decode($details, true);
+      $temp = Payload::where('id', '=', $category)
+          ->select('id', 'payload_value as room_type', 'capacity', 'category as general_description', 'details as general_features', 'tax', 'price_label')
+          ->first();
+      if($temp !== null){
+          $details['general_features'] = json_decode($temp['general_features'], true);
+          $details['description'] = json_decode($temp['description'], true);
+          $details['general_description'] = $temp['general_description'];
+          $details['images'] = app('Increment\Hotel\Room\Http\ProductImageController')->retrieveImageByStatus($temp['categoryId'], 'room_type');
+          $details['room_type'] = $temp['room_type'];
+          $details['categoryId'] = $temp['id'];
+          $details['capacity'] = $temp['capacity'];
+          $details['tax'] = $temp['tax'];
+      }
+      return $details;
+  }
 }

@@ -41,6 +41,7 @@ class CartController extends APIController
                                 'reservation_id' => $getReservation[0]['id'],
                                 'qty' => $data['qty'],
                                 'status' => $getReservation[0]['status'],
+                                'details' => $data['details'],
                                 'check_in' => $createdCart['check_in'],
                                 'check_out' => $createdCart['check_out']
                             );
@@ -129,7 +130,7 @@ class CartController extends APIController
                 ->where('reservation_id', '=', $reservationId[0]['id'])
                 ->where('deleted_at', '=', null)
                 ->groupBy('carts.price_id')
-                ->get(['id', 'qty', 'carts.status', 'price_id', 'reservation_id', 'check_in', 'check_out', 'category_id', DB::raw('Sum(qty) as checkoutQty')]);
+                ->get(['id', 'qty', 'details', 'carts.status', 'price_id', 'reservation_id', 'check_in', 'check_out', 'category_id', DB::raw('Sum(qty) as checkoutQty')]);
         }else{
             $result = Cart::where('carts.account_id', '=', $data['account_id'])
                 ->where(function($query){
@@ -138,7 +139,7 @@ class CartController extends APIController
                 })
                 ->where('deleted_at', '=', null)
                 ->groupBy('carts.price_id')
-                ->get(['id', 'qty', 'carts.status', 'price_id', 'reservation_id',  'check_in', 'check_out', 'category_id', DB::raw('Sum(qty) as checkoutQty')]);
+                ->get(['id', 'qty', 'details', 'carts.status', 'price_id', 'reservation_id',  'check_in', 'check_out', 'category_id', DB::raw('Sum(qty) as checkoutQty')]);
         }
         $reserve = [];
         $reservation = [];
@@ -157,7 +158,7 @@ class CartController extends APIController
                     $result[$i]['reservation_details'] = $reservation;
                     $result[$i]['code'] = sizeOf($reservation) > 0 ? $reservation[0]['code'] : null;
                     $result[$i]['reservation_code'] = sizeOf($reservation) > 0 ? $reservation[0]['reservation_code'] : null;
-                    $result[$i]['rooms'] = app('Increment\Hotel\Room\Http\AvailabilityController')->getDetails($item['category_id'], $item['check_in']);
+                    $result[$i]['rooms'] = app('Increment\Hotel\Room\Http\RoomTypeController')->getDetails($item['category_id'], $item['details']);
                     // if($result[$i]['rooms'][0]['label'] === 'MONTH'){
                     //     $nightsDays = $end->diffInMonths($start);
                     // }
@@ -204,12 +205,12 @@ class CartController extends APIController
     public function retrieveCartWithRooms($reservation_id){
         $result = Cart::where('reservation_id', '=', $reservation_id)
             ->groupBy('carts.price_id')
-            ->get(['qty', 'reservation_id', 'price_id', 'check_in', 'check_out', 'category_id', DB::raw('Sum(qty) as checkoutQty')]);
+            ->get(['qty', 'details', 'reservation_id', 'price_id', 'check_in', 'check_out', 'category_id', DB::raw('Sum(qty) as checkoutQty')]);
         if(sizeof($result) > 0 ){
             for ($i=0; $i <= sizeof($result) -1; $i++) {
                 $temp = [];
                 $item = $result[$i];
-                $rooms = app('Increment\Hotel\Room\Http\AvailabilityController')->getDetails($item['category_id'], $item['check_in']);
+                $rooms = app('Increment\Hotel\Room\Http\RoomTypeController')->getDetails($item['category_id'], $item['details']);
                 $result[$i]['rooms'] = $rooms;
                 if($rooms !== null){
                     $booking = app('Increment\Hotel\Reservation\Http\ReservationController')->retrieveBookingsByParams('reservation_id',  $item['reservation_id']);
@@ -309,12 +310,12 @@ class CartController extends APIController
         }
         if($params['method'] === 'update'){
             $result = Cart::where($whereArray)
-            ->select('id', 'qty', 'price_id', 'reservation_id', 'check_in', 'check_out', 'category_id')
+            ->select('id', 'details', 'qty', 'price_id', 'reservation_id', 'check_in', 'check_out', 'category_id')
             ->get();
             $checkoutQty = Cart::where($whereArray)->sum('qty');
         }else{
             $result = Cart::where($whereArray)
-            ->select('id', 'qty', 'price_id', 'reservation_id', 'check_in', 'check_out', 'category_id')
+            ->select('id', 'details', 'qty', 'price_id', 'reservation_id', 'check_in', 'check_out', 'category_id')
             ->get();
             $checkoutQty = Cart::where($whereArray)->sum('qty');
         }
@@ -325,7 +326,7 @@ class CartController extends APIController
                 $reservation =app('Increment\Hotel\Reservation\Http\ReservationController')->retrieveReservationByParams('id', $item['reservation_id'], ['code']);
                 $result[$i]['reservation_code'] = sizeOf($reservation) > 0 ? $reservation[0]['code'] : null;
                 $result[$i]['checkoutQty'] = $checkoutQty;
-                $result[$i]['rooms'] = app('Increment\Hotel\Room\Http\AvailabilityController')->getDetails($item['category_id'], $item['check_in']);
+                $result[$i]['rooms'] = app('Increment\Hotel\Room\Http\RoomTypeController')->getDetails($item['category_id'], $item['details']);
 
                 $exist = array_filter($final, function($each)use($item){
                     return $each['category_id'] == $item['category_id'] && $each['rooms']['add_on'] == $item['rooms']['add_on'] && $each['rooms']['room_price'] == $item['rooms']['room_price'];

@@ -8,6 +8,7 @@ use Increment\Hotel\Room\Models\Availability;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
 
+
 class AvailabilityController extends APIController
 {
     function __construct(){
@@ -400,24 +401,6 @@ class AvailabilityController extends APIController
             }
         }
         return false;
-    }
-
-    public function getDetails($category, $startDate){
-        $startDate = Carbon::parse($startDate)->format('Y-m-d');
-        $temp = Availability::leftJoin('payloads as T1', 'T1.id', '=', 'availabilities.payload_value')
-            ->where('availabilities.start_date', '<=', $startDate)
-            ->where('availabilities.end_date', '>=', $startDate)
-            ->where('availabilities.payload_value', '=', $category)
-            ->select('availabilities.id as availabilityId', 'T1.id as categoryId', 'T1.payload_value as room_type', 'availabilities.*', 'T1.capacity',
-            'T1.category as general_description', 'T1.details as general_features', 'T1.tax', 'T1.price_label', 'limit_per_day')
-            ->first();
-        if($temp !== null){
-            $temp['general_features'] = json_decode($temp['general_features'], true);
-            $temp['description'] = json_decode($temp['description'], true);
-            $temp['general_description'] = $temp['general_description'];
-            $temp['images'] = app('Increment\Hotel\Room\Http\ProductImageController')->retrieveImageByStatus($temp['categoryId'], 'room_type');
-        }
-        return $temp;
     }
 
     public function retrieveByIds($categoryId, $startDate){
