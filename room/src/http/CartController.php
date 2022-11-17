@@ -27,6 +27,7 @@ class CartController extends APIController
             $getReservation = app('Increment\Hotel\Reservation\Http\ReservationController')->retrieveReservationByParams('reservation_code', $data['reservation_code'], ['id', 'status']);
             if(sizeof($getReservation) > 0){
                 $existingCart = Cart::where('reservation_id', '=', $getReservation[0]['id'])
+                    ->where('account_id', '=', $data['account_id'])
                     ->where('check_in', 'like', '%'.$data['check_in'].'%')
                     ->where('check_out', 'like', '%'.$data['check_out'].'%')->get();
                 if(sizeof($existingCart) <= 0){
