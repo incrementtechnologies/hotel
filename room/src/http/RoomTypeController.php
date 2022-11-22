@@ -167,6 +167,7 @@ class RoomTypeController extends APIController
         array('payloads.capacity', '<=', $data['adults']),
         array('T1.room_price', '>=', $data['min']),
         array('T1.room_price', '<=', $data['max']),
+        array('T1.deleted_at', '=', null)
         // array('T1.id', '=', 21),
       );
       if($data['priceType'] !== null){
@@ -258,6 +259,8 @@ class RoomTypeController extends APIController
       $whereArray = array(
         array('payloads.payload', '=', 'room_type'),
         array('T1.limit_per_day', '>', 0),
+        array('T1.status', '=', 'available'),
+        array('T1.deleted_at', '=', null),
         array('payloads.capacity', '<=', $data['filter']['adults']),
         array('payloads.id', '=', $data['category_id']),
         array('T1.room_price', '>=', $data['filter']['min']),
@@ -291,6 +294,7 @@ class RoomTypeController extends APIController
         ->orderBy('T1.room_price', 'asc')
         ->get(['T1.id as availabilityId', 'payloads.id as categoryId', 'payloads.payload_value as room_type', 'T1.*', 'payloads.capacity',
          'payloads.person_rate', 'payloads.category as general_description', 'payloads.details as general_features', 'payloads.tax', 'payloads.price_label', 'payloads.code']);
+      // dd($temp);
       $result = [];
       $finalResult = [];
       if(sizeof($temp) > 0){
@@ -309,6 +313,8 @@ class RoomTypeController extends APIController
           $temp[$i]['remaining_qty'] = $item['limit_per_day'] - $cartReservation;
           if($cartReservation != $item['limit_per_day']){
             if(Carbon::parse($data['filter']['check_in']) >= Carbon::parse($item['start_date']) && Carbon::parse($data['filter']['check_in']) <= Carbon::parse($item['end_date'])){
+              // dd($temp[$i]);
+              // dd(Carbon::parse($data['filter']['check_in']), Carbon::parse($item['start_date']), Carbon::parse($data['filter']['check_in']), Carbon::parse($item['end_date']));
               array_push($result, $temp[$i]);
             }
           }
