@@ -431,4 +431,48 @@ class AvailabilityController extends APIController
             return $temp['limit_per_day'];
         }
     }
+
+    public function hasNotAvailableDates($category, $checkIn, $checkOut, $addOn){
+        $whereArray = array(
+            array('payload_value', '=', $category),
+        );
+        if($addOn !== null){
+            $whereArray[] = array('add_on', '=', $addOn);
+        }
+        $res = Availability::where($whereArray)->get();
+        $checkIn = Carbon::parse($checkIn);
+        $checkOut = Carbon::parse($checkOut);
+        $temp1 = [];
+        $temp2 = [];
+        for ($i=0; $i <= sizeof($res)-1 ; $i++) { 
+            $item = $res[$i];
+            $item['start_date'] = Carbon::parse($item['start_date']);
+            $item['end_date'] = Carbon::parse($item['end_date']);
+            if($item['start_date'] <= $checkOut){
+                array_push($temp1, $item);
+            }
+        }
+        if(sizeof($temp1) > 0){
+            for ($i=0; $i <= sizeof($temp1)-1 ; $i++) { 
+                $item = $temp1[$i];
+                if(($item['start_date'] < $checkIn && $item['end_date'] < $checkIn) || ($item['start_date'] > $checkOut && $item['end_date'] > $checkOut)){
+
+                }else{
+                    array_push($temp2, $item);
+                }
+            }
+        }
+        if(sizeof($temp2) > 0){
+            $hasNotAvailable = array_filter($temp2, function($item){
+                return $item['limit_per_day'] <= 0;
+            });
+            if(sizeof($hasNotAvailable) > 0){
+                return true;
+            }else{
+                return false;
+            }
+        }else{
+            return true;
+        }
+    }
 }
