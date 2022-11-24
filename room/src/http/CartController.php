@@ -74,7 +74,8 @@ class CartController extends APIController
                 ->orWhere('status', '=', 'in_progress');
             })->where('deleted_at', '=', null)
             ->sum('qty');
-        $availability = app('Increment\Hotel\Room\Http\AvailabilityController')->retrieveByIds($data['category_id'], $data['check_in'], $data['rooms']['add_on']);
+        $cartDetails = json_decode($data['details'], true);
+        $availability = app('Increment\Hotel\Room\Http\AvailabilityController')->retrieveByIds($data['category_id'], $data['check_in'], $cartDetails['add-on']);
         if($existingCart != null && sizeof($emptyCart) > 0){
             $this->response['data'] = [];
             $this->response['error'] = 'You had previously added rooms with this email with different dates in your cart. Kindly remove or checkout these rooms to proceed';
