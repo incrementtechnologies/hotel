@@ -332,7 +332,7 @@ class CartController extends APIController
                 $result[$i]['rooms'] = app('Increment\Hotel\Room\Http\RoomTypeController')->getDetails($item['category_id'], $item['details']);
                 $result[$i]['limit_per_day'] = $availabilty['limit_per_day'];
                 $exist = array_filter($final, function($each)use($item){
-                    return $each['category_id'] == $item['category_id'] && $each['rooms']['add_on'] == $item['rooms']['add_on'] && $each['rooms']['room_price'] == $item['rooms']['room_price'];
+                    return $each['category_id'] == $item['category_id'] && $each['rooms']['add-on'] == $item['rooms']['add-on'] && $each['rooms']['room_price'] == $item['rooms']['room_price'];
                 });
                 if(sizeof($exist) <= 0){
                     array_push($final, $result[$i]);
