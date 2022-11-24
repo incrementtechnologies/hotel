@@ -225,9 +225,12 @@ class RoomTypeController extends APIController
           $cartReservation = app('Increment\Hotel\Room\Http\CartController')->countDailyCarts($item['start_date'], $item['availabilityId'], $item['category_id']);
           $hasNotAvailable = app('Increment\Hotel\Room\Http\AvailabilityController')->hasNotAvailableDates($item['category_id'], $data['check_in'], $data['check_out'], $item['add_on']);
           if(!$hasNotAvailable && $cartReservation != $item['limit_per_day']){
-            // if(Carbon::parse($item['start_date']) <= Carbon::parse($data['check_in']) && Carbon::parse($item['end_date']) >= Carbon::parse($data['check_in'])){
+            if(Carbon::parse($item['start_date']) <= Carbon::parse($data['check_in']) && Carbon::parse($item['end_date']) >= Carbon::parse($data['check_in'])){
               array_push($result, $temp[$i]);
-            //}
+            }
+            if(Carbon::parse($item['start_date']) <= Carbon::parse($data['check_out']) && Carbon::parse($item['end_date']) >= Carbon::parse($data['check_out'])){
+              array_push($result, $temp[$i]);
+            }
           }
         }
       }
@@ -238,7 +241,9 @@ class RoomTypeController extends APIController
           return $el['category_id'] == $each['category_id'];
         });
         if(sizeof($exist) <= 0){
-          array_push($finalResult, $each);
+          if(Carbon::parse($each['start_date']) <= Carbon::parse($data['check_in'])){
+            array_push($finalResult, $each);
+          }
         }
       }
       $this->response['size'] = sizeOf($finalResult);
@@ -291,7 +296,7 @@ class RoomTypeController extends APIController
 
       $temp = Payload::leftJoin('availabilities as T1', 'T1.payload_value', '=', 'payloads.id')->where($whereArray)
         // ->groupBy('T1.room_price')
-        ->orderBy('T1.room_price', 'asc')
+        ->orderBy('T1.start_date', 'desc')
         ->get(['T1.id as availabilityId', 'payloads.id as categoryId', 'payloads.payload_value as room_type', 'T1.*', 'payloads.capacity',
          'payloads.person_rate', 'payloads.category as general_description', 'payloads.details as general_features', 'payloads.tax', 'payloads.price_label', 'payloads.code']);
       // dd($temp);
@@ -314,17 +319,24 @@ class RoomTypeController extends APIController
           // if($cartReservation != $item['limit_per_day']){
           $hasNotAvailable = app('Increment\Hotel\Room\Http\AvailabilityController')->hasNotAvailableDates($item['categoryId'], $data['filter']['check_in'], $data['filter']['check_out'], $item['add_on']);
           if(!$hasNotAvailable && $cartReservation != $item['limit_per_day']){
-            array_push($result, $temp[$i]);
+            if(Carbon::parse($item['start_date']) <= Carbon::parse($data['filter']['check_in']) && Carbon::parse($item['end_date']) >= Carbon::parse($data['filter']['check_in'])){
+              array_push($result, $temp[$i]);
+            }
+            if(Carbon::parse($item['start_date']) <= Carbon::parse($data['filter']['check_out']) && Carbon::parse($item['end_date']) >= Carbon::parse($data['filter']['check_out'])){
+              array_push($result, $temp[$i]);
+            }
           }
         }
         // dd($result);
         for ($a=0; $a <= sizeof($result)-1 ; $a++) { 
           $each = $result[$a];
           $exist = array_filter($finalResult, function($el)use($each){
-            return $el['add_on'] == $each['add_on'] && $el['categoryId'] == $each['categoryId'] && $each['tax'] == $el['tax'];
+            return $el['add_on'] == $each['add_on'] && $el['categoryId'] == $each['categoryId'] && $each['tax'] == $el['tax'] && $each['room_price'] == $el['room_price'];
           });
           if(sizeof($exist) <= 0){
-            array_push($finalResult, $each);
+            if(Carbon::parse($each['start_date']) <= Carbon::parse($data['filter']['check_in'])){
+              array_push($finalResult, $each);
+            }
           }
         }
       }
