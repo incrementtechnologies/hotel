@@ -403,9 +403,9 @@ class AvailabilityController extends APIController
         return false;
     }
 
-    public function retrieveByIds($categoryId, $startDate){
+    public function retrieveByIds($categoryId, $startDate, $addOn){
         $startDate= Carbon::parse($startDate)->format('Y-m-d');
-        $result = Availability::where('payload_value', '=', $categoryId)->where('start_date', '<=', $startDate)->where('end_date', '>=', $startDate)->first();
+        $result = Availability::where('payload_value', '=', $categoryId)->where('start_date', '<=', $startDate)->where('end_date', '>=', $startDate)->where('add_on', '=', $addOn)->first();
         if($result !== null){
             $result['description'] = json_decode($result['description'], true);
         }

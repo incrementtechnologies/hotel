@@ -74,7 +74,7 @@ class CartController extends APIController
                 ->orWhere('status', '=', 'in_progress');
             })->where('deleted_at', '=', null)
             ->sum('qty');
-        $availability = app('Increment\Hotel\Room\Http\AvailabilityController')->retrieveByIds($data['category_id'], $data['check_in']);
+        $availability = app('Increment\Hotel\Room\Http\AvailabilityController')->retrieveByIds($data['category_id'], $data['check_in'], $data['rooms']['add_on']);
         if($existingCart != null && sizeof($emptyCart) > 0){
             $this->response['data'] = [];
             $this->response['error'] = 'You had previously added rooms with this email with different dates in your cart. Kindly remove or checkout these rooms to proceed';
@@ -324,11 +324,13 @@ class CartController extends APIController
         if(sizeof($result) > 0 ){
             for ($i=0; $i <= sizeof($result) -1; $i++) { 
                 $item = $result[$i];
+                $addOn = json_decode($item['details'], true);
                 $reservation =app('Increment\Hotel\Reservation\Http\ReservationController')->retrieveReservationByParams('id', $item['reservation_id'], ['code']);
+                $availabilty = app('Increment\Hotel\Room\Http\AvailabilityController')->retrieveByIds($item['category_id'], $item['check_in'], $addOn['add-on']);
                 $result[$i]['reservation_code'] = sizeOf($reservation) > 0 ? $reservation[0]['code'] : null;
                 $result[$i]['checkoutQty'] = $checkoutQty;
                 $result[$i]['rooms'] = app('Increment\Hotel\Room\Http\RoomTypeController')->getDetails($item['category_id'], $item['details']);
-
+                $result[$i]['limit_per_day'] = $availabilty['limit_per_day'];
                 $exist = array_filter($final, function($each)use($item){
                     return $each['category_id'] == $item['category_id'] && $each['rooms']['add_on'] == $item['rooms']['add_on'] && $each['rooms']['room_price'] == $item['rooms']['room_price'];
                 });
@@ -433,7 +435,8 @@ class CartController extends APIController
         if(sizeof($temp) > 0){
             for ($i=0; $i <= sizeof($temp)-1 ; $i++) { 
                 $item = $temp[$i];
-                $roomDetails = app('Increment\Hotel\Room\Http\AvailabilityController')->retrieveByIds($item['category_id'], $item['check_in']);
+                $addOn = json_decode($item['details'], true);
+                $roomDetails = app('Increment\Hotel\Room\Http\AvailabilityController')->retrieveByIds($item['category_id'], $item['check_in'], $addOn['add-on']);
                 $roomType = app('Increment\Hotel\Room\Http\RoomTypeController')->getById($item['category_id']);
                 if($roomDetails != null){
                     if($roomDetails['add_on'] == 'With Breakfast'){
