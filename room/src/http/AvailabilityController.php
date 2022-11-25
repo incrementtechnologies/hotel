@@ -488,20 +488,21 @@ class AvailabilityController extends APIController
             $eED = Carbon::parse($temp['end_date']);
             $res = Availability::where('id', '!=', $temp['id'])->where('start_date', '>=', $temp['start_date'])->where('start_date', '<=', $endDate)->where('add_on', '=', $addOn)->where('payload_value', '=', $category)->get();
             if(sizeof($res) > 0){
-                for ($i=0; $i <= sizeof($res)-1; $i++) { 
+                for ($i=0; $i <= sizeof($res)-1; $i++) {
                     $item = $res[$i];
                     if(Carbon::parse($item['start_date']) > $startDate && Carbon::parse($item['end_date']) == $endDate){
                         $day = $this->getDiffDates($item['start_date'], $item['end_date'], true);
                         $sum += ((float)$item['room_price'] * $day);
-                        break;
                     }else if(Carbon::parse($item['start_date']) > $startDate && Carbon::parse($item['end_date']) < $endDate){
-                        $day = $this->getDiffDates($item['start_date'], $endDate, true);
-                        $sum += ((float)$item['room_price'] * $day);
-                        break;
+                        if(Carbon::parse($item['start_date']) == Carbon::parse($item['end_date'])){
+                            $sum += ((float)$item['room_price']);
+                        }else{
+                            $day = $this->getDiffDates($item['start_date'], $endDate, true);
+                            $sum += ((float)$item['room_price'] * $day);
+                        }
                     }else if(Carbon::parse($item['start_date']) > $startDate && Carbon::parse($item['end_date']) > $endDate){
                         $day = $this->getDiffDates($item['start_date'], $endDate, true);
                         $sum += ((float)$item['room_price'] * $day);
-                        break;
                     }
                 }
                 $price = ((float)$temp['room_price'] + $sum) / ($this->getDiffDates($startDate, $endDate, true));
@@ -509,6 +510,7 @@ class AvailabilityController extends APIController
             }else{
                 $day = $this->getDiffDates($startDate, $endDate, true);
                 $sum += ((float)$temp['room_price'] * $day);
+
                 $price = $sum / $this->getDiffDates($startDate, $endDate, true);
                 return number_format((float)$price, 2, '.', ''); 
             }
