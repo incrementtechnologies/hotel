@@ -486,8 +486,7 @@ class AvailabilityController extends APIController
             $day = 0;
             $eSD = Carbon::parse($temp['start_date']);
             $eED = Carbon::parse($temp['end_date']);
-            $res = Availability::where('id', '!=', $temp['id'])->where('start_date', '>=', $temp['start_date'])->where('start_date', '<=', $endDate)->where('add_on', '=', $addOn)->where('payload_value', '=', $category)->get();
-            // dd($res);
+            $res = Availability::where('id', '!=', $temp['id'])->where('start_date', '>=', $temp['start_date'])->where('start_date', '<', $endDate)->where('add_on', '=', $addOn)->where('payload_value', '=', $category)->orderBy('start_date', 'asc')->get();
             if(sizeof($res) > 0){
                 for ($i=0; $i <= sizeof($res)-1; $i++) {
                     $item = $res[$i];
@@ -511,7 +510,7 @@ class AvailabilityController extends APIController
                     }
                 }
                 $price = ((float)$temp['room_price'] + $sum) / ($this->getDiffDates($startDate, $endDate, true));
-                return number_format((float)$price, 2, '.', ''); 
+                return number_format((float)$price, 2, '.', '');
             }else{
                 $day = $this->getDiffDates($startDate, $endDate, true);
                 $sum += ((float)$temp['room_price'] * $day);
