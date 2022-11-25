@@ -482,12 +482,41 @@ class AvailabilityController extends APIController
         $endDate = Carbon::parse($endDate);
         $days = $startDate->diffInDays($endDate);
         if($temp){
+            $sum = 0;
+            $day = 0;
             $eSD = Carbon::parse($temp['start_date']);
             $eED = Carbon::parse($temp['end_date']);
-            $res = Availability::where('id', '!=', $temp['id'])->where('start_date', '>=', $temp['start_date'])->where('start_date', '<=', $endDate)->where('add_on', '=', $addOn)->where('payload_value', '=', $category)->sum('room_price');
-            return ((float)$temp['room_price'] + $res) / 1; 
+            $res = Availability::where('id', '!=', $temp['id'])->where('start_date', '>=', $temp['start_date'])->where('start_date', '<=', $endDate)->where('add_on', '=', $addOn)->where('payload_value', '=', $category)->get();
+            if(sizeof($res) > 0){
+                for ($i=0; $i <= sizeof($res)-1; $i++) { 
+                    $item = $res[$i];
+                    if(Carbon::parse($item['start_date']) > $startDate && Carbon::parse($item['end_date']) == $endDate){
+                        $day = $this->getDiffDates($item['start_date'], $item['end_date'], true);
+                        $sum += ((float)$item['room_price'] * $day);
+                        break;
+                    }else if(Carbon::parse($item['start_date']) > $startDate && Carbon::parse($item['end_date']) < $endDate){
+                        $day = $this->getDiffDates($item['start_date'], $endDate, true);
+                        $sum += ((float)$item['room_price'] * $day);
+                        break;
+                    }
+                }
+            }
+            return ((float)$temp['room_price'] + $sum) / ($this->getDiffDates($startDate, $endDate, true) - $day); 
         }else{
             return 0;
         }
-    }   
+    }
+
+    public function getDiffDates($startDate, $endDate, $flag){
+        if($flag == true){
+            $days = Carbon::parse($startDate)->addHour(2)->diffInDays(Carbon::parse($endDate)->addHour(12));
+            return $days;
+        }else{
+            $sD2 = Carbon::parse($endDate)->startOfDay();
+            $eD2  = Carbon::parse($endDate)->endOfDay();
+            $day2 = round((strtotime($eD2) - strtotime($sD2)) / 3600);
+
+            return $day2 / 24;
+        }
+    }
 }
