@@ -498,6 +498,10 @@ class AvailabilityController extends APIController
                         $day = $this->getDiffDates($item['start_date'], $endDate, true);
                         $sum += ((float)$item['room_price'] * $day);
                         break;
+                    }else if(Carbon::parse($item['start_date']) > $startDate && Carbon::parse($item['end_date']) > $endDate){
+                        $day = $this->getDiffDates($item['start_date'], $endDate, true);
+                        $sum += ((float)$item['room_price'] * $day);
+                        break;
                     }
                 }
             }
