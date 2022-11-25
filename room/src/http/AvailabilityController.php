@@ -509,7 +509,7 @@ class AvailabilityController extends APIController
             }else{
                 $day = $this->getDiffDates($temp['start_date'], $endDate, true);
                 $sum += ((float)$temp['room_price'] * $day);
-                $price = $sum;
+                $price = $sum / $day;
                 return number_format((float)$price, 2, '.', ''); 
             }
         }else{
