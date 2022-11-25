@@ -487,17 +487,22 @@ class AvailabilityController extends APIController
             $eSD = Carbon::parse($temp['start_date']);
             $eED = Carbon::parse($temp['end_date']);
             $res = Availability::where('id', '!=', $temp['id'])->where('start_date', '>=', $temp['start_date'])->where('start_date', '<=', $endDate)->where('add_on', '=', $addOn)->where('payload_value', '=', $category)->get();
+            // dd($res);
             if(sizeof($res) > 0){
                 for ($i=0; $i <= sizeof($res)-1; $i++) {
                     $item = $res[$i];
                     if(Carbon::parse($item['start_date']) > $startDate && Carbon::parse($item['end_date']) == $endDate){
-                        $day = $this->getDiffDates($item['start_date'], $item['end_date'], true);
-                        $sum += ((float)$item['room_price'] * $day);
+                        if(Carbon::parse($item['start_date']) == Carbon::parse($item['end_date'])){
+                            $sum += ((float)$item['room_price']);
+                        }else{
+                            $sum += ((float)$item['room_price'] * $day);
+                            $day = $this->getDiffDates($item['start_date'], $item['end_date'], true);
+                        }
                     }else if(Carbon::parse($item['start_date']) > $startDate && Carbon::parse($item['end_date']) < $endDate){
                         if(Carbon::parse($item['start_date']) == Carbon::parse($item['end_date'])){
                             $sum += ((float)$item['room_price']);
                         }else{
-                            $day = $this->getDiffDates($item['start_date'], $endDate, true);
+                            $day = $this->getDiffDates($item['start_date'], $item['end_date'], true);
                             $sum += ((float)$item['room_price'] * $day);
                         }
                     }else if(Carbon::parse($item['start_date']) > $startDate && Carbon::parse($item['end_date']) > $endDate){
@@ -524,11 +529,8 @@ class AvailabilityController extends APIController
             $days = Carbon::parse($startDate)->addHour(2)->diffInDays(Carbon::parse($endDate)->addHour(12));
             return $days;
         }else{
-            $sD2 = Carbon::parse($endDate)->startOfDay();
-            $eD2  = Carbon::parse($endDate)->endOfDay();
-            $day2 = round((strtotime($eD2) - strtotime($sD2)) / 3600);
-
-            return $day2 / 24;
+            $days = Carbon::parse($startDate)->diffInDays(Carbon::parse($endDate));
+            return $days;
         }
     }
 }
