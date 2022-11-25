@@ -242,6 +242,8 @@ class RoomTypeController extends APIController
         });
         if(sizeof($exist) <= 0){
           if(Carbon::parse($each['start_date']) <= Carbon::parse($data['check_in'])){
+            $roomPrice = app('Increment\Hotel\Room\Http\AvailabilityController')->sumOfPrice($data['check_in'], $data['check_out'], $each['category_id'], $each['add_on'], $each['availabilityId']);
+            $each['room_price'] = $roomPrice;
             array_push($finalResult, $each);
           }
         }
@@ -335,6 +337,8 @@ class RoomTypeController extends APIController
           });
           if(sizeof($exist) <= 0){
             if(Carbon::parse($each['start_date']) <= Carbon::parse($data['filter']['check_in'])){
+              $roomPrice = app('Increment\Hotel\Room\Http\AvailabilityController')->sumOfPrice($data['filter']['check_in'], $data['filter']['check_out'], $each['categoryId'], $each['add_on'], $each['availabilityId']);
+              $each['room_price'] = $roomPrice;
               array_push($finalResult, $each);
             }
           }

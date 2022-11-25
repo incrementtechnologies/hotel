@@ -475,4 +475,19 @@ class AvailabilityController extends APIController
             return true;
         }
     }
+
+    public function sumOfPrice($startDate, $endDate, $category, $addOn, $availID){
+        $temp = Availability::where('id', '=', $availID)->first();
+        $startDate = Carbon::parse($startDate);
+        $endDate = Carbon::parse($endDate);
+        $days = $startDate->diffInDays($endDate);
+        if($temp){
+            $eSD = Carbon::parse($temp['start_date']);
+            $eED = Carbon::parse($temp['end_date']);
+            $res = Availability::where('id', '!=', $temp['id'])->where('start_date', '>=', $temp['start_date'])->where('start_date', '<=', $endDate)->where('add_on', '=', $addOn)->where('payload_value', '=', $category)->sum('room_price');
+            return ((float)$temp['room_price'] + $res) / 1; 
+        }else{
+            return 0;
+        }
+    }   
 }
