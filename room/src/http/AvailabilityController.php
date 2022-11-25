@@ -439,7 +439,7 @@ class AvailabilityController extends APIController
         if($addOn !== null){
             $whereArray[] = array('add_on', '=', $addOn);
         }
-        $res = Availability::where($whereArray)->get();
+        $res = Availability::where($whereArray)->orderBy('end_date', 'desc')->get();
         $checkIn = Carbon::parse($checkIn);
         $checkOut = Carbon::parse($checkOut);
         $temp1 = [];
@@ -467,6 +467,8 @@ class AvailabilityController extends APIController
                 return $item['limit_per_day'] <= 0;
             });
             if(sizeof($hasNotAvailable) > 0){
+                return true;
+            }else if(Carbon::parse($res[0]['end_date']) < $checkOut || Carbon::parse($res[0]['end_date']) < $checkIn){
                 return true;
             }else{
                 return false;
