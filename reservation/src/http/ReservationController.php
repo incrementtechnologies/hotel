@@ -827,10 +827,10 @@ class ReservationController extends APIController
 				$item = $res[$i];
 				$accountInfo = app('Increment\Account\Http\AccountInformationController')->getByParamsWithColumns($item['account_id'], ['first_name']);
 				$res[$i]['name'] = $accountInfo !== null ? $accountInfo['first_name'] : $this->retrieveNameOnly($item['account_id']);
-				$res[$i]['details'] = json_decode($item['details']);
 				$res[$i]['check_in'] = Carbon::createFromFormat('Y-m-d H:i:s', $item['check_in'])->copy()->tz($this->response['timezone'])->format('F j, Y');
 				$res[$i]['check_out'] = Carbon::createFromFormat('Y-m-d H:i:s', $item['check_out'])->copy()->tz($this->response['timezone'])->format('F j, Y');
 				$res[$i]['room'] = app('Increment\Hotel\Room\Http\RoomTypeController')->getDetails($item['category_id'], $item['details']);;
+				$res[$i]['details'] = json_decode($item['details']);
 				$res[$i]['total'] = number_format($item['total'], 2, '.', '');
 			}
 		}
