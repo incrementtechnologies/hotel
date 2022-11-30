@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Http\Controllers\APIController;
 use Increment\Hotel\Room\Models\Availability;
 use Carbon\Carbon;
+use Carbon\CarbonPeriod;
 use Illuminate\Support\Facades\Log;
 
 
@@ -479,6 +480,84 @@ class AvailabilityController extends APIController
     }
 
     public function sumOfPrice($startDate, $endDate, $category, $addOn, $availID){
+        $temp = Availability::where('id', '=', $availID)->first();
+        $startDate = Carbon::parse($startDate);
+        $endDate = Carbon::parse($endDate);
+        $days = $startDate->diffInDays($endDate);
+        if($temp){
+            $sum = 0;
+            $day = 0;
+            $dates = [];
+            $eSD = Carbon::parse($temp['start_date']);
+            $eED = Carbon::parse($temp['end_date']);
+            $res = Availability::where('id', '!=', $temp['id'])->where('start_date', '>=', $temp['start_date'])->where('start_date', '<', $endDate)->where('add_on', '=', $addOn)->where('payload_value', '=', $category)->orderBy('start_date', 'asc')->get();
+            if(sizeof($res) > 0){
+                for ($i=0; $i <= sizeof($res)-1; $i++) {
+                    $item = $res[$i];
+                    if(Carbon::parse($item['start_date']) > $startDate && Carbon::parse($item['end_date']) == $endDate){
+                        $period = CarbonPeriod::create($item['start_date'], $item['end_date']);
+                        foreach ($period as $date) {
+                            array_push($dates, array(
+                                'date' => $date->format('Y-m-d'),
+                                'price' => $item['room_price']
+                            ));
+                        }
+                    }else if(Carbon::parse($item['start_date']) > $startDate && Carbon::parse($item['end_date']) < $endDate){
+                        $period = CarbonPeriod::create($item['start_date'], $item['end_date']);
+                        foreach ($period as $date) {
+                            array_push($dates, array(
+                                'date' => $date->format('Y-m-d'),
+                                'price' => $item['room_price']
+                            ));
+                        }
+                    }else if(Carbon::parse($item['start_date']) > $startDate && Carbon::parse($item['end_date']) > $endDate){
+                        $period = CarbonPeriod::create($item['start_date'], $endDate);
+                        foreach ($period as $date) {
+                            array_push($dates, array(
+                                'date' => $date->format('Y-m-d'),
+                                'price' => $item['room_price']
+                            ));
+                        }
+                    }
+                }
+                if($temp['end_date'] < $endDate){
+                    $period = CarbonPeriod::create($startDate, $temp['end_date']);
+                    foreach ($period as $date) {
+                        array_push($dates, array(
+                            'date' => $date->format('Y-m-d'),
+                            'price' => $temp['room_price']
+                        ));
+                    }
+                }else{
+                    $period = CarbonPeriod::create($startDate, $endDate);
+                    foreach ($period as $date) {
+                        array_push($dates, array(
+                            'date' => $date->format('Y-m-d'),
+                            'price' => $temp['room_price']
+                        ));
+                    }
+                }
+            }else{
+                $period = CarbonPeriod::create($startDate, $endDate);
+                foreach ($period as $date) {
+                    array_push($dates, array(
+                        'date' => $date->format('Y-m-d'),
+                        'price' => $temp['room_price']
+                    ));
+                }
+            }
+            for ($a=0; $a <= sizeof($dates)-1 ; $a++) { 
+                $each = $dates[$a];
+                $sum += (float)$each['price'];
+            }
+            $total = $sum / ($this->getDiffDates($startDate, $endDate, true));
+            return number_format((float)$total, 2, '.', '');
+        }else{
+            return 0;
+        }
+    }
+
+    public function sumOfPrice2($startDate, $endDate, $category, $addOn, $availID){ 
         $temp = Availability::where('id', '=', $availID)->first();
         $startDate = Carbon::parse($startDate);
         $endDate = Carbon::parse($endDate);
