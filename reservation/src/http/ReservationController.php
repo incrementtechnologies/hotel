@@ -817,7 +817,7 @@ class ReservationController extends APIController
 				->limit($data['limit'])
 				->offset($data['offset'])
 				->groupBy('carts.reservation_id')
-				->get();
+				->get(['carts.*', 'reservations.details as bookingDetails', 'reservations.total', 'reservations.code', 'reservations.reservation_code']);
 		$size =  Reservation::leftJoin('carts', 'carts.reservation_id', '=', 'reservations.id')->where($condition)
 			->groupBy('carts.reservation_id')
 			->orderBy($sortBy, array_values($data['sort'])[0])
@@ -831,6 +831,7 @@ class ReservationController extends APIController
 				$res[$i]['check_out'] = Carbon::createFromFormat('Y-m-d H:i:s', $item['check_out'])->copy()->tz($this->response['timezone'])->format('F j, Y');
 				$res[$i]['room'] = app('Increment\Hotel\Room\Http\RoomTypeController')->getDetails($item['category_id'], $item['details']);;
 				$res[$i]['details'] = json_decode($item['details']);
+				$res[$i]['bookingDetails'] = json_decode($item['bookingDetails']);
 				$res[$i]['total'] = number_format($item['total'], 2, '.', '');
 			}
 		}

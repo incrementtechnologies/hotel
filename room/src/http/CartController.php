@@ -206,7 +206,7 @@ class CartController extends APIController
 
     public function retrieveCartWithRooms($reservation_id){
         $result = Cart::where('reservation_id', '=', $reservation_id)
-            ->groupBy('carts.price_id')
+            // ->groupBy('carts.price_id')
             ->get(['qty', 'details', 'reservation_id', 'price_id', 'check_in', 'check_out', 'category_id', DB::raw('Sum(qty) as checkoutQty')]);
         if(sizeof($result) > 0 ){
             for ($i=0; $i <= sizeof($result) -1; $i++) {
