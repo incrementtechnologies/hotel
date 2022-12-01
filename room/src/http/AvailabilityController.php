@@ -491,7 +491,6 @@ class AvailabilityController extends APIController
             $eSD = Carbon::parse($temp['start_date']);
             $eED = Carbon::parse($temp['end_date']);
             $res = Availability::where('id', '!=', $temp['id'])->where('start_date', '>=', $temp['start_date'])->where('start_date', '<', $endDate)->where('add_on', '=', $addOn)->where('payload_value', '=', $category)->orderBy('start_date', 'asc')->get();
-            // dd($res);
             if(sizeof($res) > 0){
                 for ($i=0; $i <= sizeof($res)-1; $i++) {
                     $item = $res[$i];
@@ -540,7 +539,8 @@ class AvailabilityController extends APIController
                     }
                 }
             }else{
-                $period = CarbonPeriod::create($startDate, $endDate);
+                $nextToEndDate = Carbon::parse($endDate);
+                $period = CarbonPeriod::create($startDate, $nextToEndDate->subDays(1));
                 foreach ($period as $date) {
                     array_push($dates, array(
                         'date' => $date->format('Y-m-d'),
