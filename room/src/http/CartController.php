@@ -76,7 +76,7 @@ class CartController extends APIController
             ->sum('qty');
         $cartDetails = json_decode($data['details'], true);
         $availability = app('Increment\Hotel\Room\Http\AvailabilityController')->retrieveByIds($data['category_id'], $data['check_in'], $cartDetails['add-on']);
-        if($existingCart != null && sizeof($emptyCart) > 0){
+        if($existingCart != null && sizeof($emptyCart) > 0 && (isset($data['override']) && $data['override'] == 'false')){
             $this->response['data'] = [];
             $this->response['error'] = 'You had previously added rooms with this email with different dates in your cart. Kindly remove or checkout these rooms to proceed';
             return $this->response();
@@ -90,11 +90,28 @@ class CartController extends APIController
                 $data['reservation_id'] = $reservation[0]['id'];
                 $data['status'] = $reservation[0]['status'];
             }
+            if($existingCart != null && sizeof($emptyCart) > 0 && (isset($data['override']) && $data['override'] == 'true')){
+                for ($i=0; $i <= sizeof($emptyCart)-1; $i++) { 
+                    $eCart = $emptyCart[$i];
+                    Cart::where('id', '=', $eCart['id'])->update(array('deleted_at' => Carbon::now()));
+                }
+            }
             $res = Cart::create($data);
             $this->response['data'] = $res;
             $this->response['error'] = null;
             return $this->response();
         }
+    }
+
+    public function updateCreate(Request $request){
+        $data = $request->all();
+        $removeExisting = Cart::where('id', '=', $data['id'])->update(array('deleted_at' => Carbon::now()));
+        if($removeExisting){
+            unset($data['id']);
+            $this->model = new Cart();
+            $this->insertDB($data);
+        }
+        return $this->response();
     }
 
     public function countById($priceId, $categoryId){
