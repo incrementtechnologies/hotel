@@ -60,8 +60,10 @@ class CartController extends APIController
             }
         }
         $existingCart = Cart::where('account_id', '=', $data['account_id'])
-            ->where('check_in', '!=', $data['check_in'])
-            ->where('check_out', '!=', $data['check_out'])
+            ->where(function($query)use($data){
+                $query->where('check_in', '!=', $data['check_in'])
+                ->orWhere('check_out', '!=', $data['check_out']);
+            })
             ->where(function($query){
                 $query->where('status', '=', 'pending')
                 ->orWhere('status', '=', 'in_progress');
