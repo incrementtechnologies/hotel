@@ -138,21 +138,21 @@ class ReservationController extends APIController
 		$this->insertDB($data);
 		if($this->response['data']){
 			$finalResult['reservation_id'] = $this->response['data'];
-			$condition = array(
-				array('account_id', '=', $data['account_id']),
-				array('reservation_id', '=', null),
-				array('deleted_at', '=', null),
-				array(function($query){
-					$query->where('status', '=', 'pending')
-					->orWhere('status', '=', 'in_progress');
-				})
-			);
-			$updates = array(
-				'status' => 'in_progress',
-				'reservation_id' => $this->response['data'],
-				'updated_at' => Carbon::now()
-			);
-			app('Increment\Hotel\Room\Http\CartController')->updateByParams($condition, $updates);
+			for ($i=0; $i <= sizeof($data['cart'])-1 ; $i++) { 
+				$each = $data['cart'][$i];
+				$condition = array(
+					array('account_id', '=', $data['account_id']),
+					array('deleted_at', '=', null),
+					array('id', '=', $each['id'])
+				);
+				$updates = array(
+					'status' => 'in_progress',
+					'qty' => $each['checkoutQty'],
+					'reservation_id' => $this->response['data'],
+					'updated_at' => Carbon::now()
+				);
+				app('Increment\Hotel\Room\Http\CartController')->updateByParams($condition, $updates);
+			}
 		}
 		$this->response['error'] = null;
 		$finalResult['account_id'] = $createdAccountId;

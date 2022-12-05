@@ -394,7 +394,7 @@ class RoomTypeController extends APIController
           $details['general_features'] = json_decode($temp['general_features'], true);
           $details['description'] = json_decode($temp['description'], true);
           $details['general_description'] = $temp['general_description'];
-          $details['images'] = app('Increment\Hotel\Room\Http\ProductImageController')->retrieveImageByStatus($temp['categoryId'], 'room_type');
+          $details['images'] = app('Increment\Hotel\Room\Http\ProductImageController')->retrieveImageByStatus($category, 'room_type');
           $details['room_type'] = $temp['room_type'];
           $details['categoryId'] = $temp['id'];
           $details['capacity'] = $temp['capacity'];
