@@ -142,9 +142,19 @@ class ReservationController extends APIController
 				$each = $data['cart'][$i];
 				$condition = array(
 					array('account_id', '=', $data['account_id']),
-					array('deleted_at', '=', null),
-					array('id', '=', $each['id'])
+					array('deleted_at', '=', null)
 				);
+				if(isset($each['id'])){
+					array_push($condition, array('id', '=', $each['id']));
+				}else{
+					array_push($condition, 
+						array('reservation_id', '=', null),
+						array(function($query){
+							$query->where('status', '=', 'pending')
+							->orWhere('status', '=', 'in_progress');
+						})
+					);
+				}
 				$updates = array(
 					'status' => 'in_progress',
 					'qty' => $each['checkoutQty'],
