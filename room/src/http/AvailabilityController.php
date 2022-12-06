@@ -560,7 +560,7 @@ class AvailabilityController extends APIController
     }
 
     public function sumOfPrice2($startDate, $endDate, $category, $addOn, $availID){ 
-        $temp = Availability::where('id', '=', $availID)->first();
+        $temp = Availability::where('id', '=', $availID)->orderBy('room_price', 'asc')->first();
         $startDate = Carbon::parse($startDate);
         $endDate = Carbon::parse($endDate);
         $days = $startDate->diffInDays($endDate);
