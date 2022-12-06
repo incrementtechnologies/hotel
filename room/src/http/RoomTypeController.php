@@ -204,7 +204,7 @@ class RoomTypeController extends APIController
       $result = [];
       $finalResult = [];
       $temp = Payload::leftJoin('availabilities as T1', 'T1.payload_value', '=', 'payloads.id')->where($whereArray)
-        ->orderBy('T1.room_price', 'asc')
+        ->orderBy('T1.start_date', 'desc')
         ->get(['T1.id as availabilityId', 'payloads.id as category_id', 'payloads.payload_value as room_type', 'T1.*', 'payloads.capacity',
          'payloads.category as general_description', 'payloads.details as general_features', 'payloads.price_label', 'payloads.code']);
       if(sizeof($temp) > 0){
@@ -234,7 +234,7 @@ class RoomTypeController extends APIController
           }
         }
       }
-      usort($result, function($a, $b) {return (float)$a['room_price'] <=> (float)$b['room_price'];}); //asc
+      // usort($result, function($a, $b) {return (float)$a['room_price'] <=> (float)$b['room_price'];}); //asc
       for ($a=0; $a <= sizeof($result)-1 ; $a++) { 
         $each = $result[$a];
         $exist = array_filter($finalResult, function($el)use($each){
@@ -249,6 +249,7 @@ class RoomTypeController extends APIController
         }
       }
       $this->response['size'] = sizeOf($finalResult);
+      usort($result, function($a, $b) {return (float)$a['room_price'] <=> (float)$b['room_price'];}); //asc
       $finalResult = array_slice($finalResult, $data['offset'], $data['limit']);
       $this->response['data'] = array(
         'room' => $finalResult,
