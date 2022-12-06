@@ -234,7 +234,6 @@ class RoomTypeController extends APIController
           }
         }
       }
-      usort($result, function($a, $b) {return (float)$a['room_price'] <=> (float)$b['room_price'];}); //asc
       for ($a=0; $a <= sizeof($result)-1 ; $a++) { 
         $each = $result[$a];
         $exist = array_filter($finalResult, function($el)use($each){
@@ -249,6 +248,7 @@ class RoomTypeController extends APIController
         }
       }
       $this->response['size'] = sizeOf($finalResult);
+      usort($finalResult, function($a, $b) {return (float)$a['room_price'] <=> (float)$b['room_price'];}); //asc
       $finalResult = array_slice($finalResult, $data['offset'], $data['limit']);
       $this->response['data'] = array(
         'room' => $finalResult,
@@ -344,6 +344,7 @@ class RoomTypeController extends APIController
           }
         }
       }
+      usort($finalResult, function($a, $b) {return (float)$a['room_price'] <=> (float)$b['room_price'];}); //asc
       $this->response['data'] = array(
         'result' => $finalResult,
         'images' => app('Increment\Hotel\Room\Http\ProductImageController')->retrieveImageByStatus($data['category_id'], 'room_type'),
