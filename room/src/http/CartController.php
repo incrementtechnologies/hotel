@@ -71,6 +71,7 @@ class CartController extends APIController
             ->first();
         $totalAddedByDate = Cart::where('account_id', '=', $data['account_id'])
             ->where('check_in', '=', $data['check_in'])
+            ->where('category_id', '=', $data['category_id'])
             ->where(function($query){
                 $query->where('status', '=', 'pending')
                 ->orWhere('status', '=', 'in_progress');
@@ -78,13 +79,13 @@ class CartController extends APIController
             ->sum('qty');
         $cartDetails = json_decode($data['details'], true);
         $availability = app('Increment\Hotel\Room\Http\AvailabilityController')->retrieveByIds($data['category_id'], $data['check_in'], $cartDetails['add-on']);
-        if($existingCart != null && sizeof($emptyCart) > 0 && (isset($data['override']) && $data['override'] == 'false')){
+        if($existingCart != null && sizeof($emptyCart) > 0 && (isset($data['override']) && $data['override'] == false)){
             $this->response['data'] = [];
             $this->response['error'] = 'You had previously added rooms with this email with different dates in your cart. Kindly remove or checkout these rooms to proceed';
             return $this->response();
         }else if(((int)$availability['limit_per_day'] - (int)$totalAddedByDate) <= 0){
-            $this->response['error']  = `Your added cart already exceeds the remaining slots of room category for this day`;
-            $this->response['data'] = null;
+            $this->response['error']  = "One of your room already reached it's available slot for this date!";
+            $this->response['data'] = [];
             return $this->response();
         }else{
             if(isset($data['reservation_code'])){
@@ -92,7 +93,7 @@ class CartController extends APIController
                 $data['reservation_id'] = $reservation[0]['id'];
                 $data['status'] = $reservation[0]['status'];
             }
-            if($existingCart != null && sizeof($emptyCart) > 0 && (isset($data['override']) && $data['override'] == 'true')){
+            if($existingCart != null && sizeof($emptyCart) > 0 && (isset($data['override']) && $data['override'] == true)){
                 for ($i=0; $i <= sizeof($emptyCart)-1; $i++) { 
                     $eCart = $emptyCart[$i];
                     Cart::where('id', '=', $eCart['id'])->update(array('deleted_at' => Carbon::now()));
@@ -333,12 +334,12 @@ class CartController extends APIController
             $result = Cart::where($whereArray)
             ->select('id', 'details', 'qty', 'price_id', 'reservation_id', 'check_in', 'check_out', 'category_id')
             ->get();
-            $checkoutQty = Cart::where($whereArray)->sum('qty');
+            // $checkoutQty = Cart::where($whereArray)->sum('qty');
         }else{
             $result = Cart::where($whereArray)
             ->select('id', 'details', 'qty', 'price_id', 'reservation_id', 'check_in', 'check_out', 'category_id')
             ->get();
-            $checkoutQty = Cart::where($whereArray)->sum('qty');
+            // $checkoutQty = Cart::where($whereArray)->sum('qty');
         }
         $final = [];
         if(sizeof($result) > 0 ){
@@ -348,7 +349,7 @@ class CartController extends APIController
                 $reservation =app('Increment\Hotel\Reservation\Http\ReservationController')->retrieveReservationByParams('id', $item['reservation_id'], ['code']);
                 $availabilty = app('Increment\Hotel\Room\Http\AvailabilityController')->retrieveByIds($item['category_id'], $item['check_in'], $addOn['add-on']);
                 $result[$i]['reservation_code'] = sizeOf($reservation) > 0 ? $reservation[0]['code'] : null;
-                $result[$i]['checkoutQty'] = $checkoutQty;
+                $result[$i]['checkoutQty'] = $item['qty']; //$checkoutQty;
                 $result[$i]['rooms'] = app('Increment\Hotel\Room\Http\RoomTypeController')->getDetails($item['category_id'], $item['details']);
                 $result[$i]['limit_per_day'] = $availabilty['limit_per_day'];
                 $exist = array_filter($final, function($each)use($item){

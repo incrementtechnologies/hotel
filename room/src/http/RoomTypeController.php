@@ -249,7 +249,7 @@ class RoomTypeController extends APIController
         }
       }
       $this->response['size'] = sizeOf($finalResult);
-      usort($result, function($a, $b) {return (float)$a['room_price'] <=> (float)$b['room_price'];}); //asc
+      // usort($result, function($a, $b) {return (float)$a['room_price'] <=> (float)$b['room_price'];}); //asc
       $finalResult = array_slice($finalResult, $data['offset'], $data['limit']);
       $this->response['data'] = array(
         'room' => $finalResult,
