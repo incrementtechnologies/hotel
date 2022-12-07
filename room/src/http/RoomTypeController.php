@@ -235,20 +235,15 @@ class RoomTypeController extends APIController
         }
       }
       usort($result, function($a, $b) {return (float)$a['room_price'] <=> (float)$b['room_price'];}); //asc
-      // dd($result);
       for ($a=0; $a <= sizeof($result)-1 ; $a++) { 
         $each = $result[$a];
         $exist = array_filter($finalResult, function($el)use($each){
           return $el['category_id'] == $each['category_id'];
         });
         if(sizeof($exist) <= 0){
-          // dd($each);
-          // dd($data['check_in'], $data['check_out'], $each['category_id'], $each['add_on'], $each['availabilityId']);
-          if(Carbon::parse($each['start_date']) <= Carbon::parse($data['check_in'])){
-            $roomPrice = app('Increment\Hotel\Room\Http\AvailabilityController')->sumOfPrice($data['check_in'], $data['check_out'], $each['category_id'], $each['add_on'], $each['availabilityId']);
-            $each['room_price'] = $roomPrice;
-            array_push($finalResult, $each);
-          }
+          $roomPrice = $this->getLeastPrice($data, $each['category_id']);
+          $each['room_price'] = $roomPrice;
+          array_push($finalResult, $each);
         }
       }
       $this->response['size'] = sizeOf($finalResult);
@@ -390,7 +385,6 @@ class RoomTypeController extends APIController
       return Payload::where('id', '=', $id)->first();
     }
     
-
     public function getDetails($category, $details){
       $details = json_decode($details, true);
       $temp = Payload::where('id', '=', $category)
@@ -407,5 +401,65 @@ class RoomTypeController extends APIController
           $details['tax'] = $temp['tax'];
       }
       return $details;
-  }
+    }
+
+    public function getLeastPrice($data, $categoryId){
+      $whereArray = array(
+        array('payloads.payload', '=', 'room_type'),
+        array('T1.deleted_at', '=', null),
+        array('payloads.capacity', '<=', $data['adults']),
+        array('payloads.id', '=', $categoryId),
+        array('T1.room_price', '>=', $data['min']),
+        array('T1.room_price', '<=', $data['max']),
+      );
+      if($data['priceType'] !== null){
+        $tempLabel = [];
+        for ($i=0; $i <= sizeof($data['priceType'])-1; $i++) {
+          $item = $data['priceType'][$i];
+          array_push($tempLabel, $item['label']);
+        }
+        $whereArray[] = array(function($query)use($tempLabel){
+          $query->whereIn('T1.add_on', $tempLabel);
+        });
+      }
+      $temp = Payload::leftJoin('availabilities as T1', 'T1.payload_value', '=', 'payloads.id')->where($whereArray)
+      ->orderBy('T1.start_date', 'desc')
+      ->get(['T1.id as availabilityId', 'payloads.id as categoryId', 'payloads.payload_value as room_type', 'T1.*', 'payloads.capacity',
+       'payloads.person_rate', 'payloads.category as general_description', 'payloads.details as general_features', 'payloads.tax', 'payloads.price_label', 'payloads.code']);
+
+      $result = [];
+      $finalResult = [];
+      if(sizeof($temp) > 0){
+        for ($i=0; $i <= sizeof($temp)-1 ; $i++) { 
+          $item = $temp[$i];
+          $cartReservation = app('Increment\Hotel\Room\Http\CartController')->countDailyCarts($data['check_in'], $item['availabilityId'], $item['categoryId']);
+          $temp[$i]['remaining_qty'] = $item['limit_per_day'] - $cartReservation;
+          $hasNotAvailable = app('Increment\Hotel\Room\Http\AvailabilityController')->hasNotAvailableDates($item['categoryId'], $data['check_in'], $data['check_out'], $item['add_on']);
+          if(!$hasNotAvailable && $cartReservation != $item['limit_per_day']){
+            if(Carbon::parse($item['start_date']) <= Carbon::parse($data['check_in']) && Carbon::parse($item['end_date']) >= Carbon::parse($data['check_in'])){
+              array_push($result, $temp[$i]);
+            }
+            if(Carbon::parse($item['start_date']) <= Carbon::parse($data['check_out']) && Carbon::parse($item['end_date']) >= Carbon::parse($data['check_out'])){
+              array_push($result, $temp[$i]);
+            }
+          }
+        }
+        for ($a=0; $a <= sizeof($result)-1 ; $a++) { 
+          $each = $result[$a];
+          $exist = array_filter($finalResult, function($el)use($each){
+            return $el['add_on'] == $each['add_on'] && $el['categoryId'] == $each['categoryId'] && $each['tax'] == $el['tax'] && $each['room_price'] == $el['room_price'];
+          });
+          if(sizeof($exist) <= 0){
+            // dd($data['filter']['check_in'], $data['filter']['check_out'], $each['categoryId'], $each['add_on'], $each['availabilityId']);
+            if(Carbon::parse($each['start_date']) <= Carbon::parse($data['check_in'])){
+              $roomPrice = app('Increment\Hotel\Room\Http\AvailabilityController')->sumOfPrice($data['check_in'], $data['check_out'], $each['categoryId'], $each['add_on'], $each['availabilityId']);
+              $each['room_price'] = $roomPrice;
+              array_push($finalResult, $each);
+            }
+          }
+        }
+      }
+      usort($finalResult, function($a, $b) {return (float)$a['room_price'] <=> (float)$b['room_price'];});
+      return sizeof($finalResult) > 0 ? $finalResult[0]['room_price'] : null;
+    }
 }
