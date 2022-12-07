@@ -170,6 +170,7 @@ class CartController extends APIController
             $reserve['total'] = null;
             for ($i=0; $i <= sizeof($result) -1; $i++) { 
                 $item = $result[$i];
+                $cartDetails = json_decode($item['details'], true);
                 $reservation =app('Increment\Hotel\Reservation\Http\ReservationController')->retrieveReservationByParams('id', $item['reservation_id'], ['code', 'reservation_code', 'details', 'coupon_id']);
                 if(sizeof($reservation) > 0){
                     $coupon = app('App\Http\Controllers\CouponController')->retrieveById($reservation[0]['coupon_id']);
@@ -184,8 +185,8 @@ class CartController extends APIController
                     // if($result[$i]['rooms'][0]['label'] === 'MONTH'){
                     //     $nightsDays = $end->diffInMonths($start);
                     // }
-                    $result[$i]['price_per_qty'] = $result[$i]['rooms']['room_price'] * $item['checkoutQty'];
-                    $result[$i]['price_with_number_of_days'] = number_format(($result[$i]['price_per_qty'] * $nightsDays), '2', '.', '');
+                    $result[$i]['price_per_qty'] = (float)$cartDetails['room_price'] * $item['checkoutQty'];
+                    $result[$i]['price_with_number_of_days'] = $result[$i]['price_per_qty'];
                     $reserve['total'] = (double)$reserve['total'] + (double)$result[$i]['price_with_number_of_days'];
                     $reserve['subTotal'] = $reserve['total'];
 

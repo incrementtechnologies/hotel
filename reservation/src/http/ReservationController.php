@@ -44,14 +44,15 @@ class ReservationController extends APIController
 			$reserve['details'] = json_decode($reserve['details'], true);
 			for ($i=0; $i <= sizeof($cart) -1; $i++) {
 				$item = $cart[$i];
+				$cartDetails = json_decode($item['details'], true);
 				$start = Carbon::createFromFormat('Y-m-d H:i:s', $item['check_in']);
 				$end = Carbon::createFromFormat('Y-m-d H:i:s', $item['check_out']);
 				$nightsDays = $end->diffInDays($start);
 				// if($item['rooms'][0]['label'] === 'MONTH'){
 				// 	$nightsDays = $end->diffInMonths($start);
 				// }
-				$cart[$i]['price_per_qty'] = number_format(($item['rooms']['room_price'] * $item['checkoutQty']), 2, '.', '');
-				$cart[$i]['price_with_number_of_days'] = number_format(($cart[$i]['price_per_qty'] * $nightsDays), 2, '.', '');
+				$cart[$i]['price_per_qty'] = ((float)$cartDetails['room_price'] * $item['checkoutQty']);
+				$cart[$i]['price_with_number_of_days'] = $cart[$i]['price_per_qty'];
 				$reserve['total'] = number_format((float)((double)$reserve['total'] + (double)$cart[$i]['price_with_number_of_days']), 2, '.', '');
 				$reserve['subTotal'] = $reserve['total'];
 				if(sizeof($reserve['details']['selectedAddOn']) > 0){
