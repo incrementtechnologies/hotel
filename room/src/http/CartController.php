@@ -85,7 +85,7 @@ class CartController extends APIController
                 ->sum('qty');
             $cartDetails = json_decode($data['details'], true);
             $availability = app('Increment\Hotel\Room\Http\AvailabilityController')->retrieveByIds($data['category_id'], $data['check_in'], $cartDetails['add-on']);
-            if($existingCart != null && sizeof($emptyCart) > 0 && (isset($data['override']) && $data['override'] == false)){
+            if($existingCart != null && sizeof($emptyCart) > 0 && (isset($data['override']) && ($data['override'] == 'false' || $data['override'] == false))){
                 $this->response['data'] = [];
                 $this->response['error'] = 'You had previously added rooms with this email with different dates in your cart. Kindly remove or checkout these rooms to proceed';
                 return $this->response();
@@ -99,16 +99,35 @@ class CartController extends APIController
                     $data['reservation_id'] = $reservation[0]['id'];
                     $data['status'] = $reservation[0]['status'];
                 }
-                if($existingCart != null && sizeof($emptyCart) > 0 && (isset($data['override']) && $data['override'] == true)){
+                if($existingCart != null && sizeof($emptyCart) > 0 && (isset($data['override']) && ($data['override'] == 'true' || $data['override'] == true))){
                     for ($i=0; $i <= sizeof($emptyCart)-1; $i++) { 
                         $eCart = $emptyCart[$i];
                         Cart::where('id', '=', $eCart['id'])->update(array('deleted_at' => Carbon::now()));
                     }
                 }
-                $res = Cart::create($data);
-                $this->response['data'] = $res;
-                $this->response['error'] = null;
-                return $this->response();
+                $cartExisted = Cart::where('category_id', '=', $data['category_id'])
+                    ->where('details', 'like', '%'.$data['details'].'%')
+                    ->where('check_in', '=', $data['check_in'])
+                    ->where('check_out', '=', $data['check_out'])
+                    ->where(function($query){
+                        $query->where('status', '=', 'pending')
+                        ->orWhere('status', '=', 'in_progress');
+                    })->where('deleted_at', '=', null)
+                    ->first();
+                if($cartExisted != null && (isset($data['override']) && ($data['override'] == 'false' || $data['override'] == false))){
+                    $res = Cart::where('id', '=', $cartExisted['id'])->update(array(
+                        'qty' => (int)$cartExisted['qty'] + (int)$data['qty'],
+                        'updated_at' => Carbon::now(),
+                    ));
+                    $this->response['data'] = $res;
+                    $this->response['error'] = null;
+                    return $this->response();
+                }else{
+                    $res = Cart::create($data);
+                    $this->response['data'] = $res;
+                    $this->response['error'] = null;
+                    return $this->response();
+                }
             }
         }
     }
