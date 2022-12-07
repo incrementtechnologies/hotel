@@ -458,23 +458,22 @@ class CartController extends APIController
             for ($i=0; $i <= sizeof($temp)-1 ; $i++) { 
                 $item = $temp[$i];
                 $addOn = json_decode($item['details'], true);
-                $roomDetails = app('Increment\Hotel\Room\Http\AvailabilityController')->retrieveByIds($item['category_id'], $item['check_in'], $addOn['add-on']);
+                $cartDetails = json_decode($item['details'], true);
+                // $roomDetails = app('Increment\Hotel\Room\Http\AvailabilityController')->retrieveByIds($item['category_id'], $item['check_in'], $addOn['add-on']);
                 $roomType = app('Increment\Hotel\Room\Http\RoomTypeController')->getById($item['category_id']);
-                if($roomDetails != null){
-                    if($roomDetails['add_on'] == 'With Breakfast'){
-                        $returnArray[] = array(
-                            'qty' => $item['qty'],
-                            'room_type' => $roomType['payload_value'],
-                            'key' => 'with breakfast'
-                        );
-                    }
-                    if($roomDetails['add_on'] == 'Room Only'){
-                        $returnArray[] = array(
-                            'qty' => $item['qty'],
-                            'room_type' => $roomType['payload_value'],
-                            'key' => 'room only'
-                        );
-                    }
+                if($cartDetails['add-on'] == 'With Breakfast'){
+                    $returnArray[] = array(
+                        'qty' => $item['qty'],
+                        'room_type' => $roomType['payload_value'],
+                        'key' => 'with breakfast'
+                    );
+                }
+                if($cartDetails['add-on'] == 'Room Only'){
+                    $returnArray[] = array(
+                        'qty' => $item['qty'],
+                        'room_type' => $roomType['payload_value'],
+                        'key' => 'room only'
+                    );
                 }
             }
         }
