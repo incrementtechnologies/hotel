@@ -28,8 +28,9 @@ class CartController extends APIController
             if(sizeof($getReservation) > 0){
                 $existingCart = Cart::where('reservation_id', '=', $getReservation[0]['id'])
                     ->where('account_id', '=', $data['account_id'])
-                    ->where('check_in', 'like', '%'.$data['check_in'].'%')
-                    ->where('check_out', 'like', '%'.$data['check_out'].'%')->get();
+                    ->where('status', '=', 'for_approval')
+                    ->where('check_in', 'not like', '%'.$data['check_in'].'%')
+                    ->where('check_out', 'not like', '%'.$data['check_out'].'%')->get();
                 if(sizeof($existingCart) <= 0){
                     $createdCart = Cart::where('reservation_id', '=', $getReservation[0]['id'])->first();
                     if(isset($data['reservation_code'])){
@@ -41,7 +42,7 @@ class CartController extends APIController
                                 'category_id' => $data['category_id'],
                                 'reservation_id' => $getReservation[0]['id'],
                                 'qty' => $data['qty'],
-                                'status' => $getReservation[0]['status'],
+                                'status' => 'in_progress',
                                 'details' => $data['details'],
                                 'check_in' => $createdCart['check_in'],
                                 'check_out' => $createdCart['check_out']
@@ -56,53 +57,59 @@ class CartController extends APIController
                         $this->response['error'] = 'You had previously added rooms with this email with different dates in your cart. Kindly remove or checkout these rooms to proceed';
                         return $this->response();
                     }
+                }else{
+                    $this->response['data'] = [];
+                    $this->response['error'] = 'You had previously added rooms with this email with different dates in your cart. Kindly remove or checkout these rooms to proceed';
+                    return $this->response();
                 }
             }
         }
-        $existingCart = Cart::where('account_id', '=', $data['account_id'])
-            ->where(function($query)use($data){
-                $query->where('check_in', '!=', $data['check_in'])
-                ->orWhere('check_out', '!=', $data['check_out']);
-            })
-            ->where(function($query){
-                $query->where('status', '=', 'pending')
-                ->orWhere('status', '=', 'in_progress');
-            })->where('deleted_at', '=', null)
-            ->first();
-        $totalAddedByDate = Cart::where('account_id', '=', $data['account_id'])
-            ->where('check_in', '=', $data['check_in'])
-            ->where('category_id', '=', $data['category_id'])
-            ->where(function($query){
-                $query->where('status', '=', 'pending')
-                ->orWhere('status', '=', 'in_progress');
-            })->where('deleted_at', '=', null)
-            ->sum('qty');
-        $cartDetails = json_decode($data['details'], true);
-        $availability = app('Increment\Hotel\Room\Http\AvailabilityController')->retrieveByIds($data['category_id'], $data['check_in'], $cartDetails['add-on']);
-        if($existingCart != null && sizeof($emptyCart) > 0 && (isset($data['override']) && $data['override'] == false)){
-            $this->response['data'] = [];
-            $this->response['error'] = 'You had previously added rooms with this email with different dates in your cart. Kindly remove or checkout these rooms to proceed';
-            return $this->response();
-        }else if(((int)$availability['limit_per_day'] - (int)$totalAddedByDate) <= 0){
-            $this->response['error']  = "One of your room already reached it's available slot for this date!";
-            $this->response['data'] = [];
-            return $this->response();
-        }else{
-            if(isset($data['reservation_code'])){
-                $reservation = app('Increment\Hotel\Reservation\Http\ReservationController')->retrieveReservationByParams('reservation_code', $data['reservation_code'], ['id', 'status']);
-                $data['reservation_id'] = $reservation[0]['id'];
-                $data['status'] = $reservation[0]['status'];
-            }
-            if($existingCart != null && sizeof($emptyCart) > 0 && (isset($data['override']) && $data['override'] == true)){
-                for ($i=0; $i <= sizeof($emptyCart)-1; $i++) { 
-                    $eCart = $emptyCart[$i];
-                    Cart::where('id', '=', $eCart['id'])->update(array('deleted_at' => Carbon::now()));
+        else{
+            $existingCart = Cart::where('account_id', '=', $data['account_id'])
+                ->where(function($query)use($data){
+                    $query->where('check_in', '!=', $data['check_in'])
+                    ->orWhere('check_out', '!=', $data['check_out']);
+                })
+                ->where(function($query){
+                    $query->where('status', '=', 'pending')
+                    ->orWhere('status', '=', 'in_progress');
+                })->where('deleted_at', '=', null)
+                ->first();
+            $totalAddedByDate = Cart::where('account_id', '=', $data['account_id'])
+                ->where('check_in', '=', $data['check_in'])
+                ->where('category_id', '=', $data['category_id'])
+                ->where(function($query){
+                    $query->where('status', '=', 'pending')
+                    ->orWhere('status', '=', 'in_progress');
+                })->where('deleted_at', '=', null)
+                ->sum('qty');
+            $cartDetails = json_decode($data['details'], true);
+            $availability = app('Increment\Hotel\Room\Http\AvailabilityController')->retrieveByIds($data['category_id'], $data['check_in'], $cartDetails['add-on']);
+            if($existingCart != null && sizeof($emptyCart) > 0 && (isset($data['override']) && $data['override'] == false)){
+                $this->response['data'] = [];
+                $this->response['error'] = 'You had previously added rooms with this email with different dates in your cart. Kindly remove or checkout these rooms to proceed';
+                return $this->response();
+            }else if(((int)$availability['limit_per_day'] - (int)$totalAddedByDate) <= 0){
+                $this->response['error']  = "One of your room already reached it's available slot for this date!";
+                $this->response['data'] = [];
+                return $this->response();
+            }else{
+                if(isset($data['reservation_code'])){
+                    $reservation = app('Increment\Hotel\Reservation\Http\ReservationController')->retrieveReservationByParams('reservation_code', $data['reservation_code'], ['id', 'status']);
+                    $data['reservation_id'] = $reservation[0]['id'];
+                    $data['status'] = $reservation[0]['status'];
                 }
+                if($existingCart != null && sizeof($emptyCart) > 0 && (isset($data['override']) && $data['override'] == true)){
+                    for ($i=0; $i <= sizeof($emptyCart)-1; $i++) { 
+                        $eCart = $emptyCart[$i];
+                        Cart::where('id', '=', $eCart['id'])->update(array('deleted_at' => Carbon::now()));
+                    }
+                }
+                $res = Cart::create($data);
+                $this->response['data'] = $res;
+                $this->response['error'] = null;
+                return $this->response();
             }
-            $res = Cart::create($data);
-            $this->response['data'] = $res;
-            $this->response['error'] = null;
-            return $this->response();
         }
     }
 
@@ -228,7 +235,7 @@ class CartController extends APIController
     public function retrieveCartWithRooms($reservation_id){
         $result = Cart::where('reservation_id', '=', $reservation_id)
             // ->groupBy('carts.price_id')
-            ->get(['qty', 'details', 'reservation_id', 'price_id', 'check_in', 'check_out', 'category_id', DB::raw('Sum(qty) as checkoutQty')]);
+            ->get(['qty', 'details', 'reservation_id', 'price_id', 'check_in', 'check_out', 'category_id', 'qty as checkoutQty']);
         if(sizeof($result) > 0 ){
             for ($i=0; $i <= sizeof($result) -1; $i++) {
                 $temp = [];
@@ -448,8 +455,13 @@ class CartController extends APIController
         })->get();
     }
 
-    public function getCartsWithCount($reservationId){
-        $temp = Cart::where('reservation_id', '=', $reservationId)->get();
+    public function getCartsWithCount($reservationId, $status=null){
+        $temp = [];
+        if($status == null){
+            $temp = Cart::where('reservation_id', '=', $reservationId)->get();
+        }else{
+            $temp = Cart::where('reservation_id', '=', $reservationId)->where('status', '=', $status)->get();
+        }
         $breakfastOnly = 0;
         $roomOnly = 0;
         $both = 0;

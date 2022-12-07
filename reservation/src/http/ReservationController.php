@@ -668,7 +668,7 @@ class ReservationController extends APIController
 		if(sizeof($result) > 0){
 			for ($i=0; $i <= sizeof($result)-1 ; $i++) { 
 				$item = $result[$i];
-				$carts = app('Increment\Hotel\Room\Http\CartController')->getCartsWithCount($item['id']);
+				$carts = app('Increment\Hotel\Room\Http\CartController')->getCartsWithCount($item['id'], 'for_approval');
 				$result[$i]['details'] = json_decode($item['details']);
 				$result[$i]['check_in'] = Carbon::parse($item['check_in'])->format('F d, Y H:i:s');
         		$result[$i]['check_out'] = Carbon::parse($item['check_out'])->format('F d, Y H:i:s');
