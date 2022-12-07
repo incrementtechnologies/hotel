@@ -186,7 +186,7 @@ class CartController extends APIController
                     //     $nightsDays = $end->diffInMonths($start);
                     // }
                     $result[$i]['price_per_qty'] = (float)$cartDetails['room_price'] * $item['checkoutQty'];
-                    $result[$i]['price_with_number_of_days'] = $result[$i]['price_per_qty'];
+                    $result[$i]['price_with_number_of_days'] = ($result[$i]['price_per_qty'] * $nightsDays);
                     $reserve['total'] = (double)$reserve['total'] + (double)$result[$i]['price_with_number_of_days'];
                     $reserve['subTotal'] = $reserve['total'];
 

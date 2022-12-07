@@ -52,7 +52,7 @@ class ReservationController extends APIController
 				// 	$nightsDays = $end->diffInMonths($start);
 				// }
 				$cart[$i]['price_per_qty'] = ((float)$cartDetails['room_price'] * $item['checkoutQty']);
-				$cart[$i]['price_with_number_of_days'] = $cart[$i]['price_per_qty'];
+				$cart[$i]['price_with_number_of_days'] = ($cart[$i]['price_per_qty'] * $nightsDays);
 				$reserve['total'] = number_format((float)((double)$reserve['total'] + (double)$cart[$i]['price_with_number_of_days']), 2, '.', '');
 				$reserve['subTotal'] = $reserve['total'];
 				if(sizeof($reserve['details']['selectedAddOn']) > 0){
