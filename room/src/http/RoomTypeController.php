@@ -222,7 +222,7 @@ class RoomTypeController extends APIController
           $temp[$i]['description'] = json_decode($item['description']);
           $temp[$i]['images'] = app('Increment\Hotel\Room\Http\ProductImageController')->retrieveImageByStatus($item['category_id'], 'room_type');
           $isAvailable = app('Increment\Hotel\Room\Http\AvailabilityController')->isAvailable($item['payload_value'], $data['check_in'], $data['check_out']);
-          $cartReservation = app('Increment\Hotel\Room\Http\CartController')->countDailyCarts($item['start_date'], $item['availabilityId'], $item['category_id']);
+          $cartReservation = app('Increment\Hotel\Room\Http\CartController')->countDailyCarts($item['start_date'], $item['add_on'], $item['category_id']);
           $hasNotAvailable = app('Increment\Hotel\Room\Http\AvailabilityController')->hasNotAvailableDates($item['category_id'], $data['check_in'], $data['check_out'], $item['add_on']);
           if(!$hasNotAvailable && $cartReservation != $item['limit_per_day']){
             if(Carbon::parse($item['start_date']) <= Carbon::parse($data['check_in']) && Carbon::parse($item['end_date']) >= Carbon::parse($data['check_in'])){
@@ -315,7 +315,7 @@ class RoomTypeController extends APIController
           }else if($temp[$i]['description']['room_price'] != 0 && $temp[$i]['description']['break_fast'] != 0){
             $temp[$i]['room_status'] = array('title' => 'Room with Breakfast', 'price' => $item['room_price']);
           }
-          $cartReservation = app('Increment\Hotel\Room\Http\CartController')->countDailyCarts($data['filter']['check_in'], $item['availabilityId'], $item['categoryId']);
+          $cartReservation = app('Increment\Hotel\Room\Http\CartController')->countDailyCarts($data['filter']['check_in'], $item['add_on'], $item['categoryId']);
           $temp[$i]['remaining_qty'] = $item['limit_per_day'] - $cartReservation;
           // if($cartReservation != $item['limit_per_day']){
           $hasNotAvailable = app('Increment\Hotel\Room\Http\AvailabilityController')->hasNotAvailableDates($item['categoryId'], $data['filter']['check_in'], $data['filter']['check_out'], $item['add_on']);
@@ -426,13 +426,12 @@ class RoomTypeController extends APIController
       ->orderBy('T1.start_date', 'desc')
       ->get(['T1.id as availabilityId', 'payloads.id as categoryId', 'payloads.payload_value as room_type', 'T1.*', 'payloads.capacity',
        'payloads.person_rate', 'payloads.category as general_description', 'payloads.details as general_features', 'payloads.tax', 'payloads.price_label', 'payloads.code']);
-
       $result = [];
       $finalResult = [];
       if(sizeof($temp) > 0){
         for ($i=0; $i <= sizeof($temp)-1 ; $i++) { 
           $item = $temp[$i];
-          $cartReservation = app('Increment\Hotel\Room\Http\CartController')->countDailyCarts($data['check_in'], $item['availabilityId'], $item['categoryId']);
+          $cartReservation = app('Increment\Hotel\Room\Http\CartController')->countDailyCarts($data['check_in'], $item['add_on'], $item['categoryId']);
           $temp[$i]['remaining_qty'] = $item['limit_per_day'] - $cartReservation;
           $hasNotAvailable = app('Increment\Hotel\Room\Http\AvailabilityController')->hasNotAvailableDates($item['categoryId'], $data['check_in'], $data['check_out'], $item['add_on']);
           if(!$hasNotAvailable && $cartReservation != $item['limit_per_day']){
