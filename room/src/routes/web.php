@@ -61,7 +61,7 @@ Route::post($route.'retrieve', $controller."retrieve");
 Route::post($route.'retrieve_by_params', $controller."retrieveByParams");
 Route::post($route.'retrieve_by_date', $controller."getByDate");
 Route::post($route.'update', $controller."update");
-Route::post($route.'update_create', $controller."updateCreate");
+Route::post($route.'update_qty', $controller."updateQty");
 Route::post($route.'delete', $controller."delete");
 Route::get($route.'test', $controller."test");
 

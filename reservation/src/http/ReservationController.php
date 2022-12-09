@@ -560,8 +560,8 @@ class ReservationController extends APIController
 					$emailParams['check_in'] = Carbon::createFromFormat('Y-m-d H:i:s', $reservations['check_in'])->copy()->tz($this->response['timezone'])->format('F d, Y');
 					$emailParams['check_out'] = Carbon::createFromFormat('Y-m-d H:i:s', $reservations['check_out'])->copy()->tz($this->response['timezone'])->format('F d, Y');
 					$emailParams['nights'] = $nightsDays;
-					$emailParams['adults'] = $reservations['details']->heads;
-					$emailParams['children'] = $reservations['details']->child;
+					$emailParams['adults'] = $reservations['bookingDetails']->heads;
+					$emailParams['children'] = $reservations['bookingDetails']->child;
 					$emailParams['room_types'] = $reservations['room_types'];
 					$emailParams['total'] = $reservations['total'];
 					$emailParams['add_ons'] = $reservations['add_ons'];
@@ -1018,7 +1018,7 @@ class ReservationController extends APIController
 		$temp = Reservation::leftJoin('carts as T1', 'T1.reservation_id', '=', 'reservations.id')
 			->leftJoin('payloads as T2', 'T2.id', '=', 'T1.category_id')
 			->where('reservations.id', '=', $id)
-			->where('T1.status', '=', 'for_approval')->get(['reservations.*', 'T1.*', 'T2.payload_value']);
+			->where('T1.status', '=', 'for_approval')->get(['reservations.*', 'T1.*', 'T2.payload_value', 'reservations.details as bookingDetails']);
 		$result = [];
 		if(sizeof($temp) > 0){
 			for ($i=0; $i <= sizeof($temp)-1 ; $i++) { 
@@ -1028,21 +1028,21 @@ class ReservationController extends APIController
 				$carts = app('Increment\Hotel\Room\Http\CartController')->getCartsWithCount($item['reservation_id']);
 				$result['check_in'] = $item['check_in'];
 				$result['check_out'] = $item['check_out'];
-				$result['details'] = json_decode($item['details']);
+				$result['bookingDetails'] = json_decode($item['bookingDetails']);
 				$result['account_id'] = $item['account_id'];
 				$result['total'] = $item['total'];
 				$result['carts'] = $carts;
-				if($result['details']->payment_method == 'checkIn'){
+				if($result['bookingDetails']->payment_method == 'checkIn'){
 					$result['booking_status'] = 'Payment upon check-in';
-				}else if($result['details']->payment_method == 'bank'){
+				}else if($result['bookingDetails']->payment_method == 'bank'){
 					$result['booking_status'] = 'Bank Payment';
 				}else{
 					$result['booking_status'] = 'Paid';
 				}
-				if(sizeOf($result['details']->selectedAddOn)){
+				if(sizeOf($result['bookingDetails']->selectedAddOn)){
 					for ($a=0; $a <= sizeOf($result['details']->selectedAddOn)-1 ; $a++) { 
-						$each = $result['details']->selectedAddOn[$a];
-						$addOns .= $each['title'] . ($a < (sizeof($result['details']->selectedAddOn) - 1) ? ', ' : '');
+						$each = $result['bookingDetails']->selectedAddOn[$a];
+						$addOns .= $each['title'] . ($a < (sizeof($result['bookingDetails']->selectedAddOn) - 1) ? ', ' : '');
 					}
 				}
 			}

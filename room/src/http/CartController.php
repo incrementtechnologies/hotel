@@ -132,13 +132,11 @@ class CartController extends APIController
         }
     }
 
-    public function updateCreate(Request $request){
+    public function updateQty(Request $request){
         $data = $request->all();
-        $removeExisting = Cart::where('id', '=', $data['id'])->update(array('deleted_at' => Carbon::now()));
-        if($removeExisting){
-            unset($data['id']);
-            $this->model = new Cart();
-            $this->insertDB($data);
+        $exist = Cart::where('id', '=', $data['id'])->first();
+        if($exist['status'] == 'pending' ||$exist['status'] == 'inprogress'){
+            $this->updateDB($data);
         }
         return $this->response();
     }
@@ -481,7 +479,7 @@ class CartController extends APIController
         if($status == null){
             $temp = Cart::where('reservation_id', '=', $reservationId)->get();
         }else{
-            $temp = Cart::where('reservation_id', '=', $reservationId)->where('status', '=', $status)->get();
+            $temp = Cart::where('reservation_id', '=', $reservationId)->where('status', '!=', 'pending')->where('status', '!=', 'inprogress')->get();
         }
         $breakfastOnly = 0;
         $roomOnly = 0;
