@@ -135,9 +135,9 @@ class CartController extends APIController
     public function updateQty(Request $request){
         $data = $request->all();
         $exist = Cart::where('id', '=', $data['id'])->first();
-        if($exist['status'] == 'pending' ||$exist['status'] == 'inprogress'){
+        // if($exist['status'] == 'pending' ||$exist['status'] == 'inprogress'){
             $this->updateDB($data);
-        }
+        // }
         return $this->response();
     }
 
@@ -199,9 +199,9 @@ class CartController extends APIController
                 if(sizeof($reservation) > 0){
                     $coupon = app('App\Http\Controllers\CouponController')->retrieveById($reservation[0]['coupon_id']);
                     $result[$i]['coupon'] = $coupon;
-                    $start = Carbon::createFromFormat('Y-m-d H:i:s', $item['check_in']);
-                    $end = Carbon::createFromFormat('Y-m-d H:i:s', $item['check_out']);
-                    $nightsDays = $end->diffInDays($start);
+                    $start = Carbon::parse($item['check_in']);
+                    $end = Carbon::parse($item['check_out']);
+                    $nightsDays = $end->diffInDays($start) == 0 ? 1 : $end->diffInDays($start);
                     $result[$i]['reservation_details'] = $reservation;
                     $result[$i]['code'] = sizeOf($reservation) > 0 ? $reservation[0]['code'] : null;
                     $result[$i]['reservation_code'] = sizeOf($reservation) > 0 ? $reservation[0]['reservation_code'] : null;
@@ -209,7 +209,7 @@ class CartController extends APIController
                     // if($result[$i]['rooms'][0]['label'] === 'MONTH'){
                     //     $nightsDays = $end->diffInMonths($start);
                     // }
-                    $result[$i]['price_per_qty'] = (float)$cartDetails['room_price'] * $item['checkoutQty'];
+                    $result[$i]['price_per_qty'] = (float)$cartDetails['room_price'] * (int)$item['checkoutQty'];
                     $result[$i]['price_with_number_of_days'] = ($result[$i]['price_per_qty'] * $nightsDays);
                     $reserve['total'] = (double)$reserve['total'] + (double)$result[$i]['price_with_number_of_days'];
                     $reserve['subTotal'] = $reserve['total'];
