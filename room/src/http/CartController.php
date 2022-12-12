@@ -78,6 +78,7 @@ class CartController extends APIController
             $totalAddedByDate = Cart::where('account_id', '=', $data['account_id'])
                 ->where('check_in', '=', $data['check_in'])
                 ->where('category_id', '=', $data['category_id'])
+                ->where('details', 'like', '%'.$data['details'].'%')
                 ->where(function($query){
                     $query->where('status', '=', 'pending')
                     ->orWhere('status', '=', 'in_progress');
@@ -375,6 +376,7 @@ class CartController extends APIController
                 $availabilty = app('Increment\Hotel\Room\Http\AvailabilityController')->retrieveByIds($item['category_id'], $item['check_in'], $addOn['add-on']);
                 $result[$i]['reservation_code'] = sizeOf($reservation) > 0 ? $reservation[0]['code'] : null;
                 $result[$i]['checkoutQty'] = $item['qty']; //$checkoutQty;
+                $result[$i]['cart_id'] = $item['id'];
                 $result[$i]['rooms'] = app('Increment\Hotel\Room\Http\RoomTypeController')->getDetails($item['category_id'], $item['details']);
                 $result[$i]['limit_per_day'] = $availabilty['limit_per_day'];
                 $exist = array_filter($final, function($each)use($item){
