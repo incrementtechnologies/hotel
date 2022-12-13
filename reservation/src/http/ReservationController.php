@@ -306,7 +306,7 @@ class ReservationController extends APIController
 			$details->allow_email_updates = $data['allow_email_updates'];
 			$details->payment_method = $data['payment_method'];
 			$res = Reservation::where($condition)->update(array(
-				'details' => 	json_encode($details),	
+				'details' => json_encode($details),	
 				'status' => $data['status'],
 				'total' => $data['amount']
 			));

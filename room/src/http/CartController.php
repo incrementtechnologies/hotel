@@ -202,7 +202,7 @@ class CartController extends APIController
                     $result[$i]['coupon'] = $coupon;
                     $start = Carbon::parse($item['check_in']);
                     $end = Carbon::parse($item['check_out']);
-                    $nightsDays = $end->diffInDays($start) == 0 ? 1 : $end->diffInDays($start);
+                    $nightsDays = $end->diffInDays($start);
                     $result[$i]['reservation_details'] = $reservation;
                     $result[$i]['code'] = sizeOf($reservation) > 0 ? $reservation[0]['code'] : null;
                     $result[$i]['reservation_code'] = sizeOf($reservation) > 0 ? $reservation[0]['reservation_code'] : null;
