@@ -241,14 +241,14 @@ class ReservationController extends APIController
 			'country_code' => $data['account_info']['countryCode'],
 		);
 		app('Increment\Account\Http\AccountInformationController')->updateByAccountId($data['account_id'], $accountInfo);
-		$cart = json_decode($data['carts']);
+		$cart = json_decode($data['carts'], true);
 		for ($i=0; $i <= sizeof($cart)-1 ; $i++) { 
 			$item = $cart[$i];
 			$condition = array();
 			if(!isset($data['reservation_code'])){
 				$condition[] = array('account_id', '=', $data['account_id']);
-				$condition[] = array('category_id', '=', $item->category);
-				$condition[] = array('price_id', '=', $item->price_id);
+				$condition[] = array('category_id', '=', $item['category']);
+				$condition[] = array('price_id', '=', $item['price_id']);
 				$condition[] = array('deleted_at', '=', null);
 				$condition[] = array(function($query){
 					$query->where('status', '=', 'in_progress')
@@ -257,10 +257,13 @@ class ReservationController extends APIController
 				});
 			}else{
 				$condition[] = array('reservation_id', '=', $reservation['id']);
+				if(isset($item['cart_id'])){
+					$condition[] = array('id', '=', $item['cart_id']);
+				}
 			}
 			$updates = array(
 				'status' => 'in_progress',
-				'qty' => $item->checkoutQty,
+				'qty' => $item['checkoutQty'],
 				'reservation_id' => $data['id'],
 				'check_in' => Carbon::parse($data['check_in'])->addHours(2),
 				'check_out' => Carbon::parse($data['check_out'])->addHours(12),
