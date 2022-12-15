@@ -63,8 +63,7 @@ class CartController extends APIController
                     return $this->response();
                 }
             }
-        }
-        else{
+        }else{
             $existingCart = Cart::where('account_id', '=', $data['account_id'])
                 ->where(function($query)use($data){
                     $query->where('check_in', '!=', $data['check_in'])
@@ -368,6 +367,7 @@ class CartController extends APIController
             // $checkoutQty = Cart::where($whereArray)->sum('qty');
         }
         $final = [];
+        // dd($result);
         if(sizeof($result) > 0 ){
             for ($i=0; $i <= sizeof($result) -1; $i++) { 
                 $item = $result[$i];
@@ -481,7 +481,7 @@ class CartController extends APIController
         if($status == null){
             $temp = Cart::where('reservation_id', '=', $reservationId)->get();
         }else{
-            $temp = Cart::where('reservation_id', '=', $reservationId)->where('status', '!=', 'pending')->where('status', '!=', 'inprogress')->get();
+            $temp = Cart::where('reservation_id', '=', $reservationId)->where('status', '!=', 'pending')->where('status', '!=', 'in_progress')->get();
         }
         $breakfastOnly = 0;
         $roomOnly = 0;
