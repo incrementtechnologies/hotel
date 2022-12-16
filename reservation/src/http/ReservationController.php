@@ -281,7 +281,7 @@ class ReservationController extends APIController
 				'details' => $data['details'],
 			));
 		}
-		$this->response['data'] = $update;
+		$this->response['data'] = $reservation;
 		$this->response['error'] = null;
 		return $this->response();
 	}
