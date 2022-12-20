@@ -224,8 +224,8 @@ class ReservationController extends APIController
 		$this->model = new Reservation();
 		$reservation = null;
 		if(!isset($data['reservation_code'])){
-			$confirmed = Reservation::where('id', '=', $data['id'])->first();
-			if($confirmed['status'] === 'confirm'){
+			$reservation = Reservation::where('id', '=', $data['id'])->first();
+			if($reservation['status'] === 'confirm'){
 				$this->response['data'] = null;
 				$this->response['error'] = 'Your reservation has been confirmed by the admin';
 				return $this->response();;
