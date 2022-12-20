@@ -411,7 +411,8 @@ class ReservationController extends APIController
 		$con = $data['condition'];
 		$whereArray = array(
 			array($con[0]['column'], $con[0]['clause'], $con[0]['value']),
-			array('details', 'not like', '%'.'"payment_method":"credit"'.'%')
+			array('details', 'not like', '%'.'"payment_method":"credit"'.'%'),
+			array('deleted_at', '=', null)
 		);
 		if(isset($data['reservation_id'])){
 			array_push($whereArray, array('reservation_code', '=', $data['reservation_id']),
@@ -445,7 +446,7 @@ class ReservationController extends APIController
 		}
 		if(isset($data['reservation_id'])){
 			$reservation = Reservation::where('reservation_code', '=', $data['reservation_id'])->first();
-			$data['reservation_id'] = $reservation['id'];
+			$data['reservation_id'] = $reservation !== null ? $reservation['id'] : null;
 			$carts = app('Increment\Hotel\Room\Http\CartController')->retrieveOwn($data);
 		}else{
 			$carts = app('Increment\Hotel\Room\Http\CartController')->retrieveOwn($data);

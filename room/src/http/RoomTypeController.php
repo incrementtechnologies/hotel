@@ -398,6 +398,8 @@ class RoomTypeController extends APIController
           $details['room_type'] = $temp['room_type'];
           $details['categoryId'] = $temp['id'];
           $details['capacity'] = $temp['capacity'];
+          // $cartReservation = app('Increment\Hotel\Room\Http\CartController')->countDailyCarts($data['filter']['check_in'], $temp['add-on'], $temp['id']);
+          // $details['remaining_qty'] = $item['limit_per_day'] - $cartReservation;
           $details['tax'] = $temp['tax'];
       }
       return $details;
