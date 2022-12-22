@@ -164,6 +164,32 @@ class ReservationController extends APIController
 		return $this->response();
 	}
 
+	public function validateBooking(Request $request){
+		$data = $request->all();
+		$data['account_info'] = json_decode($data['account_info'], true);
+		if($this->validateBeforeCreate($data) == false){
+			$this->response['data'] = false;
+			$this->response['error'] = 'Apologies, the maximum amount of reservations that we can cater today is already reached. Try to lessen your qty number or book other room type';
+			return $this->response();
+		}
+		$existEmail = app('Increment\Account\Http\AccountController')->retrieveByEmail($data['account_info']['email']);
+		if($existEmail !== null){
+			if(!isset($data['token'])){
+				$this->response['error'] = 'Your email already exists. Please login before proceeding to checkout';
+				$this->response['data'] = false;
+				return $this->response();
+			}else{
+				$this->response['error'] = null;
+				$this->response['data'] = true;
+				return $this->response();	
+			}
+		}else{
+			$this->response['error'] = null;
+			$this->response['data'] = true;
+			return $this->response();
+		}
+	}
+
 	public function insertIntoAccountInformation($data){
 		$existAccount = app('Increment\Account\Http\AccountInformationController')->getByParamsWithColumns($data['account_id'], ['first_name']);
 		$customerInfo = array(
