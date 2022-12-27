@@ -480,7 +480,10 @@ class AvailabilityController extends APIController
     }
 
     public function sumOfPrice($startDate, $endDate, $category, $addOn, $availID){
-        $temp = Availability::where('id', '=', $availID)->first();
+        $temp = Availability::where('id', '=', $availID)->where(function($query){
+            $query->where('deleted_at', '=', null)
+            ->orWhere('deleted_at', '!=', null);
+        })->first();
         $startDate = Carbon::parse($startDate);
         $endDate = Carbon::parse($endDate);
         $days = $startDate->diffInDays($endDate);
@@ -557,6 +560,50 @@ class AvailabilityController extends APIController
         }else{
             return 0;
         }
+    }
+
+    public function dailyRate(Request $request){
+        $data = $request->all();
+        $result = [];
+        for ($i=0; $i <= sizeof($data['carts'])-1; $i++) {
+            $item = $data['carts'][$i];
+            $details = isset($item['roomDetails']) ? json_decode($item['roomDetails'], true) : json_decode($item['details'], true);
+            $startDate = $data['check_in'];
+            $endDate = $data['check_out'];
+            $category = $item['category_id'];
+            $addOn = $details['add-on'];
+            $availID = $item['price_id'];
+            $rate = $this->sumOfPrice($startDate, $endDate, $category, $addOn, $availID);
+            $details['room_price'] = $rate;
+            $details['add-on'] = $addOn;
+            if(isset($item['roomDetails'])){
+                $item['roomDetails'] = json_encode($details);
+            }else{
+                $item['details'] = json_encode($details);
+            }
+            $item['check_in'] = $startDate;
+            $item['check_out'] = $endDate;
+            $hasNotAvailable = $this->hasNotAvailableDates($category, $startDate, $endDate, $addOn);
+            $roomType = app('Increment\Hotel\Room\Http\RoomTypeController')->getById($category);
+            if(!$hasNotAvailable){
+                if($roomType['capacity'] <= $data['adults']){
+                    $item['check_in'] = Carbon::parse($item['check_in'])->addHour(2)->format('Y-m-d H:i:s');
+                    $item['check_out'] = Carbon::parse($item['check_out'])->addHour(12)->format('Y-m-d H:i:s');
+                    array_push($result, $item);
+                }else{
+                    $this->response['data'] = null;
+                    $this->response['error'] = 'Your room added to cart is not part of your selected filter';
+                    return $this->response();
+                }
+            }else{
+                $this->response['data'] = null;
+                $this->response['error'] = 'Your room added to cart is not part of your selected filter';
+                return $this->response();
+            }
+        }
+        $this->response['data'] = $result;
+        $this->response['error'] = null;
+        return $this->response();
     }
 
     public function sumOfPrice2($startDate, $endDate, $category, $addOn, $availID){ 

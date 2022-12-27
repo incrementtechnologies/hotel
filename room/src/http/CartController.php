@@ -11,7 +11,7 @@ use Carbon\Carbon;
 class CartController extends APIController
 {
     public function __construct(){
-        $this->model = new Cart;
+        $this->model = new Cart();
     }
 
     public function create(Request $request){
@@ -132,6 +132,11 @@ class CartController extends APIController
         }
     }
 
+    public function insert($data){
+        $this->model = new Cart();
+        Cart::create($data);
+    }
+
     public function updateQty(Request $request){
         $data = $request->all();
         $exist = Cart::where('id', '=', $data['id'])->first();
@@ -198,6 +203,73 @@ class CartController extends APIController
                 $reservation =app('Increment\Hotel\Reservation\Http\ReservationController')->retrieveReservationByParams('id', $item['reservation_id'], ['code', 'reservation_code', 'details', 'coupon_id']);
                 if(sizeof($reservation) > 0){
                     $coupon = app('App\Http\Controllers\CouponController')->retrieveById($reservation[0]['coupon_id']);
+                    $result[$i]['coupon'] = $coupon;
+                    $start = Carbon::parse($item['check_in']);
+                    $end = Carbon::parse($item['check_out']);
+                    $nightsDays = $end->diffInDays($start);
+                    $result[$i]['reservation_details'] = $reservation;
+                    $result[$i]['code'] = sizeOf($reservation) > 0 ? $reservation[0]['code'] : null;
+                    $result[$i]['reservation_code'] = sizeOf($reservation) > 0 ? $reservation[0]['reservation_code'] : null;
+                    $result[$i]['rooms'] = app('Increment\Hotel\Room\Http\RoomTypeController')->getDetails($item['category_id'], $item['details']);
+                    // if($result[$i]['rooms'][0]['label'] === 'MONTH'){
+                    //     $nightsDays = $end->diffInMonths($start);
+                    // }
+                    $result[$i]['price_per_qty'] = (float)$cartDetails['room_price'] * (int)$item['checkoutQty'];
+                    $result[$i]['price_with_number_of_days'] = ($result[$i]['price_per_qty'] * $nightsDays);
+                    $reserve['total'] = (double)$reserve['total'] + (double)$result[$i]['price_with_number_of_days'];
+                    $reserve['subTotal'] = $reserve['total'];
+
+                    $details = json_decode($reservation[0]['details'], true);
+                    if(sizeof($details['selectedAddOn']) > 0){
+                        for ($a=0; $a <= sizeof($details['selectedAddOn'])-1 ; $a++) {
+                            $each = $details['selectedAddOn'][$a];
+                            $reserve['total'] = (float)$reserve['total'] + (float)$each['price'];
+                            $reserve['subTotal'] = $reserve['total'];
+                            $details['selectedAddOn'][$a]['price'] = number_format($each['price'], 2, '.', '');
+                        }   
+                    }
+                    $reservation[0]['details'] = $details;
+                }
+            }
+            if(sizeof($reservation) > 0){
+                if($reservation[0]['coupon_id'] !== null){
+                    if($coupon['type'] === 'fixed'){
+                        $reserve['total'] = number_format((float)((double)$reserve['total'] - (double)$coupon['amount']), 2, '.', '');
+                    }else if($coupon['type'] === 'percentage'){
+                        $reserve['total'] = number_format((float)((double)$reserve['total'] - ((double)$reserve['total'] * ((double)$coupon['amount'] / 100))), 2, '.', '');
+                    }
+                }else{
+                    $reserve['total'] = number_format($reserve['total'], 2, '.', '');
+                    $reserve['subTotal'] = number_format($reserve['subTotal'], 2, '.', '');
+                }
+            }
+            $otherDetails = [
+                'customer_details' => app('Increment\Account\Http\AccountController')->retrieveAccountInfo($data['account_id']),
+                'reservation_detail' => app('Increment\Hotel\Reservation\Http\ReservationController')->retrieveReservationByParams('id', $result[0]['reservation_id'], ['details']),
+            ];
+            $this->response['data']['other_details'] = $otherDetails;
+        }
+        $this->response['data']['result'] = $result;
+        $this->response['data']['total'] = $reserve;
+        return $this->response();
+    }
+
+    public function retrieveLocalCart(Request $request){
+        $data = $request->all();
+        $temp = app('Increment\Common\Cache\Http\CacheController')->retrieve($data['reservation_code']);
+        $reserve = [];
+        $result = [];
+        $reservation = [];
+        $coupon = null;
+        if(sizeof($temp) > 0 ){
+            $result = $temp['cart'];
+            $reserve['total'] = null;
+            for ($i=0; $i <= sizeof($result)-1; $i++) { 
+                $item = $result[$i];
+                $cartDetails = json_decode($item['details'], true);
+                $reservation =app('Increment\Hotel\Reservation\Http\ReservationController')->retrieveReservationByParams('id', $item['reservation_id'], ['code', 'reservation_code', 'details', 'coupon_id']);
+                if(sizeof($reservation) > 0){
+                    $coupon = app('App\Http\Controllers\CouponController')->retrieveById($reservation[0]['coupon_id'] !== null ? $reservation[0]['coupon_id'] : (isset($item['coupon']) ? $item['coupon'] : null));
                     $result[$i]['coupon'] = $coupon;
                     $start = Carbon::parse($item['check_in']);
                     $end = Carbon::parse($item['check_out']);

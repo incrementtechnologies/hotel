@@ -18,6 +18,7 @@ Route::get($route.'success_callback', $controller."successCallback");
 Route::get($route.'failure_callback', $controller."failCallback");
 Route::post($route.'search', $controller."search");
 Route::post($route.'update', $controller."update");
+Route::post($route.'initial_update', $controller."initialUpdate");
 Route::post($route.'update_reservation', $controller."updateReservations");
 Route::post($route.'update_with_coupon', $controller."updateCoupon");
 Route::post($route.'update_coupon', $controller."updatedCoupon");
