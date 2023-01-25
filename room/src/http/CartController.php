@@ -208,6 +208,7 @@ class CartController extends APIController
                     $end = Carbon::parse($item['check_out']);
                     $nightsDays = $end->diffInDays($start);
                     $result[$i]['reservation_details'] = $reservation;
+                    $result[$i]['cart_id'] = $item['id'];
                     $result[$i]['code'] = sizeOf($reservation) > 0 ? $reservation[0]['code'] : null;
                     $result[$i]['reservation_code'] = sizeOf($reservation) > 0 ? $reservation[0]['reservation_code'] : null;
                     $result[$i]['rooms'] = app('Increment\Hotel\Room\Http\RoomTypeController')->getDetails($item['category_id'], $item['details']);
@@ -275,6 +276,7 @@ class CartController extends APIController
                     $end = Carbon::parse($item['check_out']);
                     $nightsDays = $end->diffInDays($start);
                     $result[$i]['reservation_details'] = $reservation;
+                    $result[$i]['cart_id'] = $item['id'];
                     $result[$i]['code'] = sizeOf($reservation) > 0 ? $reservation[0]['code'] : null;
                     $result[$i]['reservation_code'] = sizeOf($reservation) > 0 ? $reservation[0]['reservation_code'] : null;
                     $result[$i]['rooms'] = app('Increment\Hotel\Room\Http\RoomTypeController')->getDetails($item['category_id'], $item['details']);

@@ -372,7 +372,12 @@ class ReservationController extends APIController
 			app('App\Http\Controllers\EmailController')->newReservation($data['account_id']);
 			
 		}
-		app('Increment\Common\Cache\Http\CacheController')->delete($data['reservation_code']);
+		for ($i=0; $i <= sizeof($data['cart'])-1 ; $i++) {
+			$each = $data['cart'][$i];
+			if(isset($item['reservation_code'])){
+				app('Increment\Common\Cache\Http\CacheController')->delete($item['reservation_code']);
+			}
+		}
 		return $this->response();
 	}
 
