@@ -410,7 +410,7 @@ class RoomTypeController extends APIController
       $whereArray = array(
         array('payloads.payload', '=', 'room_type'),
         array('T1.deleted_at', '=', null),
-        array('payloads.capacity', '<=', $data['adults']),
+        array('payloads.capacity', '>=', $data['adults']),
         array('payloads.id', '=', $categoryId),
         array('T1.room_price', '>=', $data['min']),
         array('T1.room_price', '<=', $data['max']),
