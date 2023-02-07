@@ -165,7 +165,7 @@ class RoomTypeController extends APIController
         array('payloads.payload', '=', 'room_type'),
         // array('T1.limit_per_day', '>', 0),
         array('T1.deleted_at', '=', null),
-        array('payloads.capacity', '<=', $data['adults']),
+        array('payloads.capacity', '>=', $data['adults']),
         array('T1.room_price', '>=', $data['min']),
         array('T1.room_price', '<=', $data['max']),
         array('T1.deleted_at', '=', null)
