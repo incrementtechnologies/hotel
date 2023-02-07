@@ -58,7 +58,7 @@ class RoomTypeController extends APIController
           );
           if($data['status'] === 'create'){
             $this->model = new Payload();
-            $res = $this->insertDB($payload);;
+            $res = $this->insertDB($payload);
           }else if($data['status'] === 'update'){
             $payload['updated_at'] = Carbon::now();
             $res = Payload::where('id', '=', $data['id'])->update($payload);
@@ -68,7 +68,7 @@ class RoomTypeController extends APIController
               for ($i=0; $i <= sizeof($data['images'])-1 ; $i++) { 
                 $item = $data['images'][$i];
                 $params = array(
-                  'room_id' => $data['status'] === 'create' ? $res['id'] : $data['id'],
+                  'room_id' => $data['status'] === 'create' ? $res['data'] : $data['id'],
                   'url' => $item['url'],
                   'status' => 'room_type'
                 );
